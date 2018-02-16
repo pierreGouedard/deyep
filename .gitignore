@@ -1,0 +1,6 @@
+*~
+*.pyc
+DATA/
+settings/local_settings.py
+settings/local_settings.yml
+*.sqlite3
