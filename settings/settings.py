@@ -12,7 +12,7 @@ import pkg_resources
 
 
 DEFAULT_CONF = {
-    'data_pm.drivers': ['file'],
+    'deyep.drivers': ['file'],
     'deyep.data.dir': 'DATA',
     'deyep.local.path': '~/.local/deyep',
     'deyep.driver.file.workspace': '',
