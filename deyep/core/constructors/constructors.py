@@ -3,6 +3,7 @@
 # local import
 import settings
 
+
 class Constructors(object):
 
     def __init__(self, project, seed, feature_size, edge_density, edge_weight):
@@ -22,11 +23,6 @@ class Constructors(object):
         self.input_nodes = []
         self.output_nodes = []
         self.network_nodes = []
-
-        # Edges
-        self.input_edges = []
-        self.output_edges = []
-        self.network_edges = []
 
     def build_input_nodes(self):
         raise NotImplementedError

@@ -10,13 +10,13 @@ class Generators(object):
 
         self.project = project
         self.driver = driver
-        self.url_in = settings.deyep_raw_path.format(project)
-        self.url_out = settings.deyep_io_path.format(project)
-        self.raw_data = None
-        self.raw_features = None
+        self.dir_in = settings.deyep_raw_path.format(project)
+        self.dir_out = settings.deyep_io_path.format(project)
+        self.raw_data = dict()
+        self.raw_features = dict()
 
     def read_raw_data(self):
-        self.raw_data = self.driver.read_content(self.url_in)
+        raise NotImplementedError
 
     def run_preprocessing(self):
         raise NotImplementedError
