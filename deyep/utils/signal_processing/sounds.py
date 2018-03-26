@@ -23,7 +23,7 @@ def butter_lowpass(cutoff, fs, order):
     return b, a
 
 
-def butter_lowpass_filter(s, cutOff, fs, order=20):
+def butter_lowpass_filter(s, cutOff, fs, order=50):
     """
 
     :param data:
@@ -63,19 +63,16 @@ def compute_stft_decomposition(s, n, fs, p, fm, no, ns):
 
     d_stft = dict()
     for name, d_part in d_sig.items():
-        import IPython
-        IPython.embed()
-
         # Compute stft
-        f, t, Zxx = signal.stft(d_part['signal'], fs, noverlap=no, nperseg=ns, boundary=None)
+        f, t, Zxx = signal.stft(d_part['signal'], fs=fs, window='boxcar', noverlap=no, nperseg=ns, boundary=None)
 
         # Build time mask from signal mask
         time_mask, time_offset = transform_mask(d_part['mask'], int(name.split('_')[-1]), n, t, ns, fs)
 
-        # Store result in dictonnary
-        d_stft.update({name: {'frequencies': f[f < fm], 'time': t[time_mask], 'offset': time_offset,
-                              'imaginary': np.imag(Zxx[f < fm][:, time_mask]),
-                              'real': np.real(Zxx[f < fm][:, time_mask])}})
+        # Store result in dictonnary we only need
+        d_stft.update({name: {'freq': f[f < fm], 'time': t[time_mask], 'offset': time_offset,
+                              'im': np.imag(Zxx[f < fm][:, time_mask]), 're': np.real(Zxx[f < fm][:, time_mask]),
+                              'window': Zxx[f >= fm][:, time_mask]}})
 
     return d_stft
 
@@ -89,7 +86,7 @@ def transform_mask(mask, i, n, t, ns, fs):
     return np.array(new_mask), i * n
 
 
-def optimize_segmentation(ns, n, p, fs):
+def optimize_segmentation(ns, n, fs):
     """
     make sure that the
 
@@ -101,21 +98,21 @@ def optimize_segmentation(ns, n, p, fs):
     """
 
     # Test if ns is a comon divisor of n * p * fs and n * fs
-    r = int(n * p * fs / ns)
+    r = int(n * fs / ns)
 
-    if r == float(n * p * fs) / ns:
+    if r == float(n * fs) / ns:
         return ns
 
     else:
-        while float(n * p * fs) / r != int(n * p * fs) / r:
+        while float(n * fs) / r != int(n * fs) / r:
             r += 1
 
-        ns_ = int(n * p * fs) / r
+        ns_ = int(n * fs) / r
 
         return ns_
 
 
-def inverse_stft_decomposition(d_stft, fs, no, ns):
+def inverse_stft_decomposition(d_stft, fs, no, ns, noise=0):
     """
 
     :param Zxx:
@@ -124,15 +121,20 @@ def inverse_stft_decomposition(d_stft, fs, no, ns):
     :param ns:
     :return:
     """
-    import IPython
-    IPython.embed()
+
+
     # Recover the signal from a
-    l_stft = sorted(d_stft.items(), key=lambda x: int(x[0].split('_')[-1]))
-    Z_xx = np.hstack((x['real'] + x['imaginary'] * np.complex(0, 1) for _, x in l_stft))
-    # TODO:
-    # First we need to padd along the freq axis so that Z_xx.shape[-2] - 1 = nperseg / 2 (which was the initial length of Z_xx before mask
-    # May be we should add a field in dictonarry with : frequency to padd !!!!!!!!
-    _, s_rec = signal.istft(Z_xx, fs=fs, nperseg=ns, noverlap=no, boundary=None)
+    l_stft, Z_xx = sorted(d_stft.items(), key=lambda x: int(x[0].split('_')[-1])), None
+
+    # re build the entire signal
+    Z_xx = np.hstack((np.vstack((x['re'] + (x['im'] * np.complex(0, 1)), x['window'])) for _, x in l_stft))
+
+    if noise is not None:
+        Z_xx += noise*np.random.randn(Z_xx.shape[0], Z_xx.shape[1]) + \
+                noise*(np.random.randn(Z_xx.shape[0], Z_xx.shape[1]) * np.complex(0, 1))
+
+    # Inverse stft
+    _, s_rec = signal.istft(Z_xx, fs=fs, window='boxcar', nperseg=ns, noverlap=no, boundary=None)
 
     return s_rec
 

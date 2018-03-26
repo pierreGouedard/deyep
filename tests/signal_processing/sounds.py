@@ -95,7 +95,7 @@ class TestSoundUtils(unittest.TestCase):
 
     def test_signal_reconstruction(self):
         """
-        Check consruction of stress period
+        Check reconsruction of a signal that has gone through a 'by part' stft
 
         python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_signal_reconstruction
 
@@ -104,14 +104,15 @@ class TestSoundUtils(unittest.TestCase):
         s_ = butter_lowpass_filter(self.s, self.maxfrequency, self.samplingrate)
 
         # Optimize parameter
-        nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.segoverlap, self.samplingrate)
+        nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
 
         # Decompose the signal as stft
         d_stft = compute_stft_decomposition(s_, self.maxdurationsegment, self.samplingrate, self.segoverlap,
                                             self.maxfrequency, self.noverlap, nperseg)
 
         # Recompose the signal with istft
-        s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg)
-        import IPython
-        IPython.embed()
-        # compute loss
+        s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg, noise=1e-15)
+
+        # assert reconstrution is ok
+        assert np.abs(s_ -s_rec).sum() < (1e-9 / 1e-10)
+

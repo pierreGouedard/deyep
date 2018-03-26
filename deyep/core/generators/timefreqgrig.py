@@ -5,12 +5,12 @@ import numpy as np
 
 # Local import
 from deyep.core.generators.generators import Generators
-from deyep.utils.signal_processing.sounds import compute_stft_decomposition, adjust_segmentation
+from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, butter_lowpass_filter
 
 
 class SingleTimeFreqGridGenerator(Generators):
 
-    def __init__(self, project, driver, window=('tukey', 0.25), noverlap=0, nperseg=2210,
+    def __init__(self, project, driver, window='boxcar', noverlap=0, nperseg=2210,
                  maxdurationsegment=10, segoverlap=0.5, maxfrequency=6000):
 
         Generators.__init__(self, project, driver)
@@ -43,7 +43,17 @@ class SingleTimeFreqGridGenerator(Generators):
             "decomposition"
 
         # Optimize parameter of decomposition
-        self.nperseg = adjust_segmentation(self.nperseg, self.maxdurationsegment, self.segoverlap, self.samplingrate)
+        self.nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
+
+        # Low pass signal to remove unecessary  high frequency noise
+        self.raw_data['forward'] = butter_lowpass_filter(self.raw_data['forward'], self.maxfrequency, self.samplingrate)
+
+        # Decompose the Signal in multiple stft segment
+        d_stft = compute_stft_decomposition(self.raw_data['forward'], self.maxdurationsegment, self.samplingrate,
+                                            self.segoverlap, self.maxfrequency, self.noverlap, nperseg)
+
+        # Discretize the signal
+        f = d_stft['part_0']['']
 
     def run_preprocessing(self):
         # Low pass filter forward and backward message
@@ -51,7 +61,6 @@ class SingleTimeFreqGridGenerator(Generators):
         # Decompose forward and backward signal
         d_stft = compute_stft_decomposition(self.raw_data['forward'], self.maxdurationsegment, self.samplingrate,
                                             self.segoverlap, self.maxfrequency, self.noverlap,  self.nperseg)
-
 
     def run_postprocessing(self):
         raise NotImplementedError
