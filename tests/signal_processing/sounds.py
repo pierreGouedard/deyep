@@ -134,8 +134,6 @@ class TestSoundUtils(unittest.TestCase):
 
         # Recompose the signal with istft
         s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg, noise=1e-9)
-        import IPython
-        IPython.embed()
 
         # assert reconstrution is ok
         assert np.abs(s_ -s_rec).sum() < 1e-1

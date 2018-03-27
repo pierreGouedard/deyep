@@ -11,14 +11,14 @@ from deyep.utils.signal_processing.sounds import compute_stft_decomposition, opt
 class SingleTimeFreqGridGenerator(Generators):
 
     def __init__(self, project, driver, window='boxcar', noverlap=0, nperseg=2210,
-                 maxdurationsegment=10, segoverlap=0.5, maxfrequency=6000):
+                 maxdurationsegment=10, segoverlap=0.5, maxfrequency=6000, nb_channel=1):
 
         Generators.__init__(self, project, driver)
 
         # Get source filename for input raw data
         self.src_forward = filter(lambda x: 'forward' in x, os.listdir(self.dir_in))[0]
         self.src_backward = filter(lambda x: 'backward' in x, os.listdir(self.dir_in))[0]
-        self.nb_channel = 1
+        self.nb_channel = nb_channel
 
         # Parameter of transformation
         self.samplingrate = None
@@ -47,8 +47,8 @@ class SingleTimeFreqGridGenerator(Generators):
             "The number of sample used for fft of each segment is higher than the length of overlapping windows for " \
             "decomposition"
 
-
     def run_preprocessing(self):
+
         # Optimize parameter of decomposition
         self.nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
 
@@ -56,13 +56,26 @@ class SingleTimeFreqGridGenerator(Generators):
         self.raw_data['forward'] = butter_lowpass_filter(self.raw_data['forward'], self.maxfrequency, self.samplingrate)
 
         # Decompose the Signal in multiple stft segment
-        d_stft = compute_stft_decomposition(self.raw_data['forward'], self.maxdurationsegment, self.samplingrate,
-                                            self.segoverlap, self.maxfrequency, self.noverlap, nperseg)
+        d_stft_forward = compute_stft_decomposition(self.raw_data['forward'], self.maxdurationsegment,
+                                                    self.samplingrate, self.segoverlap, self.maxfrequency,
+                                                    self.noverlap, self.nperseg)
         # Decompose forward and backward signal
-        d_stft = compute_stft_decomposition(self.raw_data['forward'], self.maxdurationsegment, self.samplingrate,
-                                            self.segoverlap, self.maxfrequency, self.noverlap,  self.nperseg)
+        d_stft_backward = compute_stft_decomposition(self.raw_data['backward'], self.maxdurationsegment,
+                                                     self.samplingrate, self.segoverlap, self.maxfrequency,
+                                                     self.noverlap,  self.nperseg)
+
+        # Discretize spectograms
+
+
+        # Save forward and backward sources
 
     def run_postprocessing(self):
+        # Load output
+
+        # post process spectograms ( join higher frequencies to respect COLA constraints)
+
+        # Inverse spectograms
+
         raise NotImplementedError
 
     def save_raw_features(self):
