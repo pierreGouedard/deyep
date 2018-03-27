@@ -2,9 +2,13 @@
 import numpy as np
 import unittest
 from scipy.fftpack import fft, fftfreq, fftshift
+
 # Local import
+from deyep.utils import interactive_plots as ip
 from deyep.utils.signal_processing.sounds import get_part, butter_lowpass, butter_lowpass_filter, \
     compute_stft_decomposition, inverse_stft_decomposition, optimize_segmentation
+from deyep.utils.signal_processing.various import Discretizer
+
 __maintainer__ = 'Pierre Gouedard'
 
 
@@ -17,8 +21,27 @@ class TestSoundUtils(unittest.TestCase):
         self.maxdurationsegment = 10
         self.segoverlap = 0.5
         self.maxfrequency = 2500
-        self.s = np.random.randn(32*self.samplingrate)
 
+        # Build a realistic test signal
+        self.n_freq = 40
+        self.n_sec = 32
+        self.frequencies = np.random.randint(5, self.maxfrequency, self.n_freq)
+
+        times = np .linspace(0, self.n_sec*self.samplingrate, self.n_freq + 1)
+        self.times = np.array([max(0, min(max(times), x + int(self.samplingrate * 0.1 * np.random.randn())))
+                               for x in times])
+
+        self.time_bins = [(self.times[i], self.times[i+1]) for i in range(len(self.times) - 1)]
+        self.time_bins[0] = (0, self.time_bins[0][1])
+        self.time_bins[-1] = (self.time_bins[-1][0], self.n_sec * self.samplingrate)
+        self.s = np.zeros(self.n_sec * self.samplingrate)
+
+        for freq, bound in zip(self.frequencies, self.time_bins):
+            s_ = np.cos(2*np.pi * (float(freq) / self.samplingrate) * np.arange(bound[0], bound[1]))
+            s_ = np.hstack((np.zeros(int(bound[0])), s_, np.zeros(int((self.n_sec * self.samplingrate) - bound[1]))))
+            self.s += s_
+        import IPython
+        IPython.embed()
         # stft parameters
         self.nperseg = 2048
         self.noverlap = 0
@@ -109,6 +132,10 @@ class TestSoundUtils(unittest.TestCase):
         # Decompose the signal as stft
         d_stft = compute_stft_decomposition(s_, self.maxdurationsegment, self.samplingrate, self.segoverlap,
                                             self.maxfrequency, self.noverlap, nperseg)
+        import IPython
+        IPython.embed()
+        Zxx, t, f = d_stft['part_0']['im'] + d_stft['part_0']['re'], d_stft['part_0']['time'], d_stft['part_0']['freq']
+        ip.plot_spectogram(Zxx, f, t)
 
         # Recompose the signal with istft
         s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg, noise=1e-15)
