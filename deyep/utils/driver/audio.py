@@ -1,8 +1,9 @@
 # Global import
 from pydub import AudioSegment
 from pydub.utils import mediainfo
+from pydub.playback import play
 import os
-from numpy import array, hstack
+from numpy import array, hstack, int16
 
 # Local import
 from deyep.utils.driver import driver
@@ -93,6 +94,30 @@ class AudioDriver(driver.FileDriver):
 
     def write_file(self, **kwargs):
         raise NotImplementedError
+
+    def play_audio_segment(self, audio_segment):
+        play(audio_segment)
+
+    def play_array(self, ax, sampling_rate, auto_convert=True, sample_width=None, nb_channel=1):
+
+        if auto_convert:
+            ax = ax.astype(int16)
+
+        sample_width_ = sample_width if sample_width is not None else ax.dtype.itemsize
+
+        if sample_width_ > 4:
+            raise ValueError('dtype of value should be at most int32')
+
+        audio_segment = AudioSegment(
+            ax.tobytes(),
+            frame_rate=sampling_rate,
+            sample_width=sample_width_,
+            channels=nb_channel
+        )
+
+        self.play_audio_segment(audio_segment)
+
+
 
 
 

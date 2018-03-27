@@ -23,6 +23,29 @@ def plot_spectogram(Zxx, f, t):
     plt.show()
 
 
+def plot_signal(s, t):
+    import IPython
+    IPython.embed()
+
+    plt.plot(t, s)
+    plt.ylabel('value')
+    plt.xlabel('Time [sec]')
+    plt.show()
+
+
+def plot_signals(l_s, t):
+    import IPython
+    IPython.embed()
+
+    fig = plt.figure()
+    for s in l_s:
+        plt.plot(t, s)
+
+    plt.ylabel('value')
+    plt.xlabel('Time [sec]')
+    plt.show()
+
+
 def plot_fft(N, xf, yf):
     """
     plot frequencies

@@ -40,8 +40,7 @@ class TestSoundUtils(unittest.TestCase):
             s_ = np.cos(2*np.pi * (float(freq) / self.samplingrate) * np.arange(bound[0], bound[1]))
             s_ = np.hstack((np.zeros(int(bound[0])), s_, np.zeros(int((self.n_sec * self.samplingrate) - bound[1]))))
             self.s += s_
-        import IPython
-        IPython.embed()
+
         # stft parameters
         self.nperseg = 2048
         self.noverlap = 0
@@ -132,14 +131,12 @@ class TestSoundUtils(unittest.TestCase):
         # Decompose the signal as stft
         d_stft = compute_stft_decomposition(s_, self.maxdurationsegment, self.samplingrate, self.segoverlap,
                                             self.maxfrequency, self.noverlap, nperseg)
-        import IPython
-        IPython.embed()
-        Zxx, t, f = d_stft['part_0']['im'] + d_stft['part_0']['re'], d_stft['part_0']['time'], d_stft['part_0']['freq']
-        ip.plot_spectogram(Zxx, f, t)
 
         # Recompose the signal with istft
-        s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg, noise=1e-15)
+        s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg, noise=1e-9)
+        import IPython
+        IPython.embed()
 
         # assert reconstrution is ok
-        assert np.abs(s_ -s_rec).sum() < (1e-9 / 1e-10)
+        assert np.abs(s_ -s_rec).sum() < 1e-1
 
