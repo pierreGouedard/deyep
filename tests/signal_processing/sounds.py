@@ -7,7 +7,7 @@ from scipy.fftpack import fft, fftfreq, fftshift
 from deyep.utils import interactive_plots as ip
 from deyep.utils.signal_processing.sounds import get_part, butter_lowpass, butter_lowpass_filter, \
     compute_stft_decomposition, inverse_stft_decomposition, optimize_segmentation
-from deyep.utils.signal_processing.various import Discretizer
+from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -40,6 +40,9 @@ class TestSoundUtils(unittest.TestCase):
             s_ = np.cos(2*np.pi * (float(freq) / self.samplingrate) * np.arange(bound[0], bound[1]))
             s_ = np.hstack((np.zeros(int(bound[0])), s_, np.zeros(int((self.n_sec * self.samplingrate) - bound[1]))))
             self.s += s_
+
+        # Normalize signal
+        self.s = Normalizer().set_transform(self.s)
 
         # stft parameters
         self.nperseg = 2048
@@ -122,6 +125,7 @@ class TestSoundUtils(unittest.TestCase):
         python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_signal_reconstruction
 
         """
+
         # pre process signal (low pass filter)
         s_ = butter_lowpass_filter(self.s, self.maxfrequency, self.samplingrate)
 
@@ -137,4 +141,31 @@ class TestSoundUtils(unittest.TestCase):
 
         # assert reconstrution is ok
         assert np.abs(s_ -s_rec).sum() < 1e-1
+
+    def test_spectograms_discretization(self):
+        """
+        Check reconsruction of a signal that has gone through a 'by part' stft
+
+        python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_spectograms_discretization
+
+        """
+        # Optimize parameter
+        nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
+
+        # Decompose the signal as stft
+        d_stft = compute_stft_decomposition(self.s, self.maxdurationsegment, self.samplingrate, self.segoverlap,
+                                            self.maxfrequency, self.noverlap, nperseg)
+
+        discretizer = Discretizer(100)
+
+
+        # find a sweet treshold may be using quantile or clustering
+
+        # set discretizer with method treshold by flatenning the d_stft matrice
+
+        # discretize the stft
+
+        import IPython
+        IPython.embed()
+
 
