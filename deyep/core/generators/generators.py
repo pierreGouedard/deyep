@@ -12,8 +12,8 @@ class Generators(object):
         self.driver = driver
         self.dir_in = settings.deyep_raw_path.format(project)
         self.dir_out = settings.deyep_io_path.format(project)
-        self.raw_data = dict()
-        self.raw_features = dict()
+        self.raw_data = None
+        self.raw_features = None
 
     def read_raw_data(self):
         raise NotImplementedError

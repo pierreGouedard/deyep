@@ -6,18 +6,17 @@ import numpy as np
 # Local import
 from deyep.core.generators.generators import Generators
 from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, butter_lowpass_filter
-
+from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
 class SingleTimeFreqGridGenerator(Generators):
 
     def __init__(self, project, driver, window='boxcar', noverlap=0, nperseg=2210,
-                 maxdurationsegment=10, segoverlap=0.5, maxfrequency=6000, nb_channel=1):
+                 maxdurationsegment=10, segoverlap=0.5, maxfrequency=6000, nb_channel=1, n_discrete):
 
         Generators.__init__(self, project, driver)
 
         # Get source filename for input raw data
-        self.src_forward = filter(lambda x: 'forward' in x, os.listdir(self.dir_in))[0]
-        self.src_backward = filter(lambda x: 'backward' in x, os.listdir(self.dir_in))[0]
+        self.src = os.listdir(self.dir_in)[0]
         self.nb_channel = nb_channel
 
         # Parameter of transformation
@@ -31,16 +30,15 @@ class SingleTimeFreqGridGenerator(Generators):
         self.segoverlap = segoverlap
         self.maxfrequency = maxfrequency
 
-    def read_raw_data(self):
-        import IPython
-        IPython.embed()
+        # Init discretizer & normalizer
+        self.discretizer = Discretizer(n_discrete, method='bins')
+        self.normalizer = Normalizer()
 
-        self.raw_data['forward'], self.samplingrate, _ = \
-            self.driver.read_array_from_file(self.driver.join(self.dir_in, self.src_forward),
-                                             **{'nb_channel': self.nb_channel})
-        self.raw_data['backward'],  _, _ = \
-            self.driver.read_array_from_file(self.driver.join(self.dir_in, self.src_backward),
-                                             **{'sampling_rate': self.samplingrate, 'nb_channel':self.nb_channel})
+
+    def read_raw_data(self):
+        # read raw data
+        self.raw_data, self.samplingrate, _ = self.driver.read_array_from_file(self.driver.join(self.dir_in, self.src),
+                                                                               **{'nb_channel': self.nb_channel})
 
         # Assert that attributes are ok
         assert self.maxdurationsegment * self.segoverlap * self.samplingrate > self.nperseg, \
@@ -49,29 +47,39 @@ class SingleTimeFreqGridGenerator(Generators):
 
     def run_preprocessing(self):
 
+        # Normalize signal
+        self.raw_data = self.normalizer.set_transform(self.raw_data)
+
+
         # Optimize parameter of decomposition
         self.nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
 
         # Low pass signal to remove unecessary  high frequency noise
-        self.raw_data['forward'] = butter_lowpass_filter(self.raw_data['forward'], self.maxfrequency, self.samplingrate)
+        self.raw_data = butter_lowpass_filter(self.raw_data, self.maxfrequency, self.samplingrate)
 
         # Decompose the Signal in multiple stft segment
-        d_stft_forward = compute_stft_decomposition(self.raw_data['forward'], self.maxdurationsegment,
-                                                    self.samplingrate, self.segoverlap, self.maxfrequency,
-                                                    self.noverlap, self.nperseg)
-        # Decompose forward and backward signal
-        d_stft_backward = compute_stft_decomposition(self.raw_data['backward'], self.maxdurationsegment,
-                                                     self.samplingrate, self.segoverlap, self.maxfrequency,
-                                                     self.noverlap,  self.nperseg)
+        d_stft = compute_stft_decomposition(self.raw_data, self.maxdurationsegment, self.samplingrate, self.segoverlap,
+                                            self.maxfrequency, self.noverlap, self.nperseg)
 
-        # Discretize spectograms
+        # Init bins Discretize
+        self.discretizer.set_discretizer_bins(np.hstack((d['re'] for k, d in d_stft.items())).flatten('F'),
+                                              method='treshold', **{'treshold': 1e-3})
 
+        import IPython
+        IPython.embed()
+
+        # Discretize the stft
+        for k in d_stft.keys():
+            features_ = np.vstack((self.discretizer.transform_array(d_stft[k]['re'], sparse=True),
+                                   self.discretizer.transform_array(d_stft[k]['im'], sparse=True)))
 
 
         # Save forward and backward sources
 
     def run_postprocessing(self):
         # Load output
+
+        # Build spectograms from output
 
         # post process spectograms ( join higher frequencies to respect COLA constraints)
 

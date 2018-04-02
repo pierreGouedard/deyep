@@ -1,6 +1,6 @@
 # Global import
 import numpy as npy
-
+from scipy.sparse import lil_matrix
 
 class Discretizer:
     bins_method = ['bounds', 'signal', 'treshold']
@@ -21,24 +21,18 @@ class Discretizer:
             self.set_bins_from_bound(max_, min_)
 
         elif method == 'treshold':
-            max_, min_ = max(max(s - kwargs['treshold']), 0), min(min(s - kwargs['treshold']), 0)
-
+            max_, min_ = max(max(s - 2 * kwargs['treshold']), 0), min(min(s + 2 * kwargs['treshold']), 0)
             self.set_bins_from_bound(max_, min_, kwargs['treshold'])
 
         else:
             raise ValueError('method to compute bins not understood: {}. choose from {}'.format(method,
                                                                                                 self.bins_method))
 
-        max_, min_ = max(s), min(s)
-        self.set_bins_from_bound(max_, min_)
-
     def set_bins_from_bound(self, max_, min_, treshold=None):
-        delta, r = [0, 0], 0
-        if treshold is not None:
-            tmp_min, tmp_max = min_, max_
-            delta, r = [2 * int(min_ < 0) * treshold, 2 * int(max_ > 0) * treshold], 1
 
-        self.bins = {i: x for i, x in enumerate(npy.linspace(min_ + delta[0], max_ - delta[1], self.k - r))}
+        # Computes bins
+        r = int(treshold is not None)
+        self.bins = {i: x for i, x in enumerate(npy.linspace(min_, max_, self.k - r))}
 
         if treshold is not None:
             nn, np, nz = len([x for _, x in self.bins.items() if x < 0]), \
@@ -48,11 +42,11 @@ class Discretizer:
             self.bins, offset = {0: 0.0}, 1
 
             if nn > 0:
-                self.bins.update({i + offset: x for i, x in enumerate(npy.linspace(tmp_min, - max(delta), nn + nz))})
+                self.bins.update({i + offset: x for i, x in enumerate(npy.linspace(min_, - 2 * treshold, nn + nz))})
                 offset = len(self.bins)
 
             if np > 0:
-                self.bins.update({i + offset: x for i, x in enumerate(npy.linspace(max(delta), tmp_max, np + nz))})
+                self.bins.update({i + offset: x for i, x in enumerate(npy.linspace(2 * treshold, max_, np + nz))})
 
     def discretize_value(self, x):
 
@@ -72,6 +66,67 @@ class Discretizer:
         ax_ = vdicretizer(ax)
 
         return ax_
+
+    def encode_1d_array(self, ax, sparse=False):
+
+        ax_out = npy.zeros(len(ax) * self.k)
+        ax_ = self.discretize_array(ax)
+
+        for i, x in enumerate(ax_):
+            ax_out[i * self.k: (i + 1) * self.k] = \
+                npy.array([b == x for _, b in sorted(self.bins.items(), key=lambda t: t[0])])
+
+        if sparse:
+            ax_out = lil_matrix(ax_out)
+
+        return ax_out
+
+    def encode_2d_array(self, ax, sparse=False, orient='lines'):
+        if orient == 'columns':
+            ax = ax.transpose()
+
+        ax_out = npy.zeros([len(ax), len(ax[0]) * self.k])
+
+        for i, ax_ in enumerate(ax):
+            ax_out[i, :] = self.encode_1d_array(ax_)
+
+        if orient == 'columns':
+            ax_out = ax_out.transpose()
+
+        if sparse:
+            ax_out = lil_matrix(ax_out)
+
+        return ax_out
+
+    def decode_1d_array(self, ax, sparse=False):
+
+        if sparse:
+            ax = ax.toarray()[0]
+
+        ax_out = npy.zeros(int(len(ax) / self.k))
+
+        for i in range(len(ax_out)):
+            ax_out[i] = self.bins.get(npy.where(ax[i * self.k: (i + 1) * self.k])[0][0])
+
+        return ax_out
+
+    def decode_2d_array(self, ax, sparse=False, orient='lines'):
+
+        if orient == 'columns':
+            ax = ax.transpose()
+
+        if sparse:
+            ax = ax.toarray()
+
+        ax_out = npy.zeros([len(ax), int(len(ax[0]) / self.k)])
+
+        for i, ax_ in enumerate(ax):
+            ax_out[i, :] = self.decode_1d_array(ax_)
+
+        if orient == 'columns':
+            ax_out = ax_out.transpose()
+
+        return ax_out
 
 
 class Normalizer:
@@ -97,12 +152,12 @@ class Normalizer:
             max = npy.max(s)
 
             if max < 0:
-                max = npy.min(s)
+                max = - npy.min(s)
 
             if max == 0:
                 raise ValueError('max = 0 computed from signal passed')
 
-            self.params['coef'] = max
+            self.params['max'] = max
 
     def set_transform(self, s):
 

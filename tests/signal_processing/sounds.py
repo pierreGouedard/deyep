@@ -44,6 +44,9 @@ class TestSoundUtils(unittest.TestCase):
         # Normalize signal
         self.s = Normalizer().set_transform(self.s)
 
+        # Set discretization params
+        self.N = 100
+
         # stft parameters
         self.nperseg = 2048
         self.noverlap = 0
@@ -156,16 +159,26 @@ class TestSoundUtils(unittest.TestCase):
         d_stft = compute_stft_decomposition(self.s, self.maxdurationsegment, self.samplingrate, self.segoverlap,
                                             self.maxfrequency, self.noverlap, nperseg)
 
-        discretizer = Discretizer(100)
+        discretizer = Discretizer(self.N)
+
+        # Init bins
+        discretizer.set_discretizer_bins(np.hstack((d_['re'] for k, d_ in d_stft.items())).flatten('F'),
+                                         method='treshold', **{'treshold': 1e-3})
+
+        # Discretize the stft
+        for k in d_stft.keys():
+            d_stft[k]['re'] = discretizer.discretize_array(d_stft[k]['re'])
+            d_stft[k]['im'] = discretizer.discretize_array(d_stft[k]['im'])
+
+        assert len(np.unique(np.hstack((d_['re'] for k, d_ in d_stft.items())).flatten('F'))) < self.N
+
+        # Recompose the signal with istft
+        s_rec = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, nperseg)
+
+        # assert reconstruction is ok
+        assert np.abs(self.s - s_rec).mean() < 1e-1
 
 
-        # find a sweet treshold may be using quantile or clustering
 
-        # set discretizer with method treshold by flatenning the d_stft matrice
-
-        # discretize the stft
-
-        import IPython
-        IPython.embed()
 
 
