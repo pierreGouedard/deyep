@@ -89,10 +89,10 @@ class AudioDriver(driver.FileDriver):
 
         return ax_audio, sampling_rate, nb_channel
 
-    def write_array_to_file(self, format):
+    def write_array_to_file(self, ax, format):
         raise NotImplementedError
 
-    def write_file(self, **kwargs):
+    def write_file(self, audio_segment, **kwargs):
         raise NotImplementedError
 
     def play_audio_segment(self, audio_segment):

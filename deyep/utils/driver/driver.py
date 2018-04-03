@@ -13,7 +13,7 @@ class Driver(object):
     def read_file(self, url, **kwargs):
         raise NotImplementedError
 
-    def write_file(self, url, **kwargs):
+    def write_file(self, x,  url, **kwargs):
         raise NotImplementedError
 
     def join(self, arg, *args):
@@ -27,6 +27,9 @@ class FileDriver(Driver):
 
     def join(self, arg, *args):
         return os.path.join(arg, *args)
+
+    def listdir(self, path):
+        return os.listdir(path)
 
 
 class HdhfsDriver(Driver):

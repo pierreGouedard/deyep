@@ -122,7 +122,6 @@ def inverse_stft_decomposition(d_stft, fs, no, ns, noise=0):
     :return:
     """
 
-
     # Recover the signal from a
     l_stft, Z_xx = sorted(d_stft.items(), key=lambda x: int(x[0].split('_')[-1])), None
 

@@ -143,10 +143,10 @@ class Normalizer:
         if self.method == 'variance':
             var = npy.var(s)
 
-            if var <=0:
+            if var <= 0:
                 raise ValueError('semi negative variance computed from signal passed')
 
-            self.params['sigma2'] = var
+            self.params['sigma'] = npy.sqrt(var)
 
         elif self.method == 'max':
             max = npy.max(s)
@@ -171,7 +171,7 @@ class Normalizer:
 
     def transform(self, s):
         if self.method == 'variance':
-            s_ = s / self.params['sigma2']
+            s_ = s / self.params['sigma']
         elif self.method == 'max':
             s_ = s / self.params['max']
         else:

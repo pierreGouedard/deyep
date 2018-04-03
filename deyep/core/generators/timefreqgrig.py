@@ -1,6 +1,6 @@
 # global import
 import os
-from scipy import signal
+import scipy.sparse
 import numpy as np
 
 # Local import
@@ -8,12 +8,13 @@ from deyep.core.generators.generators import Generators
 from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, butter_lowpass_filter
 from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
+
 class SingleTimeFreqGridGenerator(Generators):
 
-    def __init__(self, project, driver, window='boxcar', noverlap=0, nperseg=2210,
-                 maxdurationsegment=10, segoverlap=0.5, maxfrequency=6000, nb_channel=1, n_discrete):
+    def __init__(self, project, driver_in, driver_out, window='boxcar', noverlap=0, nperseg=2210, maxdurationsegment=10,
+                 segoverlap=0.5, maxfrequency=6000, nb_channel=1, n_discrete=100):
 
-        Generators.__init__(self, project, driver)
+        Generators.__init__(self, project, driver_in, driver_out)
 
         # Get source filename for input raw data
         self.src = os.listdir(self.dir_in)[0]
@@ -30,10 +31,12 @@ class SingleTimeFreqGridGenerator(Generators):
         self.segoverlap = segoverlap
         self.maxfrequency = maxfrequency
 
+        # Meta for stft inversion
+        self.meta_stft = {}
+
         # Init discretizer & normalizer
         self.discretizer = Discretizer(n_discrete, method='bins')
         self.normalizer = Normalizer()
-
 
     def read_raw_data(self):
         # read raw data
@@ -50,12 +53,11 @@ class SingleTimeFreqGridGenerator(Generators):
         # Normalize signal
         self.raw_data = self.normalizer.set_transform(self.raw_data)
 
-
         # Optimize parameter of decomposition
         self.nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
 
         # Low pass signal to remove unecessary  high frequency noise
-        self.raw_data = butter_lowpass_filter(self.raw_data, self.maxfrequency, self.samplingrate)
+        self.raw_data = butter_lowpass_filter(self.raw_data, self.maxfrequency, self.samplingrate, order=5)
 
         # Decompose the Signal in multiple stft segment
         d_stft = compute_stft_decomposition(self.raw_data, self.maxdurationsegment, self.samplingrate, self.segoverlap,
@@ -65,16 +67,16 @@ class SingleTimeFreqGridGenerator(Generators):
         self.discretizer.set_discretizer_bins(np.hstack((d['re'] for k, d in d_stft.items())).flatten('F'),
                                               method='treshold', **{'treshold': 1e-3})
 
-        import IPython
-        IPython.embed()
-
-        # Discretize the stft
+        # Encode the stft and build Input / Output features
         for k in d_stft.keys():
-            features_ = np.vstack((self.discretizer.transform_array(d_stft[k]['re'], sparse=True),
-                                   self.discretizer.transform_array(d_stft[k]['im'], sparse=True)))
+            self.raw_features[k] = scipy.sparse.vstack(
+                [self.discretizer.encode_2d_array(d_stft[k].pop('re'), sparse=True, orient='columns'),
+                 self.discretizer.encode_2d_array(d_stft[k].pop('im'), sparse=True, orient='columns')]
+            )
 
+            # update meta for stft inversion
+            self.meta_stft.update({k: {'window': d_stft[k].pop('window'), 'size': len(d_stft[k].pop('freq'))}})
 
-        # Save forward and backward sources
 
     def run_postprocessing(self):
         # Load output
@@ -88,4 +90,5 @@ class SingleTimeFreqGridGenerator(Generators):
         raise NotImplementedError
 
     def save_raw_features(self):
+
         raise NotImplementedError
