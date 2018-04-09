@@ -4,7 +4,7 @@ import IPython
 
 # Local import
 from deyep.utils.driver.audio import AudioDriver
-from deyep.utils.driver.numpy import NumpyDriver
+from deyep.utils.driver.nmp import NumpyDriver
 from deyep.core.generators.timefreqgrig import SingleTimeFreqGridGenerator
 
 # Instantiate every element needed for simulation

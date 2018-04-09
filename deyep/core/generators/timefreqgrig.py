@@ -77,7 +77,6 @@ class SingleTimeFreqGridGenerator(Generators):
             # update meta for stft inversion
             self.meta_stft.update({k: {'window': d_stft[k].pop('window'), 'size': len(d_stft[k].pop('freq'))}})
 
-
     def run_postprocessing(self):
         # Load output
 
