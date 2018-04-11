@@ -5,7 +5,8 @@ import numpy as np
 
 # Local import
 from deyep.core.generators.generators import Generators
-from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, butter_lowpass_filter
+from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, \
+    butter_lowpass_filter, inverse_stft_decomposition
 from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
 
@@ -40,8 +41,9 @@ class SingleTimeFreqGridGenerator(Generators):
 
     def read_raw_data(self):
         # read raw data
-        self.raw_data, self.samplingrate, _ = self.driver.read_array_from_file(self.driver.join(self.dir_in, self.src),
-                                                                               **{'nb_channel': self.nb_channel})
+        self.raw_data, self.samplingrate, _ = self.driver_in.read_array_from_file(
+            self.driver_in.join(self.dir_in, self.src), **{'nb_channel': self.nb_channel}
+        )
 
         # Assert that attributes are ok
         assert self.maxdurationsegment * self.segoverlap * self.samplingrate > self.nperseg, \
@@ -77,17 +79,44 @@ class SingleTimeFreqGridGenerator(Generators):
             # update meta for stft inversion
             self.meta_stft.update({k: {'window': d_stft[k].pop('window'), 'size': len(d_stft[k].pop('freq'))}})
 
-    def run_postprocessing(self):
+    def run_postprocessing(self, url=None):
+
+        if url is None:
+            url = self.driver_out.join(self.dir_out, 'output')
+
         # Load output
+        d_raw_features = self.driver_out.read_partitioned_file(url, is_sparse=True)
 
-        # Build spectograms from output
+        # Build spectograms from features
+        d_stft = self.meta_stft.copy()
+        for k in d_raw_features.keys():
+            # Decode signal
+            ax = self.discretizer.decode_2d_array(d_raw_features[k], sparse=True, orient='columns')
 
-        # post process spectograms ( join higher frequencies to respect COLA constraints)
+            # Fill real and imaginary part
+            d_stft[k]['re'] = ax[:d_stft[k]['size'], :]
+            d_stft[k]['im'] = ax[d_stft[k]['size']:, :]
 
         # Inverse spectograms
+        raw_data_out = inverse_stft_decomposition(d_stft, self.samplingrate, self.noverlap, self.nperseg)
 
-        raise NotImplementedError
+        return raw_data_out
 
     def save_raw_features(self):
 
-        raise NotImplementedError
+        # Remove raw features if previously built
+        if self.driver_out.exists(self.driver_out.join(self.dir_out, 'input')):
+            self.driver_out.remove(self.driver_out.join(self.dir_out, 'input'), recursive=True)
+
+        if self.driver_out.exists(self.driver_out.join(self.dir_out, 'output')):
+            self.driver_out.remove(self.driver_out.join(self.dir_out, 'output'), recursive=True)
+
+        # Create  output directory
+        self.driver_out.makedirs(self.driver_out.join(self.dir_out, 'input'), recursive=True)
+        self.driver_out.makedirs(self.driver_out.join(self.dir_out, 'output'), recursive=True)
+
+        # Save input and output file as partitionner numpy array
+        self.driver_out.write_partioned_file(self.raw_features, self.driver_out.join(self.dir_out, 'input'),
+                                             is_sparse=True)
+        self.driver_out.write_partioned_file(self.raw_features, self.driver_out.join(self.dir_out, 'output'),
+                                             is_sparse=True)

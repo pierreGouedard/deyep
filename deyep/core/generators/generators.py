@@ -1,4 +1,5 @@
 # Global imports
+import pickle
 
 # Local imports
 import settings
@@ -11,6 +12,7 @@ class Generators(object):
         self.project = project
         self.driver_in = driver_in
         self.driver_out = driver_out
+        self.dir_gen = settings.deyep_generator_path.format(project)
         self.dir_in = settings.deyep_raw_path.format(project)
         self.dir_out = settings.deyep_io_path.format(project)
         self.raw_data = None
@@ -27,3 +29,8 @@ class Generators(object):
 
     def save_raw_features(self):
         raise NotImplementedError
+
+    def save(self):
+        with open(os.path.join(self.dir_gen, 'generator.pickle')) as handle:
+            pickle.dump(self, handle)
+
