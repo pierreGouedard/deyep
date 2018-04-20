@@ -4,15 +4,15 @@ from scipy.sparse import save_npz, load_npz, vstack, hstack, coo_matrix
 
 
 # Local import
-from deyep.utils.driver import driver
+from deyep.utils.driver.driver import FileDriver
 
 
 # Should inherit from FileDriver, that inherit from Driver
-class NumpyDriver(driver.FileDriver):
+class NumpyDriver(FileDriver):
 
     def __init__(self,):
         self.d_stream = None
-        driver.FileDriver.__init__(self, 'audio driver', 'Driver use to read / write any numpy arrays')
+        FileDriver.__init__(self, 'audio driver', 'Driver use to read / write any numpy arrays')
 
     def read_file(self, url, **kwargs):
         if kwargs.get('is_sparse', False):

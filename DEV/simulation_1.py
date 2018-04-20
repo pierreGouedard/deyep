@@ -1,51 +1,44 @@
 # Global import
 import IPython
-import pickle
+import os
 
 # Local import
 import settings
-from deyep.utils.driver.driver import FileDriver
-# Local import
-from deyep.utils.driver.audio import AudioDriver
-from deyep.utils.driver.nmp import NumpyDriver
 from deyep.core.generators.timefreqgrig import SingleTimeFreqGridGenerator
 
 # Instantiate every element needed for simulation
 project = 'test'
-driver_in = AudioDriver()
-driver_out = NumpyDriver()
+dir_in = settings.deyep_raw_path.format(project)
+dir_out = settings.deyep_io_path.format(project)
 
 # Create generator for audio signals
-generator = SingleTimeFreqGridGenerator(project, driver_in, driver_out)
+#generator = SingleTimeFreqGridGenerator(project, dir_in, dir_out)
 
 # Read raw data
-generator.read_raw_data()
+#generator.read_raw_data()
 
 # Compute time freq grid
-generator.run_preprocessing()
-
-IPython.embed()
+#generator.run_preprocessing()
 
 # Save I/O
-generator.save_raw_features()
+#generator.write_raw_features()
 
 # Save generator
-generator.save()
+#generator.save()
 
-###### TEST SAVE GENERATOR
-driver = FileDriver('filedriver', 'filedriver')
-with open(driver.join(settings.deyep_generator_path, 'generator.pickle'), 'rb') as handle:
-    generator_ = pickle.load(handle)
+import os
+import pickle
+from deyep.utils.driver.audio import AudioDriver
+driver = AudioDriver()
 
-# Compare generator and generator_
+with open(os.path.join(settings.deyep_generator_path.format(project), 'generator.pickle'), 'wb') as handle:
+    generator = pickle.load(handle)
 
-###### TEST SAVE GENERATOR
+# Load raw fetures
+raw_features = generator.read_raw_features(os.path.join(dir_out, 'input'))
 
-#### TEST POST PROCESSING
-
-
-
-#### TEST POST PROCESSING
+# Build back song
+raw_data_out = generator.run_postprocessing(raw_features)
 
 # Build network
 

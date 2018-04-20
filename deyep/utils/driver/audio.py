@@ -3,7 +3,7 @@ from pydub import AudioSegment
 from pydub.utils import mediainfo
 from pydub.playback import play
 import os
-from nmp import array, hstack, int16
+from numpy import array, hstack, int16
 
 # Local import
 from deyep.utils.driver import driver

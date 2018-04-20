@@ -13,10 +13,9 @@ class Node(object):
 
 class InputNode(Node):
 
-    def __init__(self, id, value, statue, frequency_range, children):
+    def __init__(self, id, value, statue, frequency_stack, children):
         Node.__init__(self, 'input_{}'.format(id), value, statue)
-        self.frequency_range = frequency_range
-        self.frequency_stack = None
+        self.frequency_stack = frequency_stack
         self.children = children
 
     def process_forward(self):
@@ -27,8 +26,7 @@ class InputNode(Node):
 
     def to_dict(self):
         d_out = Node.to_dict(self)
-        d_out.update({'frequency_range': self.frequency_range, 'frequency_stack': self.frequency_stack,
-                      'children': self.children})
+        d_out.update({'frequency_stack': self.frequency_stack.to_dict(), 'children': self.children})
         return d_out
 
 
