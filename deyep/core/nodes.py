@@ -2,19 +2,23 @@
 
 class Node(object):
 
-    def __init__(self, id, value, statue):
+    def __init__(self, id, type, values):
         self.id = id
-        self.value = value
-        self.statue = statue
+        self.values = values
+        self.type = type
 
     def to_dict(self):
-        return {'id': self.id, 'value': self.value, 'statue': self.statue}
+        return {'id': self.id, 'value': self.values, 'statue': self.type}
 
 
 class InputNode(Node):
 
-    def __init__(self, id, value, statue, frequency_stack, children):
-        Node.__init__(self, 'input_{}'.format(id), value, statue)
+    def __init__(self, id, type, frequency_stack, children, values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
+
+        # Set inherited attributes
+        Node.__init__(self, id, type, values)
+
+        # Set specific attributes
         self.frequency_stack = frequency_stack
         self.children = children
 
@@ -32,8 +36,13 @@ class InputNode(Node):
 
 class OutputNode(Node):
 
-    def __init__(self, id, value, statue):
-        Node.__init__(self, 'output_{}'.format(id), value, statue)
+    def __init__(self, id, type, parents):
+
+        # Set inherited attributes
+        Node.__init__(self, id, type, None)
+
+        # Set specific attributes
+        self.parents = parents
 
     def process_forward(self):
         raise NotImplementedError
@@ -47,13 +56,13 @@ class OutputNode(Node):
 
 class NetworkNode(Node):
 
-    def __init__(self, id, value, statue, frequency_range, children):
-        Node.__init__(self, 'network_{}'.format(id),  value, statue)
+    def __init__(self, id, type, frequency_stack, children, values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
+        # Set inherited attributes
+        Node.__init__(self, id, type, values)
 
-        self.frequency_range = frequency_range
+        # Set specific attributes
         self.level = -1
-        self.frequency_map = dict()
-        self.frequency_stack = None
+        self.frequency_stack = frequency_stack
         self.children = children
 
     def process_forward(self):
@@ -67,7 +76,6 @@ class NetworkNode(Node):
 
     def to_dict(self):
         d_out = Node.to_dict(self)
-        d_out.update({'frequency_range': self.frequency_range, 'level': self.level,
-                      'frequency_map': self.frequency_map, 'frequency_stack': self.frequency_stack,
-                      'children': self.children})
+        d_out.update({'frequency_stack': self.frequency_stack.to_dict(), 'children': self.children,
+                      'level': self.level})
         return d_out

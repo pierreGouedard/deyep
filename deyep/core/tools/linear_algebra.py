@@ -18,8 +18,14 @@ def get_fourrier_key(coef):
 
 
 def get_fourrier_series(coef):
+
     # Get N
-    N = int(pow(np.linalg.norm(coef), 2))
+    N = int(1. / pow(np.linalg.norm(coef), 2))
 
     return np.array([pow(coef, t) for t in range(N)])
+
+
+def inner_product(x, y):
+    return x.dot(y.conjugate())
+
 

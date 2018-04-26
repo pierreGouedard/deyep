@@ -20,11 +20,7 @@ class FrequencyStack(object):
 
     @property
     def basis(self):
-        return np.array(get_fourrier_coef(self.N, self.k_ + i) for i in range(self.capacity))
-
-    @callable
-    def signal(self, coef):
-        return get_fourrier_series(coef)
+        return np.array([get_fourrier_coef(self.N, self.k_ + i) for i in range(self.capacity)])
 
     @staticmethod
     def from_dict(d_frequency_stack):
@@ -41,8 +37,8 @@ class FrequencyStack(object):
         return get_fourrier_coef(N, k)
 
     @staticmethod
-    def str_from_coef(freq):
-        N, k = get_fourrier_key(freq)
+    def str_from_coef(coef):
+        N, k = get_fourrier_key(coef)
         return 'N={},k={}'.format(N, k)
 
     def encode(self, coef_in):
