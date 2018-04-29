@@ -10,7 +10,7 @@ from deyep.core.tools.linear_algebra import inner_product
 __maintainer__ = 'Pierre Gouedard'
 
 
-class TestFrequenciesStack(unittest.TestCase):
+class TestFrequencyStack(unittest.TestCase):
     def setUp(self):
 
         # Create a simple deep network (2 input nodes, 3 network nodes,, 2 output nodes)
@@ -26,7 +26,7 @@ class TestFrequenciesStack(unittest.TestCase):
     def test_frequency_stack_basics(self):
         """
         Test basic frequency management
-        python -m unittest tests.communication.TestFrequenciesStack.test_frequency_stack_basics
+        python -m unittest tests.core.frequencies.TestFrequencyStack.test_frequency_stack_basics
 
         """
         import IPython

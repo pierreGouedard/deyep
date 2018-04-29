@@ -2,7 +2,7 @@
 import numpy as np
 
 # Local import
-from deyep.core.tools.linear_algebra import get_fourrier_coef, get_fourrier_key, get_fourrier_series
+from deyep.core.tools.linear_algebra import get_fourrier_coef, get_fourrier_key
 from deyep.utils.names import KVName
 
 
@@ -20,7 +20,7 @@ class FrequencyStack(object):
 
     @property
     def basis(self):
-        return np.array([get_fourrier_coef(self.N, self.k_ + i) for i in range(self.capacity)])
+        return np.array([get_fourrier_coef(self.N, (self.k_ * self.capacity) + i) for i in range(self.capacity)])
 
     @staticmethod
     def from_dict(d_frequency_stack):
@@ -29,11 +29,11 @@ class FrequencyStack(object):
 
     @staticmethod
     def init_setfree(N, c, k):
-        return {'N={},k={}'.format(N, k + i) for i in range(c)}
+        return {'N={},k={}'.format(N, (k * c) + i) for i in range(c)}
 
     @staticmethod
     def coef_from_str(key):
-        N, k = KVName.from_string(key)['N'], KVName.from_string(key)['k']
+        N, k = int(KVName.from_string(key)['N']), int(KVName.from_string(key)['k'])
         return get_fourrier_coef(N, k)
 
     @staticmethod
@@ -55,7 +55,8 @@ class FrequencyStack(object):
         self.map.update({key_out: FrequencyStack.str_from_coef(coef_in)})
 
         # If set of free frequency is empty make 30% less priority frequency free again
-        self.release_key()
+        if len(self.setfree) == 0:
+            self.release_key()
 
         # return signal with poped frequency
         return coef_out
@@ -72,10 +73,10 @@ class FrequencyStack(object):
 
         return coef_
 
-    def release_key(self):
+    def release_key(self, p=0.3):
 
         # If set of free frequency is empty renew 30% less priority frequency free again
-        l_keys = sorted(self.priorities.items(), key=lambda t: t[1])[:int(0.3 * len(self.map))]
+        l_keys = sorted(self.priorities.items(), key=lambda t: t[1])[:max(int(p * len(self.map)), 1)]
 
         # Add back less priority freq to set of free frequencies
         self.setfree = self.setfree.union(set([t[0] for t in l_keys]))
