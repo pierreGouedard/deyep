@@ -8,10 +8,10 @@ from deyep.utils.names import KVName
 
 class FrequencyStack(object):
 
-    def __init__(self, size, key, capacity, setfree=None, priorities=None, map=None, step=None):
+    def __init__(self, size, l_keys, setfree=None, priorities=None, map=None, step=None):
         # set base attribute
         self.N = size
-        self.k_ = key
+        self.l_keys = l_keys
         self.capacity = capacity
         self.setfree = FrequencyStack.init_setfree(self.N, self.capacity, self.k_) if setfree is None else setfree
         self.step = 0 if step is None else step

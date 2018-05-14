@@ -127,8 +127,22 @@ class TestOperators(unittest.TestCase):
         IPython.embed()
 
         # Test Chi in F_N
-        coefs, d_coefs = self.vect_fourrier[:10], dict(zip(self.vect_fourrier[:10], [1] * 10))
-        x = np.random.randint(10)
+        coefs = np.array([get_fourrier_coef(self.N, k + np.random.randint(0, self.N - k - 1)) for k in range(10)])
+        freq_map, x = dict(zip(coefs, [1] * 10)), np.ones(10)
+        x[np.random.choice(range(10), 5, replace=False)] = -1
+
+        t0 = time.time()
+        res = Chi_fourrier(coefs.dot(x), coefs, freq_map=freq_map)
+        print('SINGLEPROCESS get Chi in F_{} is {} seconds'.format(self.N, (time.time() - t0)))
+
+        self.assertEqual(res, 0.)
+
+        t0 = time.time()
+        res = Chi_fourrier(coefs.dot(x), coefs, n_jobs=0, freq_map=freq_map)
+        print('SINGLEPROCESS get Chi in F_{} is {} seconds'.format(self.N, (time.time() - t0)))
+
+        self.assertEqual(res, 0.)
+
 
         x, y = Chi_fourrier(coefs.dot(x), coefs, freq_map=d_coefs)
 

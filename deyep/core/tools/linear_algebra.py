@@ -4,15 +4,6 @@ from scipy.sparse import lil_matrix
 from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 
 
-class FourrierSeriesParallel(object):
-
-    def __init__(self, coef):
-        self.coef = coef
-
-    def f(self, x):
-        return self.coef * np.exp(-1j * x)
-
-
 class InnerProductParallel(object):
     def __init__(self, keep_real=False, round=False):
         self.keep_real = keep_real
@@ -26,6 +17,38 @@ class InnerProductParallel(object):
 
         if self.round:
             res = np.round(res)
+
+        return res
+
+
+class ChiFourrierParallel(object):
+    def __init__(self, freq_map=None):
+        self.freq_map = freq_map
+
+    def f(self, t):
+
+        res = Chi(np.round(np.real(inner_product(get_fourrier_series(t[0]), get_fourrier_series(t[1])))))
+
+        if self.freq_map is not None:
+            res *= self.freq_map[t[1]]
+        else:
+            res *= t[1]
+
+        return res
+
+
+class UpsilonFourrierParallel(object):
+    def __init__(self, freq_map=None):
+        self.freq_map = freq_map
+
+    def f(self, t):
+
+        res = Upsilon(np.round(np.real(inner_product(get_fourrier_series(t[0]), get_fourrier_series(t[1])))))
+
+        if self.freq_map is not None:
+            res *= self.freq_map[t[1]]
+        else:
+            res *= t[1]
 
         return res
 
@@ -50,25 +73,12 @@ def get_fourrier_key(coef):
     return N, k
 
 
-def get_fourrier_series(coef, n_jobs=1):
+def get_fourrier_series(coef):
 
     # Get N
     N, k = get_fourrier_key(coef)
 
-    if n_jobs != 1:
-        # Build Pool
-        p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
-
-        # Instantiate class that generate Fourrier series
-        fourrier = FourrierSeriesParallel(coef)
-
-        # Parallel Fourrier series building
-        res = np.array(p.map(fourrier.f, (2. * np.pi * k * np.arange(-1, N - 1)) / N))
-
-    else:
-        res = coef * np.exp(-1j * (2. * np.pi * k * np.arange(-1, N - 1)) / N)
-
-    return res
+    return coef * np.exp(-1j * (2. * np.pi * k * np.arange(-1, N - 1)) / N)
 
 
 def inner_product(x, y):
@@ -226,14 +236,25 @@ def Chi(x):
 
 def Chi_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
 
-    res = 0
+    if n_jobs != 1:
 
-    # set freq map to identity in case None
-    if freq_map is None:
-        freq_map = dict(l_coefs, l_coefs)
+        p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
-    for c in l_coefs:
-        res += Chi(np.round(np.real(inner_product(get_fourrier_series(x), get_fourrier_series(c))))) * freq_map[c]
+        # Instantiate class that implement inner product
+        chip = ChiFourrierParallel(freq_map=freq_map)
+
+        # Parallel inner product
+        res = sum(p.map(chip.f, zip([x] * len(l_coefs), l_coefs)))
+
+    else:
+        res = 0
+        # set freq map to identity in case None
+        if freq_map is None:
+            freq_map = dict(zip(l_coefs, l_coefs))
+
+        for c in l_coefs:
+            res += Chi(np.round(np.real(inner_product(get_fourrier_series(x), get_fourrier_series(c))))) * \
+                   freq_map[c]
 
     return res
 
@@ -252,15 +273,26 @@ def Upsilon(x):
         return 0
 
 
-def Upsilon_fourrier(x):
+def Upsilon_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
 
-    res = 0
+    if n_jobs != 1:
 
-    # set freq map to identity in case None
-    if freq_map is None:
-        freq_map = dict(l_coefs, l_coefs)
+        p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
-    for c in l_coefs:
-        res += Chi(np.round(np.real(inner_product(get_fourrier_series(x), get_fourrier_series(c))))) * freq_map[c]
+        # Instantiate class that implement inner product
+        chip = UpsilonFourrierParallel(freq_map=freq_map)
+
+        # Parallel inner product
+        res = sum(p.map(chip.f, zip([x] * len(l_coefs), l_coefs)))
+
+    else:
+        res = 0
+        # set freq map to identity in case None
+        if freq_map is None:
+            freq_map = dict(zip(l_coefs, l_coefs))
+
+        for c in l_coefs:
+            res += Upsilon(np.round(np.real(inner_product(get_fourrier_series(x), get_fourrier_series(c))))) * \
+                   freq_map[c]
 
     return res
