@@ -5,12 +5,25 @@ from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 
 
 class InnerProductParallel(object):
-    def __init__(self, keep_real=False, round=False):
+    def __init__(self, keep_real=False, round=False, coef='all'):
         self.keep_real = keep_real
         self.round = round
 
+        # Assert correct value for coef
+        assert(coef in [None, 'all', 'left', 'right'])
+
+        self.coef = coef
+
     def f(self, t):
-        res = inner_product(get_fourrier_series(t[0]), get_fourrier_series(t[1]))
+
+        if self.coef == 'all':
+            res = inner_product(get_fourrier_series(t[0]), get_fourrier_series(t[1]))
+        elif self.coef == 'left':
+            res = inner_product(get_fourrier_series(t[0]), t[1])
+        elif self.coef == 'right':
+            res = inner_product(t[0], get_fourrier_series(t[1]))
+        else:
+            res = inner_product(t[0], t[1])
 
         if self.keep_real:
             res = np.real(res)
@@ -53,11 +66,34 @@ class UpsilonFourrierParallel(object):
         return res
 
 
-def get_fourrier_coef(N, k):
+def get_fourrier_coef_from_params(N, k):
     return np.exp(np.complex(np.log(1. / np.sqrt(N)), - (2. * np.pi * k) / N))
 
 
-def get_fourrier_key(coef):
+def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1):
+
+    # Build Pool if necessary
+    if n_jobs != 1:
+        p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
+
+        # Instantiate class that implement inner product
+        innerp = InnerProductParallel(keep_real=True, round=True, coef='right')
+
+        # Parallel inner product
+        res_ = p.map(innerp.f, zip([ax_s] * len(ax_basis), ax_basis))
+
+        res = ax_basis[res_.nonzeros()[0][0]]
+
+    for base in ax_basis:
+        res = np.round(np.real(inner_product(ax_s, get_fourrier_series(base))))
+
+        if res > 0:
+            break
+
+    return res
+
+
+def get_fourrier_params(coef):
 
     # Get N
     N = int(np.round(1. / pow(np.linalg.norm(coef), 2)))
@@ -76,7 +112,7 @@ def get_fourrier_key(coef):
 def get_fourrier_series(coef):
 
     # Get N
-    N, k = get_fourrier_key(coef)
+    N, k = get_fourrier_params(coef)
 
     return coef * np.exp(-1j * (2. * np.pi * k * np.arange(-1, N - 1)) / N)
 
