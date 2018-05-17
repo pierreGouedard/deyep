@@ -18,7 +18,6 @@ class FrequencyStack(object):
         self.priorities = dict() if priorities is None else priorities
         self.map = dict() if map is None else map
 
-    @property
     def fourrier_basis(self, free=True):
         if free:
             return np.array([self.coef_from_key(k) for k in self.setfree])
@@ -77,7 +76,7 @@ class FrequencyStack(object):
         l_keys = [self.map[k] for k in map(lambda c: FrequencyStack.key_from_coef(c), l_coef_out) if k is not None]
 
         if len(l_keys) > 0:
-            l_coef_in = [FrequencyStack.coef_from_key(k) for k in l_keys]
+            l_coef_in = sum([[FrequencyStack.coef_from_key(k_) for k_ in k] for k in l_keys], [])
         else:
             l_coef_in = []
 

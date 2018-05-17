@@ -2,10 +2,9 @@
 import numpy as np
 import unittest
 from scipy.sparse import lil_matrix
-from deyep.utils.names import KVName
 
 # Local import
-from deyep.core.constructors.constructors import Constructor, set_nodes, set_frequencies
+from deyep.core.constructors.constructors import set_nodes, set_frequencies
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -45,8 +44,14 @@ class TestConstructor(unittest.TestCase):
         d_networks, available_freqs = set_frequencies(d_networks, available_freqs, self.capacity, l_=d_inputs.values())
 
         # Assert that no frequency are conflicting
-        import IPython
-        IPython.embed()
+        self.assertEqual(available_freqs, {0, 1, 2, 3, 4})
+        for _, d in d_inputs.items():
+            self.assertEqual(len(d['freqs']), 1)
+
+        for _, d in d_networks.items():
+            self.assertEqual(len(d['freqs']), self.capacity)
+
+        self.assertEqual(len(set(d_networks[0]['freqs']).intersection(d_networks[3]['freqs'])), 0)
 
 
 def get_mat_from_path(l_edges, n_i, n_rn, n_o, weights='random'):

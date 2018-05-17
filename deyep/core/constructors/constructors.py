@@ -34,9 +34,6 @@ class Constructor(object):
                                       edge_density=None, w0=None):
 
         # Get size of the deep network
-        n_i, n_rn, n_o = mat_in.shape[0], mat_net.shape[0], mat_out.shape[1]
-        import IPython
-        IPython.embed()
 
         # Get dict of nodes
         d_inputs, d_net_ = set_nodes(mat_in, 'input')
@@ -49,14 +46,12 @@ class Constructor(object):
         # distribute frequencies among network nodes
         d_networks, available_freqs = set_frequencies(d_networks, available_freqs, capacity, l_=d_inputs.values())
 
-        assert len(available_freqs) == max(available_freqs) + 1
-
         # Finally, build nodes
-        l_inputs = [nodes.InputNode(k, 'input', FrequencyStack(len(available_freqs), c['freqs']), v['children'])
+        l_inputs = [nodes.InputNode(k, 'input', FrequencyStack(len(available_freqs), v['freqs']), v['children'])
                     for k, v in d_inputs.items()]
-        l_networks = [nodes.NetworkNode(k, 'network', FrequencyStack(len(available_freqs), c['freqs']), v['children'])
+        l_networks = [nodes.NetworkNode(k, 'network', FrequencyStack(len(available_freqs), v['freqs']), v['children'])
                       for k, v in d_networks.items()]
-        l_outputs = [nodes.NetworkNode(k, 'output', v['parents']) for k, v in d_networks.items()]
+        l_outputs = [nodes.OutputNode(k, 'output', v['parents']) for k, v in d_outputs.items()]
 
         return Constructor(project, seed, feature_size, edge_density, w0, input_nodes=l_inputs,
                            output_nodes=l_outputs, network_nodes=l_networks)
