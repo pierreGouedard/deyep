@@ -35,12 +35,13 @@ class InnerProductParallel(object):
 
 
 class ChiFourrierParallel(object):
-    def __init__(self, freq_map=None):
+    def __init__(self, N, freq_map=None):
         self.freq_map = freq_map
+        self.N = N
 
     def f(self, t):
 
-        res = Chi(np.round(np.real(inner_product(get_fourrier_series(t[0]), get_fourrier_series(t[1])))))
+        res = Chi(np.round(np.real(inner_product(get_fourrier_series(t[0], N=self.N), get_fourrier_series(t[1])))))
 
         if self.freq_map is not None:
             res *= self.freq_map[t[1]]
@@ -51,12 +52,13 @@ class ChiFourrierParallel(object):
 
 
 class UpsilonFourrierParallel(object):
-    def __init__(self, freq_map=None):
+    def __init__(self, N, freq_map=None):
         self.freq_map = freq_map
+        self.N = N
 
     def f(self, t):
 
-        res = Upsilon(np.round(np.real(inner_product(get_fourrier_series(t[0]), get_fourrier_series(t[1])))))
+        res = Upsilon(np.round(np.real(inner_product(get_fourrier_series(t[0], self.N), get_fourrier_series(t[1])))))
 
         if self.freq_map is not None:
             res *= self.freq_map[t[1]]
@@ -93,10 +95,13 @@ def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1):
     return res
 
 
-def get_fourrier_params(coef):
+def get_fourrier_params(coef, N=None):
 
     # Get N
-    N = int(np.round(1. / pow(np.linalg.norm(coef), 2)))
+    if N is None:
+        N, c = int(np.round(1. / pow(np.linalg.norm(coef), 2))), 1.
+    else:
+        c = int(np.round(np.sqrt(N) * np.linalg.norm(coef)))
 
     # Get k
     k = (np.angle(coef) * N) / (2. * np.pi)
@@ -104,15 +109,19 @@ def get_fourrier_params(coef):
     if k <= 0:
         k = int(np.round(- k))
     else:
-        k = int(np.round(N - k))
+        k, c = int(np.round(N / 2 - k)), - c
 
     return N, k
 
 
-def get_fourrier_series(coef):
+def get_fourrier_series(coef, N=None):
 
-    # Get N
-    N, k = get_fourrier_params(coef)
+    # if normalize Get N and k
+    if N is None:
+        N, k = get_fourrier_params(coef)
+
+    else:
+        _, k = get_fourrier_params(coef, N=N)
 
     return coef * np.exp(-1j * (2. * np.pi * k * np.arange(-1, N - 1)) / N)
 
@@ -272,12 +281,15 @@ def Chi(x):
 
 def Chi_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
 
+    # Get N
+    N = int(np.round(1. / pow(np.linalg.norm(l_coefs[0]), 2)))
+
     if n_jobs != 1:
 
         p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
         # Instantiate class that implement inner product
-        chip = ChiFourrierParallel(freq_map=freq_map)
+        chip = ChiFourrierParallel(N, freq_map=freq_map)
 
         # Parallel inner product
         res = sum(p.map(chip.f, zip([x] * len(l_coefs), l_coefs)))
@@ -289,7 +301,7 @@ def Chi_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
             freq_map = dict(zip(l_coefs, l_coefs))
 
         for c in l_coefs:
-            res += Chi(np.round(np.real(inner_product(get_fourrier_series(x), get_fourrier_series(c))))) * \
+            res += Chi(np.round(np.real(inner_product(get_fourrier_series(x, N=N), get_fourrier_series(c))))) * \
                    freq_map[c]
 
     return res
@@ -311,12 +323,15 @@ def Upsilon(x):
 
 def Upsilon_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
 
+    # Get N
+    N = int(np.round(1. / pow(np.linalg.norm(l_coefs[0]), 2)))
+
     if n_jobs != 1:
 
         p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
         # Instantiate class that implement inner product
-        chip = UpsilonFourrierParallel(freq_map=freq_map)
+        chip = UpsilonFourrierParallel(N, freq_map=freq_map)
 
         # Parallel inner product
         res = sum(p.map(chip.f, zip([x] * len(l_coefs), l_coefs)))
@@ -328,7 +343,7 @@ def Upsilon_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
             freq_map = dict(zip(l_coefs, l_coefs))
 
         for c in l_coefs:
-            res += Upsilon(np.round(np.real(inner_product(get_fourrier_series(x), get_fourrier_series(c))))) * \
+            res += Upsilon(np.round(np.real(inner_product(get_fourrier_series(x, N=N), get_fourrier_series(c))))) * \
                    freq_map[c]
 
     return res

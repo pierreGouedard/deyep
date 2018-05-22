@@ -121,11 +121,11 @@ class TestSoundUtils(unittest.TestCase):
 
         assert energy_/energy < 1e-2
 
-    def test_signal_reconstruction(self):
+    def test_signal_raw_reconstruction(self):
         """
-        Check reconsruction of a signal that has gone through a 'by part' stft
+        Check reconstruction of a signal that has gone through a 'by part' stft
 
-        python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_signal_reconstruction
+        python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_signal_raw_reconstruction
 
         """
 
@@ -145,11 +145,11 @@ class TestSoundUtils(unittest.TestCase):
         # assert reconstrution is ok
         assert np.abs(s_ -s_rec).sum() < 1e-1
 
-    def test_spectograms_discretization(self):
+    def test_spectograms_discretization_reconstruction(self):
         """
         Check reconsruction of a signal that has gone through a 'by part' stft
 
-        python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_spectograms_discretization
+        python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_spectograms_discretization_reconstruction
 
         """
         # Optimize parameter
