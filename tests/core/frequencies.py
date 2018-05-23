@@ -1,7 +1,6 @@
 # Global imports
 import numpy as np
 import unittest
-from scipy.sparse import lil_matrix
 from deyep.utils.names import KVName
 
 # Local import

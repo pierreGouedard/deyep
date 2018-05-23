@@ -1,5 +1,6 @@
 # Global imports
-import copy
+from scipy.sparse import csc_matrix
+import numpy as np
 
 # local import
 import settings
@@ -9,8 +10,8 @@ from deyep.core.tools.frequencies import FrequencyStack
 
 class Constructor(object):
 
-    def __init__(self, project, seed, feature_size, edge_density, w0,
-                 input_nodes=None, output_nodes=None, network_nodes=None):
+    def __init__(self, project, seed, feature_size, edge_density, w0, input_nodes=None, output_nodes=None,
+                 network_nodes=None, deep_network=None):
 
         # settings
         self.project = project
@@ -26,14 +27,39 @@ class Constructor(object):
         self.output_nodes = [] if output_nodes is None else output_nodes
         self.network_nodes = [] if network_nodes is None else network_nodes
 
-        # wait a minute
-        self.deep_network = None
+        # Get wieght directed matrix graph
+        if deep_network is not None:
+            self.deep_network = deep_network
+        else:
+            self.deep_network = self.get_deep_network_from_nodes()
+
+    @property
+    def D(self):
+        return csc_matrix((np.ones(len(self.Dw.data)), self.Dw.nonzero()), shape=self.Dw.shape)
+
+    @property
+    def Dw(self):
+        return self.deep_network['Dw']
+
+    @property
+    def O(self):
+        return csc_matrix((np.ones(len(self.Ow.data)), self.Ow.nonzero()), shape=self.Ow.shape)
+
+    @property
+    def Ow(self):
+        return self.deep_network['Dw']
+
+    @property
+    def I(self):
+        return csc_matrix((np.ones(len(self.Iw.data)), self.Iw.nonzero()), shape=self.Iw.shape)
+
+    @property
+    def Iw(self):
+        return self.deep_network['Iw']
 
     @staticmethod
     def from_weighted_direct_matrices(mat_net, mat_in, mat_out, capacity, project=None, seed=None, feature_size=None,
                                       edge_density=None, w0=None):
-
-        # Get size of the deep network
 
         # Get dict of nodes
         d_inputs, d_net_ = set_nodes(mat_in, 'input')
@@ -53,8 +79,11 @@ class Constructor(object):
                       for k, v in d_networks.items()]
         l_outputs = [nodes.OutputNode(k, 'output', v['parents']) for k, v in d_outputs.items()]
 
-        return Constructor(project, seed, feature_size, edge_density, w0, input_nodes=l_inputs,
-                           output_nodes=l_outputs, network_nodes=l_networks)
+        return Constructor(project, seed, feature_size, edge_density, w0, input_nodes=l_inputs, output_nodes=l_outputs,
+                           network_nodes=l_networks, deep_network={'Iw': mat_in, 'Dw': mat_net, 'Ow': mat_out})
+
+    def get_deep_network_from_nodes(self):
+        raise NotImplementedError
 
     def build_input_nodes(self):
         raise NotImplementedError

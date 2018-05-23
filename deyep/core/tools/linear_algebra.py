@@ -1,6 +1,6 @@
 # Global import
 import numpy as np
-from scipy.sparse import lil_matrix
+from scipy.sparse import csc_matrix
 from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 
 
@@ -84,15 +84,17 @@ def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1):
         # Parallel inner product
         res_ = p.map(innerp.f, zip([ax_s] * len(ax_basis), ax_basis))
 
-        res = ax_basis[res_.nonzeros()[0][0]]
+        l_res = ax_basis[res_.nonzeros()[1]]
 
-    for base in ax_basis:
-        res = np.round(np.real(inner_product(ax_s, get_fourrier_series(base))))
+    else:
+        l_res = []
+        for base in ax_basis:
+            res = np.round(np.real(inner_product(ax_s, get_fourrier_series(base))))
 
-        if res > 0:
-            break
+            if res > 0:
+                l_res += [res]
 
-    return res
+    return l_res
 
 
 def get_fourrier_params(coef, N=None):
@@ -168,7 +170,7 @@ def vector_product_type_3(x, A):
     :return:
     """
     try:
-        return lil_matrix(x.toarray()[0].dot(A.toarray()))
+        return csc_matrix(x.toarray()[0].dot(A.toarray()))
     except MemoryError:
         return x.dot(A)
 
@@ -187,7 +189,7 @@ def matrix_product(A, B):
         return A.dot(B)
     else:
         try:
-            return lil_matrix(A.toarray().dot(B.toarray()))
+            return csc_matrix(A.toarray().dot(B.toarray()))
         except MemoryError:
             return A.dot(B)
 
@@ -205,7 +207,7 @@ def matrix_fourrier_product(A, B, n_jobs=1):
     if n_jobs != 1:
         p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
-    (l_xa, l_ya), (l_xb, l_yb), res = A.nonzero(), B.nonzero(), lil_matrix((A.shape[0], B.shape[1]))
+    (l_xa, l_ya), (l_xb, l_yb), res = A.nonzero(), B.nonzero(), csc_matrix((A.shape[0], B.shape[1]))
     for i in set(l_xa):
         for j in set(l_yb):
             l_indices = list(set(l_ya[l_xa == i]).intersection(set(l_xb[l_yb == j])))
@@ -241,7 +243,7 @@ def vector_fourrier_diag(x, y, n_jobs=1):
     :return:
     """
 
-    res, l_indices = lil_matrix(x.shape), list(set(x.nonzero()[1]).intersection(y.nonzero()[1]))
+    res, l_indices = csc_matrix(x.shape), list(set(x.nonzero()[1]).intersection(y.nonzero()[1]))
 
     if n_jobs != 1:
 
@@ -251,7 +253,7 @@ def vector_fourrier_diag(x, y, n_jobs=1):
         innerp = InnerProductParallel(keep_real=True, round=True)
 
         # Parallel inner product
-        res_ = lil_matrix(p.map(innerp.f, zip(x[0, l_indices].toarray()[0], y[0, l_indices].toarray()[0])))
+        res_ = csc_matrix(p.map(innerp.f, zip(x[0, l_indices].toarray()[0], y[0, l_indices].toarray()[0])))
 
     else:
         # Loop on common non zeros diag indices
@@ -259,7 +261,7 @@ def vector_fourrier_diag(x, y, n_jobs=1):
         for i in l_indices:
             res_ += [inner_product(get_fourrier_series(x[0, i]), get_fourrier_series(y[0, i]))]
 
-        res_ = lil_matrix(res_)
+        res_ = csc_matrix(res_)
 
     # Set result sparse matrix
     res[0, l_indices] = res_

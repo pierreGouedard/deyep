@@ -61,7 +61,7 @@ class FrequencyStack(object):
         self.step += 1
 
         # Update mapping
-        self.map.update({key_out: [FrequencyStack.key_from_coef(coef)for coef in l_coef_in]})
+        self.map.update({key_out: [FrequencyStack.key_from_coef(coef) for coef in l_coef_in]})
 
         # If set of free frequency is empty make 30% less priority frequency free again
         if len(self.setfree) == 0:

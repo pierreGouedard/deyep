@@ -1,6 +1,6 @@
 # Global imports
 import unittest
-from scipy.sparse import lil_matrix
+from scipy.sparse import csc_matrix
 import numpy as np
 
 # Local import
@@ -41,7 +41,7 @@ class TestDriverNumpy(unittest.TestCase):
         assert(all(self.s == ax))
 
         # Do the same for sparse array
-        self.driver.write_file(lil_matrix(self.s), self.driver.join(tmp_dir.path, 'ax.npz'), **{'is_sparse': True})
+        self.driver.write_file(csc_matrix(self.s), self.driver.join(tmp_dir.path, 'ax.npz'), **{'is_sparse': True})
 
         # Load numpy array
         ax = self.driver.read_file(self.driver.join(tmp_dir.path, 'ax.npz'),  **{'is_sparse': True})
@@ -71,7 +71,7 @@ class TestDriverNumpy(unittest.TestCase):
             assert all(self.d_s[k] == d_ax[k])
 
         # Do the same for sparse array
-        self.driver.write_partioned_file({lil_matrix(self.d_s[k]) for k in self.d_s.keys()}, tmp_dir.path,
+        self.driver.write_partioned_file({csc_matrix(self.d_s[k]) for k in self.d_s.keys()}, tmp_dir.path,
                                          **{'is_sparse': True})
 
         # Load numpy array

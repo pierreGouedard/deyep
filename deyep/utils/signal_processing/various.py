@@ -1,6 +1,6 @@
 # Global import
 import numpy as npy
-from scipy.sparse import lil_matrix
+from scipy.sparse import csc_matrix
 
 class Discretizer:
     bins_method = ['bounds', 'signal', 'treshold']
@@ -77,7 +77,7 @@ class Discretizer:
                 npy.array([b == x for _, b in sorted(self.bins.items(), key=lambda t: t[0])])
 
         if sparse:
-            ax_out = lil_matrix(ax_out)
+            ax_out = csc_matrix(ax_out)
 
         return ax_out
 
@@ -94,7 +94,7 @@ class Discretizer:
             ax_out = ax_out.transpose()
 
         if sparse:
-            ax_out = lil_matrix(ax_out)
+            ax_out = csc_matrix(ax_out)
 
         return ax_out
 

@@ -1,13 +1,13 @@
-from scipy.sparse import lil_matrix
+from scipy.sparse import csc_matrix
 import numpy as np
 
 
 def get_mat_from_path(l_edges, n_i, n_rn, n_o, weights='random'):
 
     # Init matrices
-    mat_in = lil_matrix(np.zeros([n_i, n_rn]))
-    mat_net = lil_matrix(np.zeros([n_rn, n_rn]))
-    mat_out = lil_matrix(np.zeros([n_rn, n_o]))
+    mat_in = csc_matrix(np.zeros([n_i, n_rn]))
+    mat_net = csc_matrix(np.zeros([n_rn, n_rn]))
+    mat_out = csc_matrix(np.zeros([n_rn, n_o]))
 
     i = 0
     for (_n, n_) in l_edges:

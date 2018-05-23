@@ -1,7 +1,7 @@
 # Global imports
 import numpy as np
 import unittest
-from scipy.sparse import lil_matrix, csr_matrix, csc_matrix
+from scipy.sparse import csr_matrix, csc_matrix
 import time
 
 # Local import
@@ -97,11 +97,11 @@ class TestOperators(unittest.TestCase):
         # Type 1 operation; vector - vector = vector (1 core) SPARSE
         t0 = time.time()
         for i in range(10):
-            res = vector_product_type_1(lil_matrix(self.vect_fourrier), lil_matrix(self.vect_fourrier))
+            res = vector_product_type_1(csc_matrix(self.vect_fourrier), csc_matrix(self.vect_fourrier))
         print('Mean time for vector product in F_{} is {} seconds'.format(self.N, (time.time() - t0) / 10.))
 
         # Type 2 vector - vector => matrix (1 cores) SPARSE
-        vect_x, vect_y = lil_matrix(self.vect_fourrier[:self.n * 10]), lil_matrix(self.vect_fourrier[:(self.n * 10)])
+        vect_x, vect_y = csc_matrix(self.vect_fourrier[:self.n * 10]), csc_matrix(self.vect_fourrier[:(self.n * 10)])
         t0 = time.time()
 
         for i in range(10):
@@ -113,7 +113,7 @@ class TestOperators(unittest.TestCase):
         self.assertEqual(get_fourrier_params(np.sqrt(self.N) * res[289, 472]), (self.N, 761))
 
         # Type 3 vector matrix => vector (1 core) SPARSE
-        vect_x, mat_x = lil_matrix(self.vect_fourrier[:self.n]), lil_matrix(self.mat_fourrier)
+        vect_x, mat_x = csc_matrix(self.vect_fourrier[:self.n]), csc_matrix(self.mat_fourrier)
         t0 = time.time()
         for i in range(10):
             res = vector_product_type_3(vect_x, mat_x)
@@ -123,7 +123,7 @@ class TestOperators(unittest.TestCase):
 
         # Type 4 matrix - matrix => matrix (all core) NO SPARSE
         t0 = time.time()
-        mat_x, mat_y = lil_matrix(self.mat_fourrier), lil_matrix(self.mat_fourrier)
+        mat_x, mat_y = csc_matrix(self.mat_fourrier), csc_matrix(self.mat_fourrier)
         for i in range(10):
             res = matrix_product(mat_x, mat_y)
 
@@ -137,7 +137,7 @@ class TestOperators(unittest.TestCase):
         """
 
         # Test matrix_fourrier_product
-        mat_x, mat_y = lil_matrix(self.mat_fourrier[:7, :7]), lil_matrix(self.mat_fourrier[:7, :7])
+        mat_x, mat_y = csc_matrix(self.mat_fourrier[:7, :7]), csc_matrix(self.mat_fourrier[:7, :7])
         t0 = time.time()
         res = matrix_fourrier_product(mat_x, mat_y)
         print('Mean time for matrix - matrix fourrier product in F_{} is {} seconds'
@@ -154,7 +154,7 @@ class TestOperators(unittest.TestCase):
         self.assertEqual(res.nnz, len(mat_x.diagonal().nonzero()[0]))
 
         # Test vector_fourrier_type_2
-        vect_x, vect_y = lil_matrix(self.vect_fourrier), lil_matrix(self.vect_fourrier)
+        vect_x, vect_y = csc_matrix(self.vect_fourrier), csc_matrix(self.vect_fourrier)
 
         t0 = time.time()
         res = vector_fourrier_diag(vect_x[0, :1000], vect_y[0, :1000], n_jobs=0)
