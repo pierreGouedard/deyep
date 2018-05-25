@@ -61,7 +61,8 @@ class NetworkNode(Node):
         Node.__init__(self, id, type, values)
 
         # Set specific attributes
-        self.level = -1
+        self.active = False
+        self.level = 0
         self.frequency_stack = frequency_stack
         self.children = children
 

@@ -47,7 +47,7 @@ class Constructor(object):
 
     @property
     def Ow(self):
-        return self.deep_network['Dw']
+        return self.deep_network['Ow']
 
     @property
     def I(self):
@@ -67,17 +67,18 @@ class Constructor(object):
         d_networks, _ = set_nodes(mat_net, 'network', d_net_nodes=d_net_)
 
         # distribute frequency among input nodes,
-        d_inputs, available_freqs = set_frequencies(d_inputs, {0}, 1)
+        d_inputs, set_freqs = set_frequencies(d_inputs, {0}, 1)
 
         # distribute frequencies among network nodes
-        d_networks, available_freqs = set_frequencies(d_networks, available_freqs, capacity, l_=d_inputs.values())
+        d_networks, set_freqs = set_frequencies(d_networks, set_freqs, capacity, l_=d_inputs.values())
 
         # Finally, build nodes
-        l_inputs = [nodes.InputNode(k, 'input', FrequencyStack(len(available_freqs), v['freqs']), v['children'])
-                    for k, v in d_inputs.items()]
-        l_networks = [nodes.NetworkNode(k, 'network', FrequencyStack(len(available_freqs), v['freqs']), v['children'])
-                      for k, v in d_networks.items()]
-        l_outputs = [nodes.OutputNode(k, 'output', v['parents']) for k, v in d_outputs.items()]
+        l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs), v_['freqs']), v_['children'])
+                    for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)]
+        l_networks = [nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs), v_['freqs']), v_['children'])
+                      for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)]
+        l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
+                     for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 
         return Constructor(project, seed, feature_size, edge_density, w0, input_nodes=l_inputs, output_nodes=l_outputs,
                            network_nodes=l_networks, deep_network={'Iw': mat_in, 'Dw': mat_net, 'Ow': mat_out})
