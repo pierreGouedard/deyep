@@ -72,7 +72,7 @@ def fot(sax_O, sax_sn):
     return res
 
 
-def forward_processing(l_fnt, l_nodes, sax_Cm, n_jobs=0):
+def forward_processing(l_fnt, l_nodes, sax_Cm):
     """
     Update networks node, network signal at next iteratior and candidate matrix
     :param l_fnt: list work nodes of signal receive from previous forward transmitting phase
@@ -80,26 +80,29 @@ def forward_processing(l_fnt, l_nodes, sax_Cm, n_jobs=0):
     :param sax_Cm: scipy.sparse.csc_matrix of historical connection between network nodes and output nodes
     :return:
     """
+    l_res = []
+    for l_coefs, node in zip(l_fnt, l_nodes):
+        if len(l_coefs) > 0:
+            if node.level > 0:
+                if len(l_coefs) >= node.level:
+                    l_res += [node.frequency_stack.encode(l_coefs)]
 
-    p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
-    fnpflp = FnpFlp()
+            else:
+                l_res += [node.frequency_stack.encode(l_coefs)]
+                node.level = len(l_coefs)
 
-    # Run FNP and FLP
-    res = p.map(fnpflp.f, zip(l_fnt, l_nodes))
+            node.active = True
+        else:
+            node.active = False
 
-    # Hint this modify self.dn.network_node, just need to figure out how can multiprocessing behave the same ;)
-    for n in l_nodes:
-        n.active = True
+    # Build sn
+    sax_sn = csc_matrix(l_res)
 
-    sax_sn, l_activation = csc_matrix([t[0] for t in res]), [t[1] for t in res]
-    # TODO: find a way to directly modify the attribute active of nodes instead of modifying a copy
-    #sax_sn = csc_matrix(res)
-
-    # Run FCP
-    sax_C = csc_matrix(np.array([l_activation]).repeat(sax_Cm.shape[1], axis=0).transpose())
+    # Build candidate matrix
+    sax_C = csc_matrix(np.array([[n.active for n in l_nodes]]).repeat(sax_Cm.shape[1], axis=0).transpose())
     sax_C -= sax_Cm
 
-    return sax_sn, csc_matrix((sax_C.data > 0, sax_C.nonzero()), shape=sax_C.shape), l_activation
+    return sax_sn, csc_matrix((sax_C.data > 0, sax_C.nonzero()), shape=sax_C.shape)
 
 
 

@@ -2,6 +2,7 @@
 import unittest
 import numpy as np
 from scipy.sparse import csc_matrix
+
 # Local import
 from deyep.core.tools.equations import fnt, fot, forward_processing
 from tests.comon import get_mat_from_path
@@ -72,12 +73,12 @@ class TestEquations(unittest.TestCase):
         res_fnt = fnt(self.dn.D, self.dn.I, sax_sn, sax_si)
 
         # Test FNP
-        sax_sn, sax_C, l_activation = forward_processing(res_fnt, self.dn.network_nodes, self.dn.O)
-        import IPython
-        IPython.embed()
-        # Multiple case to test with generation of candidates (with differen memory of connection)
-        # Need to make sure that what is done to nodes is clearly happening for self.dn
+        sax_sn, sax_C = forward_processing(res_fnt, self.dn.network_nodes, self.dn.O)
 
+        self.assertEqual([n.active for n in self.dn.network_nodes], [True] * 4 + [False])
+        self.assertEqual(len(self.dn.network_nodes[2].frequency_stack.map.items()[0][1]), 2)
+        self.assertEqual(len(set(zip(sax_C.nonzero()[0], sax_C.nonzero()[1]))
+                             .intersection(zip(self.dn.O.nonzero()[0], self.dn.O.nonzero()[1]))), 0)
 
     def test_backward_transmission(self):
         """
