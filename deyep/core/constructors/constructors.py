@@ -73,9 +73,9 @@ class Constructor(object):
         d_networks, set_freqs = set_frequencies(d_networks, set_freqs, capacity, l_=d_inputs.values())
 
         # Finally, build nodes
-        l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs), v_['freqs']), v_['children'])
+        l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
                     for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)]
-        l_networks = [nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs), v_['freqs']), v_['children'])
+        l_networks = [nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
                       for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)]
         l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
                      for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]

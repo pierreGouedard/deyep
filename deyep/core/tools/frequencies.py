@@ -3,7 +3,7 @@ import numpy as np
 
 # Local import
 from deyep.core.tools.linear_algebra import get_fourrier_coef_from_params, get_fourrier_params, \
-    get_fourrier_series, get_fourrier_coef_from_series
+    get_fourrier_series, get_fourrier_coef_from_series, Upsilon
 from deyep.utils.names import KVName
 
 
@@ -20,9 +20,9 @@ class FrequencyStack(object):
 
     def fourrier_basis(self, free=True):
         if free:
-            return np.array([self.coef_from_key(k) for k in self.setfree])
+            return np.array([self.series_from_coef(self.coef_from_key(k)) for k in self.setfree])
         else:
-            return np.array([self.coef_from_key(k) for k in self.map.keys()])
+            return np.array([self.series_from_coef(self.coef_from_key(k)) for k in self.map.keys()])
 
     @staticmethod
     def from_dict(d_frequency_stack):
@@ -42,25 +42,27 @@ class FrequencyStack(object):
         return get_fourrier_series(coef)
 
     @staticmethod
-    def coef_from_series(s, basis, n_jobs=1):
-        return get_fourrier_coef_from_series(s, basis, n_jobs=n_jobs)
+    def coef_from_series(s, basis, n_jobs=1, return_coef=False):
+        return get_fourrier_coef_from_series(s, basis, n_jobs=n_jobs, return_coef=return_coef)
 
     @staticmethod
     def key_from_coef(coef):
         N, k = get_fourrier_params(coef)
         return 'N={},k={}'.format(N, k)
 
-    def encode(self, l_coef_in):
+    def encode(self, s_in):
 
         # pop next frequency
         key_out = self.setfree.pop()
-        coef_out = FrequencyStack.coef_from_key(key_out)
+        s_out = self.series_from_coef(FrequencyStack.coef_from_key(key_out))
 
         # update priorities
         self.priorities[key_out] = self.step
         self.step += 1
 
         # Update mapping
+        basis = [self.coef_from_key('k={},N={}'.format(k, self.N)) for k in range(self.N / 2)]
+        l_coef_in = self.coef_from_series(s_in, basis, n_jobs=0)
         self.map.update({key_out: [FrequencyStack.key_from_coef(coef) for coef in l_coef_in]})
 
         # If set of free frequency is empty make 30% less priority frequency free again
@@ -68,19 +70,20 @@ class FrequencyStack(object):
             self.release_key()
 
         # return signal with poped frequency
-        return coef_out
+        return s_out
 
-    def decode(self, l_coef_out):
+    def decode(self, s_in):
 
         # pop frequency if it exists in mapping
-        l_keys = [self.map[k] for k in map(lambda c: FrequencyStack.key_from_coef(c), l_coef_out) if k is not None]
+        l_coefs_in, l_coefs = self.coef_from_series(s_in, [self.coef_from_key(k) for k in self.map.keys()], n_jobs=0,
+                                                    return_coef=True)
+        s_out = np.zeros(self.N)
+        for i, c_in in enumerate(l_coefs_in):
+            l_coef_out = map(lambda x: self.coef_from_key(x), self.map[self.key_from_coef(c_in)])
+            for c_out in l_coef_out:
+                s_out = Upsilon(l_coefs[i]) * self.series_from_coef(c_out)
 
-        if len(l_keys) > 0:
-            l_coef_in = sum([[FrequencyStack.coef_from_key(k_) for k_ in k] for k in l_keys], [])
-        else:
-            l_coef_in = []
-
-        return l_coef_in
+        return s_out
 
     def release_key(self, p=0.3):
 

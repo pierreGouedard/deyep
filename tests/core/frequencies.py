@@ -47,21 +47,23 @@ class TestFrequencyStack(unittest.TestCase):
         assert ((len(stack.setfree) == self.capacity) & (len(stack.map) == 0) & (len(stack.priorities) == 0))
 
         # Test single encoding
-        coef_in = self.deep_network_1.network_nodes[1].frequency_stack.fourrier_basis()[0]
-        coef_out = stack.encode([coef_in])
+        s_in = self.deep_network_1.network_nodes[1].frequency_stack.fourrier_basis()[0, :]
+        coef_in = stack.coef_from_series(s_in, basis=[stack.coef_from_key(k) for k in stack.setfree])
+        s_out = stack.encode(s_in)
+        coef_out = stack.coef_from_series(s_out, basis=[stack.coef_from_key(k) for k in stack.map.keys()])
 
         self.assertTrue(stack.key_from_coef(coef_out) not in stack.setfree)
         self.assertTrue(stack.key_from_coef(coef_out) in stack.map.keys())
         self.assertTrue(stack.key_from_coef(coef_in) in stack.map[stack.key_from_coef(coef_out)])
 
-        l_ = [inner_product(series(coef_out), series(b)) for b in stack.fourrier_basis()]
+        l_ = [inner_product(s_out, s_b) for s_b in stack.fourrier_basis()]
         self.assertAlmostEqual(np.real(sum(l_)), 0., delta=1e-10)
-        l_ = [inner_product(series(coef_out), series(b)) for b in stack.fourrier_basis(free=False)]
+        l_ = [inner_product(s_out, s_b) for s_b in stack.fourrier_basis(free=False)]
         self.assertAlmostEqual(np.real(sum(l_)), 1., delta=1e-10)
 
         # Test decoding
-        coef_in_ = stack.decode([coef_out])
-        self.assertEqual(coef_in, coef_in_)
+        s_in_ = stack.decode(s_out)
+        self.assertAlmostEqual((s_in_ - s_in).sum(), 0., delta=1e-10)
 
         stack.release_key(p=1)
         self.assertTrue(stack.key_from_coef(coef_out) in stack.setfree)

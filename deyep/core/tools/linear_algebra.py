@@ -72,7 +72,7 @@ def get_fourrier_coef_from_params(N, k):
     return np.exp(np.complex(np.log(1. / np.sqrt(N)), - (2. * np.pi * k) / N))
 
 
-def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1):
+def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1, return_coef=False):
 
     # Build Pool if necessary
     if n_jobs != 1:
@@ -82,19 +82,24 @@ def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1):
         innerp = InnerProductParallel(keep_real=True, round=True, coef='right')
 
         # Parallel inner product
-        res_ = p.map(innerp.f, zip([ax_s] * len(ax_basis), ax_basis))
+        res_ = csc_matrix(p.map(innerp.f, zip([ax_s] * len(ax_basis), ax_basis)))
 
-        l_res = ax_basis[res_.nonzeros()[1]]
+        l_res = [ax_basis[i] for i in res_.nonzero()[1]]
+        l_coefs = res_.data
 
     else:
-        l_res = []
+        l_res, l_coefs = [], []
         for base in ax_basis:
             res = np.round(np.real(inner_product(ax_s, get_fourrier_series(base))))
 
             if res > 0:
-                l_res += [res]
+                l_res += [base]
+                l_coefs += [res]
 
-    return l_res
+    if return_coef:
+        return l_res, l_coefs
+    else:
+        return l_res
 
 
 def get_fourrier_params(coef, N=None):
