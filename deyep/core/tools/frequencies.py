@@ -18,6 +18,14 @@ class FrequencyStack(object):
         self.priorities = dict() if priorities is None else priorities
         self.map = dict() if map is None else map
 
+    @property
+    def basis_specific(self):
+        return [self.coef_from_key('k={},N={}'.format(k, self.N)) for k in self.l_keys]
+
+    @property
+    def basis_generic(self):
+        return [self.coef_from_key('k={},N={}'.format(k, self.N)) for k in range(self.N / 2)]
+
     def fourrier_basis(self, free=True):
         if free:
             return np.array([self.series_from_coef(self.coef_from_key(k)) for k in self.setfree])
@@ -61,8 +69,7 @@ class FrequencyStack(object):
         self.step += 1
 
         # Update mapping
-        basis = [self.coef_from_key('k={},N={}'.format(k, self.N)) for k in range(self.N / 2)]
-        l_coef_in = self.coef_from_series(s_in, basis, n_jobs=0)
+        l_coef_in = self.coef_from_series(s_in, self.basis_generic, n_jobs=0)
         self.map.update({key_out: [FrequencyStack.key_from_coef(coef) for coef in l_coef_in]})
 
         # If set of free frequency is empty make 30% less priority frequency free again

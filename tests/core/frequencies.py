@@ -75,18 +75,18 @@ class TestFrequencyStack(unittest.TestCase):
 
         """
         stack = self.deep_network_1.network_nodes[0].frequency_stack
-        l_coefs, coef = [], self.deep_network_1.network_nodes[1].frequency_stack.fourrier_basis()[0]
+        l_keys, s_in = [], self.deep_network_1.network_nodes[1].frequency_stack.fourrier_basis()[0]
         i = 0
         for i in range(self.capacity - 1):
-            l_coefs += [stack.key_from_coef(stack.encode([coef]))]
+            l_keys += [stack.key_from_coef(stack.coef_from_series(stack.encode(s_in), stack.basis_specific))]
 
-        self.assertEqual(stack.priorities[l_coefs[-1]], i)
+        self.assertEqual(stack.priorities[l_keys[-1]], i)
         self.assertEqual(len(stack.setfree),  1)
 
-        _ = stack.key_from_coef(stack.encode([coef]))
+        _ = stack.key_from_coef(stack.coef_from_series(stack.encode(s_in), stack.basis_specific))
 
         self.assertEqual(len(stack.setfree), int(0.3 * self.capacity))
-        self.assertTrue(all([k in stack.setfree for k in l_coefs[:int(0.3 * self.capacity)]]))
+        self.assertTrue(all([k in stack.setfree for k in l_keys[:int(0.3 * self.capacity)]]))
 
     def test_frequency_orthogonality(self):
         """
@@ -99,15 +99,9 @@ class TestFrequencyStack(unittest.TestCase):
         stack_y = self.deep_network_1.network_nodes[3].frequency_stack
 
         # Get Fourrier basis coef for network node 0 and 3
-        coef_basis_x = stack_x.fourrier_basis()
-        coef_basis_y = stack_y.fourrier_basis()
+        ax_basis_x = stack_x.fourrier_basis().sum(axis=0)
+        ax_basis_y = stack_y.fourrier_basis().sum(axis=0)
 
-        self.assertEqual(set(coef_basis_x).intersection(set(coef_basis_y)), set())
-
-        # Get the corresponding Fourrier series
-        series_x = sum([series(c) for c in coef_basis_x])
-        series_y = sum([series(c) for c in coef_basis_y])
-
-        res = inner_product(series_x, series_y)
+        res = inner_product(ax_basis_x, ax_basis_y)
 
         self.assertAlmostEqual(np.real(res), 0, delta=1e-10)
