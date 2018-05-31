@@ -10,7 +10,7 @@ from deyep.core.tools.frequencies import FrequencyStack
 
 class Constructor(object):
 
-    def __init__(self, project, seed, feature_size, edge_density, w0, input_nodes=None, output_nodes=None,
+    def __init__(self, project, w0, edge_density=None, feature_size=None, seed=None, input_nodes=None, output_nodes=None,
                  network_nodes=None, deep_network=None):
 
         # settings
@@ -57,9 +57,13 @@ class Constructor(object):
     def Iw(self):
         return self.deep_network['Iw']
 
+    @property
+    def Cm(self):
+        return self.deep_network['Cm']
+
     @staticmethod
-    def from_weighted_direct_matrices(mat_net, mat_in, mat_out, capacity, project=None, seed=None, feature_size=None,
-                                      edge_density=None, w0=None):
+    def from_weighted_direct_matrices(mat_net, mat_in, mat_out, capacity, project=None, seed=None, edge_density=None,
+                                      w0=None):
 
         # Get dict of nodes
         d_inputs, d_net_ = set_nodes(mat_in, 'input')
@@ -80,8 +84,8 @@ class Constructor(object):
         l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
                      for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 
-        return Constructor(project, seed, feature_size, edge_density, w0, input_nodes=l_inputs, output_nodes=l_outputs,
-                           network_nodes=l_networks, deep_network={'Iw': mat_in, 'Dw': mat_net, 'Ow': mat_out})
+        return Constructor(project, w0, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
+                           deep_network={'Iw': mat_in, 'Dw': mat_net, 'Ow': mat_out, 'Cm': mat_out})
 
     def get_deep_network_from_nodes(self):
         raise NotImplementedError

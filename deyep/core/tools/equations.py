@@ -41,12 +41,19 @@ def fcp(l_actives, sax_Cm):
     return csc_matrix((sax_C.data > 0, sax_C.nonzero()), shape=sax_C.shape)
 
 
-def bnt():
-    raise NotImplementedError
+def bnt(sax_D, sax_O, sax_snb, sax_sob, sax_activation):
+
+    sax_snb_ = la.matrix_product(sax_sob, sax_O.transpose().multiply(sax_activation))
+
+    sax_snb_ += la.matrix_product(sax_snb, sax_D.transpose())
+
+    return sax_snb_
 
 
-def bit():
-    raise NotImplementedError
+def bit(sax_I, sax_snb):
+    sax_sib = la.matrix_product(sax_snb, sax_I.transpose())
+
+    return sax_sib
 
 
 def bop(sax_so, sax_got):
@@ -59,6 +66,22 @@ def bop(sax_so, sax_got):
     sax_sob = sax_so.dot(csc_matrix((sax_sob.data, (sax_sob.nonzero()[1], sax_sob.nonzero()[1])), shape=(no, no)))
 
     return sax_sob
+
+
+def bnp(l_nodes, sax_snb):
+
+    sax_snb_ = csc_matrix((sax_snb.shape[1], sax_snb.shape[0]))
+    for i in range(sax_snb.shape[1]):
+        if sax_snb[:, i].nnz > 0:
+            sax_snb_[i, :] = l_nodes[i].frequency_stack.decode(sax_snb.toarray()[:, i])
+
+    return sax_snb_.transpose()
+
+def bcp(sax_sob, sax_Cb, self.dn):
+    # Simply follow the theoretical equation and update deep network's Cm and O
+    raise NotImplementedError
+
+
 
 
 
