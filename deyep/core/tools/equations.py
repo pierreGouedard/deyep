@@ -1,10 +1,9 @@
 # Global import
 import numpy as np
-from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 from scipy.sparse import csc_matrix
+
 # Local import
 from deyep.core.tools import linear_algebra as la
-from deyep.utils.names import KVName
 
 
 def fnt(sax_D, sax_I, sax_sn, sax_si):
@@ -23,22 +22,28 @@ def fnp(sax_fnt, l_nodes):
     # Init activation param of the nodes
     for n in l_nodes:
         n.active = False
-    # TODO: update level here
-    # Encode forward messages
+
+    # Encode forward messages, update list of activation and level if necessary
     for i in np.unique(sax_fnt.nonzero()[1]):
-        s_out = l_nodes[i].frequency_stack.encode(sax_fnt[:, i].toarray()[:, 0])
-        sax_sn[:, i] = np.array([s_out]).transpose()
-        l_nodes[i].active = True
+        s_out, level = l_nodes[i].frequency_stack.encode(sax_fnt[:, i].toarray()[:, 0], return_level=True)
+
+        if level >= l_nodes[i].level:
+            l_nodes[i].active = True
+            sax_sn[:, i] = np.array([s_out]).transpose()
+
+        if l_nodes[i].level == 0:
+            l_nodes[i].level = level
 
     return sax_sn
 
 
 def fcp(l_actives, sax_Cm):
+
     # Build candidate matrix
     sax_C = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
     sax_C -= sax_Cm
 
-    return csc_matrix((sax_C.data > 0, sax_C.nonzero()), shape=sax_C.shape)
+    return csc_matrix((sax_C.data > 0, sax_C.indices, sax_C.indptr), shape=sax_C.shape).toarray()
 
 
 def bnt(sax_D, sax_O, sax_snb, sax_sob, sax_activation):
@@ -77,7 +82,8 @@ def bnp(l_nodes, sax_snb):
 
     return sax_snb_.transpose()
 
-def bcp(sax_sob, sax_Cb, self.dn):
+
+def bcp(sax_sob, sax_Cb, dn):
     # Simply follow the theoretical equation and update deep network's Cm and O
     raise NotImplementedError
 

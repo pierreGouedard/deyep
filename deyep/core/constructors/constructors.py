@@ -35,7 +35,7 @@ class Constructor(object):
 
     @property
     def D(self):
-        return csc_matrix((np.ones(len(self.Dw.data)), self.Dw.nonzero()), shape=self.Dw.shape)
+        return csc_matrix((np.ones(len(self.Dw.data)), self.Dw.indices, self.Dw.indptr), shape=self.Dw.shape)
 
     @property
     def Dw(self):
@@ -43,7 +43,7 @@ class Constructor(object):
 
     @property
     def O(self):
-        return csc_matrix((np.ones(len(self.Ow.data)), self.Ow.nonzero()), shape=self.Ow.shape)
+        return csc_matrix((np.ones(len(self.Ow.data)), self.Ow.indices, self.Ow.indptr), shape=self.Ow.shape)
 
     @property
     def Ow(self):
@@ -51,7 +51,7 @@ class Constructor(object):
 
     @property
     def I(self):
-        return csc_matrix((np.ones(len(self.Iw.data)), self.Iw.nonzero()), shape=self.Iw.shape)
+        return csc_matrix((np.ones(len(self.Iw.data)), self.Iw.indices, self.Iw.indptr), shape=self.Iw.shape)
 
     @property
     def Iw(self):

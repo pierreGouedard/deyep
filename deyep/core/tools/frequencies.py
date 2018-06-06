@@ -58,7 +58,7 @@ class FrequencyStack(object):
         N, k = get_fourrier_params(coef)
         return 'N={},k={}'.format(N, k)
 
-    def encode(self, s_in):
+    def encode(self, s_in, return_level=False):
 
         # pop next frequency
         key_out = self.setfree.pop()
@@ -76,7 +76,10 @@ class FrequencyStack(object):
         if len(self.setfree) == 0:
             self.release_key()
 
-        # return signal with poped frequency
+        # return signal with poped frequency and level if necessay
+        if return_level:
+            return s_out, len(l_coef_in)
+
         return s_out
 
     def decode(self, s_in):

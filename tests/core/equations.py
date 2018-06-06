@@ -47,7 +47,7 @@ class TestEquations(unittest.TestCase):
 
         # Compute variable for test
         stack = self.dn.network_nodes[0].frequency_stack
-        set_coefs =  set(stack.coef_from_series(res_fnt.toarray()[:, 2], stack.basis_generic, n_jobs=0))
+        set_coefs = set(stack.coef_from_series(res_fnt.toarray()[:, 2], stack.basis_generic, n_jobs=0))
         coef_a = stack.coef_from_series(sax_sn.toarray()[:, 0], stack.basis_generic, n_jobs=0)[0]
         coef_b = stack.coef_from_series(sax_sn.toarray()[:, 3], stack.basis_generic, n_jobs=0)[0]
 
@@ -153,11 +153,12 @@ class TestEquations(unittest.TestCase):
         l_network_active = [False, True, True, False, False]
         sax_so, sax_C = compute_forward_pass(l_network_active, self.dn)
 
-        # In theory aditionnal step that we could call FOP
+        # TODO In theory aditionnal step that we could call FOP
         # Save candidate
         sax_Cb = sax_C.copy()
         # Save list of active nodes if fnp run
         #l_active_b = [n.active for n in self.dn.network_nodes]
+
         # If fnp not run
         l_active_b = l_network_active
 
@@ -167,7 +168,6 @@ class TestEquations(unittest.TestCase):
         # In the mean time update also Cm and O with fresh validated candidates
         # Test BCP
         bcp(sax_sob, sax_Cb, self.dn)
-
 
         # Assert expected result
         feedback = np.zeros(sax_sob.shape[1])
