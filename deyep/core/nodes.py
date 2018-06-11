@@ -51,7 +51,9 @@ class OutputNode(Node):
         raise NotImplementedError
 
     def to_dict(self):
-        return Node.to_dict(self)
+        d_out = Node.to_dict(self)
+        d_out.update({'parents': self.parents})
+        return d_out
 
 
 class NetworkNode(Node):

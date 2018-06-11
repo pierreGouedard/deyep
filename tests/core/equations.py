@@ -153,17 +153,15 @@ class TestEquations(unittest.TestCase):
         l_network_active = [False, True, True, False, False]
         sax_so, sax_C = compute_forward_pass(l_network_active, self.dn)
 
-        # TODO In theory aditionnal step that we could call FOP
-        # Save candidate
+        import IPython
+        IPython.embed()
+        # TODO In theory aditionnal step that we could call FOP or some kind of 'cache for backward operation
+        # Save candidate and active network nodes
         sax_Cb = sax_C.copy()
-        # Save list of active nodes if fnp run
-        #l_active_b = [n.active for n in self.dn.network_nodes]
-
-        # If fnp not run
-        l_active_b = l_network_active
+        sax_activation = csc_matrix(np.array([l_network_active]).repeat(self.dn.O.shape[1], axis=0))
 
         # Test BOP
-        sax_sob = bop(sax_so, csc_matrix([1, 0, 0]))
+        sax_sob = bop(sax_so, csc_matrix([1, 0, 0]), self.N)
 
         # In the mean time update also Cm and O with fresh validated candidates
         # Test BCP
@@ -181,8 +179,7 @@ class TestEquations(unittest.TestCase):
         sax_snb[:, 1] = sax_sob[:, 0]
         sax_snb[:, 2] = sax_sob[:, 1]
 
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob,
-                      csc_matrix(np.array([l_active_b]).repeat(self.dn.O.shape[1], axis=0)))
+        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_activation)
 
         # Test BNP
         sax_snb = bnp(self.dn.network_nodes, sax_snb)

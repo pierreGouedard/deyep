@@ -113,22 +113,22 @@ def set_nodes(mat, key, d_net_nodes={}):
     if key == 'input':
         x_coord, y_coord = mat.nonzero()
         for i in set(x_coord):
-            d_nodes[i] = {'children': [], 'freqs':[]}
+            d_nodes[i] = {'children': [], 'freqs': []}
             for j in y_coord[x_coord == i]:
                 d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
 
                 if j not in d_net_nodes.keys():
-                    d_net_nodes[j] = {'children': [], 'freqs':[]}
+                    d_net_nodes[j] = {'children': [], 'freqs': []}
 
     elif key == 'output':
         x_coord, y_coord = mat.nonzero()
         for j in set(y_coord):
-            d_nodes[j] = {'parents': [], 'freqs':[]}
+            d_nodes[j] = {'parents': [], 'freqs': []}
             for i in x_coord[y_coord == j]:
                 d_nodes[j]['parents'] += [('network_{}'.format(i), mat[i, j])]
 
                 if i not in d_net_nodes.keys():
-                    d_net_nodes[i] = {'children': [], 'freqs':[]}
+                    d_net_nodes[i] = {'children': [], 'freqs': []}
 
     elif key == 'network':
         x_coord, y_coord = mat.nonzero()
@@ -136,7 +136,7 @@ def set_nodes(mat, key, d_net_nodes={}):
 
             if i in d_net_nodes.keys():
                 d_net_nodes.pop(i)
-            d_nodes[i] = {'children': [], 'freqs':[]}
+            d_nodes[i] = {'children': [], 'freqs': []}
             for j in y_coord[x_coord == i]:
                 d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
 

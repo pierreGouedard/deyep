@@ -286,10 +286,10 @@ def Chi(x):
         return 0
 
 
-def Chi_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
+def Chi_fourrier(x, l_basis, n_jobs=1, freq_map=None):
 
     # Get N
-    N = int(np.round(1. / pow(np.linalg.norm(l_coefs[0]), 2)))
+    N = int(np.round(1. / pow(np.linalg.norm(l_basis[0]), 2)))
 
     if n_jobs != 1:
 
@@ -299,15 +299,15 @@ def Chi_fourrier(x, l_coefs, n_jobs=1, freq_map=None):
         chip = ChiFourrierParallel(N, freq_map=freq_map)
 
         # Parallel inner product
-        res = sum(p.map(chip.f, zip([x] * len(l_coefs), l_coefs)))
+        res = sum(p.map(chip.f, zip([x] * len(l_basis), l_basis)))
 
     else:
         res = 0
         # set freq map to identity in case None
         if freq_map is None:
-            freq_map = dict(zip(l_coefs, l_coefs))
+            freq_map = dict(zip(l_basis, l_basis))
 
-        for c in l_coefs:
+        for c in l_basis:
             res += Chi(np.round(np.real(inner_product(get_fourrier_series(x, N=N), get_fourrier_series(c))))) * \
                    freq_map[c]
 

@@ -61,13 +61,21 @@ def bit(sax_I, sax_snb):
     return sax_sib
 
 
-def bop(sax_so, sax_got):
+def bop(sax_so, sax_got, N):
 
+    # Get activated outputs and normalize signal
     sax_active = csc_matrix([sax_so[0, i] != 0 for i in range(sax_so.shape[-1])])
 
+    # Apply function chi (fourrier series domain) to output signal
+    l_basis = [la.get_fourrier_coef_from_params(N, k) for k in range(N / 2)]
+    for i in range(sax_so.shape[-1]):
+        sax_so[:, i] = np.array([la.Chi_fourrier(sax_so[:, i], l_basis,  n_jobs=0)]).transpose()
+
+    # Compute feedback
     no = sax_active.shape[1]
     sax_sob = ((2 * sax_got) - sax_active)\
         .dot(csc_matrix((sax_active.data, (sax_active.nonzero()[1], sax_active.nonzero()[1])), shape=(no, no)))
+
     sax_sob = sax_so.dot(csc_matrix((sax_sob.data, (sax_sob.nonzero()[1], sax_sob.nonzero()[1])), shape=(no, no)))
 
     return sax_sob
