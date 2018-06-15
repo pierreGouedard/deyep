@@ -35,35 +35,55 @@ class InnerProductParallel(object):
 
 
 class ChiFourrierParallel(object):
-    def __init__(self, N, freq_map=None):
-        self.freq_map = freq_map
+    def __init__(self, N, coef='all'):
         self.N = N
 
+        # Assert correct value for coef
+        assert(coef in [None, 'all', 'left', 'right'])
+
+        self.coef = coef
+
     def f(self, t):
+        if self.coef == 'all':
+            res = Chi(np.round(np.real(inner_product(get_fourrier_series(t[0], N=self.N), get_fourrier_series(t[1])))))
+            res *= get_fourrier_series(t[1])
+        elif self.coef == 'left':
+            res = Chi(np.round(np.real(inner_product(get_fourrier_series(t[0], N=self.N), t[1]))))
+            res *= t[1]
 
-        res = Chi(np.round(np.real(inner_product(get_fourrier_series(t[0], N=self.N), get_fourrier_series(t[1])))))
-
-        if self.freq_map is not None:
-            res *= self.freq_map[t[1]]
+        elif self.coef == 'right':
+            res = Chi(np.round(np.real(inner_product(t[0], get_fourrier_series(t[1], N=self.N)))))
+            res *= get_fourrier_series(t[1])
         else:
+            res = Chi(np.round(np.real(inner_product(t[0], t[1]))))
             res *= t[1]
 
         return res
 
 
 class UpsilonFourrierParallel(object):
-    def __init__(self, N, freq_map=None):
-        self.freq_map = freq_map
+
+    def __init__(self, N):
         self.N = N
+        # Assert correct value for coef
+        assert(coef in [None, 'all', 'left', 'right'])
+
+        self.coef = coef
 
     def f(self, t):
+        if self.coef == 'all':
+            res = np.round(np.real(inner_product(get_fourrier_series(t[0], self.N), get_fourrier_series(t[1]))))
+            res = Upsilon(res) * get_fourrier_series(t[1])
+        elif self.coef == 'left':
+            res = np.round(np.real(inner_product(get_fourrier_series(t[0], self.N), t[1])))
+            res = Upsilon(res) * t[1]
 
-        res = Upsilon(np.round(np.real(inner_product(get_fourrier_series(t[0], self.N), get_fourrier_series(t[1])))))
-
-        if self.freq_map is not None:
-            res *= self.freq_map[t[1]]
+        elif self.coef == 'right':
+            res = np.round(np.real(inner_product(t[0], get_fourrier_series(t[1], self.N))))
+            res = Upsilon(res) * get_fourrier_series(t[1])
         else:
-            res *= t[1]
+            res = np.round(np.real(inner_product(t[0], t[1])))
+            res = Upsilon(res) * t[1]
 
         return res
 
@@ -286,7 +306,7 @@ def Chi(x):
         return 0
 
 
-def Chi_fourrier(x, l_basis, n_jobs=1, freq_map=None):
+def Chi_fourrier(x, l_basis, n_jobs=1):
 
     # Get N
     N = int(np.round(1. / pow(np.linalg.norm(l_basis[0]), 2)))
@@ -296,7 +316,7 @@ def Chi_fourrier(x, l_basis, n_jobs=1, freq_map=None):
         p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
         # Instantiate class that implement inner product
-        chip = ChiFourrierParallel(N, freq_map=freq_map)
+        chip = ChiFourrierParallel(N, coef='right')
 
         # Parallel inner product
         res = sum(p.map(chip.f, zip([x] * len(l_basis), l_basis)))
