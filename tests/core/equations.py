@@ -4,7 +4,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 # Local import
-from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu
+from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu, bou, biu
 from tests.comon import get_mat_from_path
 from deyep.core.constructors.constructors import Constructor
 from deyep.core.tools.linear_algebra import inner_product
@@ -191,23 +191,59 @@ class TestEquations(unittest.TestCase):
         l_network_active = [False, True, True, False, False]
         sax_so, sax_C = compute_forward_pass(l_network_active, self.dn)
 
+        # Save candidate and active network nodes
+        sax_Cb = sax_C.copy()
+        sax_activation = csc_matrix(np.array([l_network_active]).repeat(self.dn.O.shape[1], axis=0))
+        sax_got = csc_matrix([1, 0, 0])
+        # Set node level
+        for node in self.dn.network_nodes:
+            node.level = 1
+
         # Create backward signals for output and network
-        sax_sob = bop(sax_so, csc_matrix([1, 0, 0]), self.N)
+        sax_sob = bop(sax_so, sax_got, self.N)
 
         sax_snb = csc_matrix(np.zeros([self.N, len(l_network_active)], dtype=np.complex))
 
         sax_snb[:, 1] = np.array([self.dn.network_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
         sax_snb[:, 2] = np.array([-1 * self.dn.network_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
+        Dw_ = self.dn.Dw.copy()
 
         # Test BDU & BLU
-        bdu(sax_snb, self.dn.Dw, self.dn.network_nodes)
+        bdu(sax_snb, self.dn)
+
+        self.assertEqual([node.level for node in self.dn.network_nodes], [1]*len(self.dn.network_nodes))
+        self.assertTrue(self.dn.Dw[0, 1] == Dw_[0, 1] + 1)
+        self.assertTrue(self.dn.Dw[0, 2] == Dw_[0, 2] - 1)
+
+        bdu(sax_snb, self.dn, penalty=100)
+        self.assertTrue(self.dn.D[0, 2] == 0)
+        self.assertTrue(self.dn.network_nodes[2].level == 0)
+        self.dn.deep_network['Dw'] = Dw_
 
         # Test BOU
+        Ow_ = self.dn.Ow
+        bou(sax_sob, sax_activation, self.dn)
+
+        self.assertTrue(self.dn.Ow[1, 0] == Ow_[1, 0] + 1)
+        self.assertTrue(self.dn.Ow[2, 1] == Ow_[2, 1] - 1)
+        self.dn.deep_network['Ow'] = Ow_
 
         # Test BIU
+        Iw_ = self.dn.Iw
+        sax_snb[:, 0] = np.array([self.dn.input_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
+        sax_snb[:, 2] = np.array([-1 * self.dn.input_nodes[1].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
+
+        biu(sax_snb, self.dn)
+
+        self.assertTrue(self.dn.Iw[0, 0] == Iw_[0, 0] + 1)
+        self.assertTrue(self.dn.Iw[1, 2] == Iw_[1, 2] - 1)
 
         # Test BCU
-        #bcu(sax_sob, sax_Cb, self.dn)
+        Cm_ = self.dn.Cm.copy()
+        bcu(sax_got, sax_Cb, self.dn, w0=10)
+
+        self.assertTrue(self.dn.Ow[sax_Cb] == 10)
+        self.assertTrue((self.dn.Ow[~sax_Cb.toarray()] == Cm_[~sax_Cb.toarray()]).all())
 
 
 def create_signals_forward(l_ia, l_na, dn):

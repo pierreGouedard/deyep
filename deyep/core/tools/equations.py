@@ -44,7 +44,7 @@ def fcp(l_actives, sax_Cm):
     sax_C = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
     sax_C -= sax_Cm
 
-    return csc_matrix((sax_C.data > 0, sax_C.indices, sax_C.indptr), shape=sax_C.shape).toarray()
+    return csc_matrix((sax_C.data > 0, sax_C.indices, sax_C.indptr), shape=sax_C.shape)
 
 
 def bnt(sax_D, sax_O, sax_snb, sax_sob, sax_activation):
@@ -95,10 +95,14 @@ def bnp(l_nodes, sax_snb):
     return sax_snb_.transpose()
 
 
-def bcu(sax_sob, sax_Cb, dn):
-    # Simply follow the theoretical equation and update deep network's Cm and O
+def bcu(sax_got, sax_Cb, dn, w0=1):
 
-    raise NotImplementedError
+    for i in range(sax_got.shape[1]):
+        sax_Cb[:, i] = sax_Cb[:, i] * sax_got[0, i] > 0
+
+    # Update candidate memory and output edges
+    dn.deep_network['Cm'] += sax_Cb
+    dn.deep_network['Ow'] += sax_Cb * w0
 
 
 class BduParallel(object):
@@ -111,10 +115,10 @@ class BduParallel(object):
         return t[0], res
 
 
-def bdu(sax_snb, Dw, l_nodes):
+def bdu(sax_snb, dn, penalty=1.):
 
     # Decompose Dw
-    l_indices = zip(*Dw.nonzero())
+    l_indices = zip(*dn.Dw.nonzero())
 
     p = Pool(cpu_count())
 
@@ -122,22 +126,78 @@ def bdu(sax_snb, Dw, l_nodes):
     bdup = BduParallel()
 
     # Parallel inner product
-    l_res = p.map(bdup.f, [((i, j), l_nodes[i], sax_snb[:, j].toarray()[:, 0]) for (i, j) in l_indices])
+    l_res = p.map(bdup.f, [((i, j), dn.network_nodes[i], sax_snb[:, j].toarray()[:, 0]) for (i, j) in l_indices])
 
-    # TODO: create update matrix D from l_re
+    Du = csc_matrix(dn.Dw.shape)
+    for (i, j), x in filter(lambda x: x!=0, l_res):
+        Du[i, j] = min(x * penalty, 1.)
 
+    # Update level
+    ax_removed = ((dn.Dw + Du) < 0).sum(axis=0)
+    for _, i in zip(*ax_removed.nonzero()):
+        if dn.network_nodes[i].level > 0:
+            dn.network_nodes[i].level -= max(ax_removed[0, i], 0)
 
-
-
-
-
-
-
-
-
-
-
+    dn.deep_network['Dw'] += Du
 
 
+class BouParallel(object):
+
+    def f(self, t):
+        res = 0
+        for x in t[1].frequency_stack.fourrier_basis(free=False):
+            res += np.round(np.real(la.inner_product(x, t[2])))
+
+        return t[0], res
 
 
+def bou(sax_sob, sax_activation, dn, penalty=1.):
+
+    # Decompose Dw
+    l_indices = zip(*dn.Ow.multiply(sax_activation.transpose()).nonzero())
+
+    p = Pool(cpu_count())
+
+    # Instantiate class that implement inner product
+    boup = BouParallel()
+
+    # Parallel inner product
+    l_res = p.map(boup.f, [((i, j), dn.network_nodes[i], sax_sob[:, j].toarray()[:, 0]) for (i, j) in l_indices])
+
+    Ou = csc_matrix(dn.Ow.shape)
+
+    for (i, j), x in filter(lambda x: x!=0, l_res):
+        Ou[i, j] = min(x * penalty, 1.)
+
+    dn.deep_network['Ow'] += Ou
+
+
+class BiuParallel(object):
+
+    def f(self, t):
+        res = 0
+        for x in t[1].frequency_stack.fourrier_basis(free=False):
+            res += np.round(np.real(la.inner_product(x, t[2])))
+
+        return t[0], res
+
+
+def biu(sax_snb, dn, penalty=1.):
+
+    # Decompose Dw
+    l_indices = zip(*dn.Iw.nonzero())
+
+    p = Pool(cpu_count())
+
+    # Instantiate class that implement inner product
+    biup = BouParallel()
+
+    # Parallel inner product
+    l_res = p.map(biup.f, [((i, j), dn.input_nodes[i], sax_snb[:, j].toarray()[:, 0]) for (i, j) in l_indices])
+
+    Iu = csc_matrix(dn.Iw.shape)
+
+    for (i, j), x in filter(lambda x: x!=0, l_res):
+        Iu[i, j] = min(x * penalty, 1.)
+
+    dn.deep_network['Iw'] += Iu
