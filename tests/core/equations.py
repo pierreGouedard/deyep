@@ -7,7 +7,6 @@ from scipy.sparse import csc_matrix
 from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu, bou, biu
 from tests.comon import get_mat_from_path
 from deyep.core.constructors.constructors import Constructor
-from deyep.core.tools.linear_algebra import inner_product
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -82,7 +81,7 @@ class TestEquations(unittest.TestCase):
         res_fnt = fnt(self.dn.D, self.dn.I, sax_sn, sax_si)
 
         # Test FNP
-        sax_sn = fnp(res_fnt, self.dn.network_nodes)
+        _ = fnp(res_fnt, self.dn.network_nodes)
         sax_C = fcp([n.active for n in self.dn.network_nodes], self.dn.Cm)
 
         self.assertEqual([n.active for n in self.dn.network_nodes], [True] * 4 + [False])
