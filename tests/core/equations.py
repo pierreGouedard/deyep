@@ -5,8 +5,8 @@ from scipy.sparse import csc_matrix
 
 # Local import
 from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu, bou, biu
-from tests.comon import get_mat_from_path
-from deyep.core.constructors.constructors import Constructor
+from deyep.core.builder.comon import mat_from_tuples
+from deyep.core.deep_network import DeepNetwork
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -25,8 +25,8 @@ class TestEquations(unittest.TestCase):
                   [('input_1', 'network_2')]
 
         # Get matrices from list of edges and build network
-        self.mat_in, self.mat_net, self.mat_out = get_mat_from_path(l_edges, self.n_i, self.n_rn, self.n_o)
-        self.dn = Constructor.from_weighted_direct_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity)
+        self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
+        self.dn = DeepNetwork.from_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity)
         self.N = self.dn.network_nodes[0].frequency_stack.N
         # Create another very large to test complecity
 

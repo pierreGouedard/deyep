@@ -2,8 +2,7 @@
 import unittest
 
 # Local import
-from deyep.core.constructors.constructors import set_nodes, set_frequencies
-from tests.comon import get_mat_from_path
+from deyep.core.builder.comon import set_nodes_from_mat, set_frequencies, mat_from_tuples
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -20,7 +19,7 @@ class TestConstructor(unittest.TestCase):
                   [('input_1', 'network_2')]
 
         # Get matrices from list of edges and build network
-        self.mat_in, self.mat_net, self.mat_out = get_mat_from_path(l_edges, n_i, n_rn, n_o)
+        self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, n_i, n_rn, n_o)
 
     def test_deepnet_building(self):
         """
@@ -30,9 +29,9 @@ class TestConstructor(unittest.TestCase):
         """
 
         # Build dictionary of nodes
-        d_inputs, d_net_ = set_nodes(self.mat_in, 'input')
-        d_outputs, d_net_ = set_nodes(self.mat_out, 'output', d_net_nodes=d_net_)
-        d_networks, _ = set_nodes(self.mat_net, 'network', d_net_nodes=d_net_)
+        d_inputs, d_net_ = set_nodes_from_mat(self.mat_in, 'input')
+        d_outputs, d_net_ = set_nodes_from_mat(self.mat_out, 'output', d_net_nodes=d_net_)
+        d_networks, _ = set_nodes_from_mat(self.mat_net, 'network', d_net_nodes=d_net_)
 
         self.assertEqual(len(d_inputs), self.mat_in.shape[0])
         self.assertEqual(len(d_networks), self.mat_net.shape[0])

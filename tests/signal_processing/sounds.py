@@ -147,7 +147,7 @@ class TestSoundUtils(unittest.TestCase):
 
     def test_spectograms_discretization_reconstruction(self):
         """
-        Check reconsruction of a signal that has gone through a 'by part' stft
+        Check reconsruction of a signal that has gone through a 'by part' stft + dicretization
 
         python -m unittest tests.signal_processing.sounds.TestSoundUtils.test_spectograms_discretization_reconstruction
 

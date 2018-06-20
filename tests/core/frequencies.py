@@ -4,9 +4,9 @@ import unittest
 from deyep.utils.names import KVName
 
 # Local import
-from tests.comon import get_mat_from_path
-from deyep.core.constructors.constructors import Constructor
-from deyep.core.tools.linear_algebra import inner_product, get_fourrier_series as series
+from deyep.core.tools.linear_algebra import inner_product
+from deyep.core.builder.comon import mat_from_tuples
+from deyep.core.deep_network import DeepNetwork
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -23,9 +23,9 @@ class TestFrequencyStack(unittest.TestCase):
                   [('input_1', 'network_2')]
 
         # Get matrices from list of edges and build network
-        mat_in, mat_net, mat_out = get_mat_from_path(l_edges, self.n_i, self.n_rn, self.n_o)
+        mat_in, mat_net, mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
 
-        self.deep_network_1 = Constructor.from_weighted_direct_matrices(mat_net, mat_in, mat_out, self.capacity)
+        self.deep_network_1 = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, self.capacity)
 
     def test_frequency_stack_basics(self):
         """

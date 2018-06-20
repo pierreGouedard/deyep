@@ -6,7 +6,6 @@ import numpy as np
 # local import
 
 
-
 class TestPattern(object):
     delay = 2
 

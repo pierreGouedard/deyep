@@ -6,7 +6,7 @@ import os
 import settings
 
 
-class Generators(object):
+class Imputer(object):
 
     def __init__(self, project, dirin, dirout):
 
@@ -33,8 +33,6 @@ class Generators(object):
         raise NotImplementedError
 
     def save(self):
-        import IPython
-        IPython.embed()
-        with open(os.path.join(self.dir_gen, 'generator.pickle'), 'wb') as handle:
+        with open(os.path.join(self.dir_gen, 'imputer.pickle'), 'wb') as handle:
             pickle.dump(self, handle)
 

@@ -4,7 +4,7 @@ import os
 
 # Local import
 import settings
-from deyep.core.generators.timefreqgrig import SingleTimeFreqGridGenerator
+from deyep.core.imputer.timefreqgrig import SingleTimeFreqGridGenerator
 
 # Instantiate every element needed for simulation
 project = 'test'

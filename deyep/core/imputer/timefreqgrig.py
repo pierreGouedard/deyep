@@ -6,13 +6,13 @@ from deyep.utils.driver.nmp import NumpyDriver
 from deyep.utils.driver.audio import AudioDriver
 
 # Local import
-from deyep.core.generators.generators import Generators
+from deyep.core.imputer.comon import Imputer
 from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, \
     butter_lowpass_filter, inverse_stft_decomposition
 from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
 
-class SingleTimeFreqGridGenerator(Generators):
+class SingleTimeFreqGridGenerator(Imputer):
 
     def __init__(self, project, dirin, dirout, window='boxcar', noverlap=0, nperseg=2210, maxdurationsegment=10,
                  segoverlap=0.5, maxfrequency=6000, nb_channel=1, n_discrete=100):
@@ -61,7 +61,7 @@ class SingleTimeFreqGridGenerator(Generators):
         # Set driver
         driver = NumpyDriver()
 
-        # Save input and output file as partitionner numpy array
+        # Save input and output file as partitioner numpy array
         d_raw_features = driver.read_partitioned_file(url, is_sparse=True)
 
         return d_raw_features
@@ -98,7 +98,7 @@ class SingleTimeFreqGridGenerator(Generators):
         # Optimize parameter of decomposition
         self.nperseg = optimize_segmentation(self.nperseg, self.maxdurationsegment, self.samplingrate)
 
-        # Low pass signal to remove unecessary  high frequency noise
+        # Low pass signal to remove unecessary high frequency noise
         self.raw_data = butter_lowpass_filter(self.raw_data, self.maxfrequency, self.samplingrate, order=5)
 
         # Decompose the Signal in multiple stft segment
