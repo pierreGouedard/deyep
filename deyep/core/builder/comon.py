@@ -51,7 +51,7 @@ def mat_from_nodes(l_nodes):
     raise NotImplementedError
 
 
-def nodes_from_mat(mat_in, mat_out, mat_net, capacity):
+def nodes_from_mat(mat_net, mat_in, mat_out, capacity, l0=10, tau=5):
 
     # Get dict of nodes
     d_inputs, d_net_ = set_nodes_from_mat(mat_in, 'input')
@@ -67,12 +67,14 @@ def nodes_from_mat(mat_in, mat_out, mat_net, capacity):
     # Finally, build nodes
     l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
                 for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)]
-    l_networks = [nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
-                  for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)]
+    l_networks = [
+        nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'], l0, tau)
+        for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
+        ]
     l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
                  for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 
-    return l_inputs, l_networks, l_outputs
+    return l_inputs, l_outputs, l_networks
 
 
 def set_nodes_from_mat(mat, key, d_net_nodes={}):

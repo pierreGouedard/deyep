@@ -58,13 +58,15 @@ class OutputNode(Node):
 
 class NetworkNode(Node):
 
-    def __init__(self, id, type, frequency_stack, children, values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
+    def __init__(self, id, type, frequency_stack, children, l0,  tau,  values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
         # Set inherited attributes
         Node.__init__(self, id, type, values)
 
         # Set specific attributes
         self.active = False
-        self.level = 0
+        self.d_levels = {i: l0 for i in range(1, 100)}
+        self.d_levels.update({0: 0})
+        self.tau = tau
         self.frequency_stack = frequency_stack
         self.children = children
 

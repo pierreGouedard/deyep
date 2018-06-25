@@ -18,7 +18,8 @@ def fot(sax_O, sax_sn):
 
 
 def fnp(sax_fnt, l_nodes):
-    sax_sn = csc_matrix(sax_fnt.shape)
+
+    sax_sn = csc_matrix((sax_fnt.shape[1], sax_fnt.shape[0]))
 
     # Init activation param of the nodes
     for n in l_nodes:
@@ -28,14 +29,11 @@ def fnp(sax_fnt, l_nodes):
     for i in np.unique(sax_fnt.nonzero()[1]):
         s_out, level = l_nodes[i].frequency_stack.encode(sax_fnt[:, i].toarray()[:, 0], return_level=True)
 
-        if level >= l_nodes[i].level:
+        if l_nodes[i].d_levels[level] >= l_nodes[i].tau:
             l_nodes[i].active = True
-            sax_sn[:, i] = np.array([s_out]).transpose()
+            sax_sn[i, :] = s_out
 
-        if l_nodes[i].level == 0:
-            l_nodes[i].level = level
-
-    return sax_sn
+    return sax_sn.transpose()
 
 
 def fcp(l_actives, sax_Cm):
@@ -90,7 +88,13 @@ def bnp(l_nodes, sax_snb):
     sax_snb_ = csc_matrix((sax_snb.shape[1], sax_snb.shape[0]))
     for i in range(sax_snb.shape[1]):
         if sax_snb[:, i].nnz > 0:
-            sax_snb_[i, :] = l_nodes[i].frequency_stack.decode(sax_snb.toarray()[:, i])
+            s, d_levels = l_nodes[i].frequency_stack.decode(sax_snb.toarray()[:, i], d_levels={})
+
+            # Update Levels and backward signal
+            for k, v in d_levels.items():
+                l_nodes[i].d_levels[k] += v
+
+            sax_snb_[i, :] = s
 
     return sax_snb_.transpose()
 
@@ -101,8 +105,8 @@ def bcu(sax_got, sax_Cb, dn, w0=1):
         sax_Cb[:, i] = sax_Cb[:, i] * sax_got[0, i] > 0
 
     # Update candidate memory and output edges
-    dn.deep_network['Cm'] += sax_Cb
-    dn.deep_network['Ow'] += sax_Cb * w0
+    dn.graph['Cm'] += sax_Cb
+    dn.graph['Ow'] += sax_Cb * w0
 
 
 class BduParallel(object):
@@ -129,16 +133,10 @@ def bdu(sax_snb, dn, penalty=1.):
     l_res = p.map(bdup.f, [((i, j), dn.network_nodes[i], sax_snb[:, j].toarray()[:, 0]) for (i, j) in l_indices])
 
     Du = csc_matrix(dn.Dw.shape)
-    for (i, j), x in filter(lambda x: x!=0, l_res):
+    for (i, j), x in filter(lambda x: x != 0, l_res):
         Du[i, j] = min(x * penalty, 1.)
 
-    # Update level
-    ax_removed = ((dn.Dw + Du) < 0).sum(axis=0)
-    for _, i in zip(*ax_removed.nonzero()):
-        if dn.network_nodes[i].level > 0:
-            dn.network_nodes[i].level -= max(ax_removed[0, i], 0)
-
-    dn.deep_network['Dw'] += Du
+    dn.graph['Dw'] += Du
 
 
 class BouParallel(object):
@@ -169,7 +167,7 @@ def bou(sax_sob, sax_activation, dn, penalty=1.):
     for (i, j), x in filter(lambda x: x!=0, l_res):
         Ou[i, j] = min(x * penalty, 1.)
 
-    dn.deep_network['Ow'] += Ou
+    dn.graph['Ow'] += Ou
 
 
 class BiuParallel(object):
@@ -200,4 +198,4 @@ def biu(sax_snb, dn, penalty=1.):
     for (i, j), x in filter(lambda x: x!=0, l_res):
         Iu[i, j] = min(x * penalty, 1.)
 
-    dn.deep_network['Iw'] += Iu
+    dn.graph['Iw'] += Iu
