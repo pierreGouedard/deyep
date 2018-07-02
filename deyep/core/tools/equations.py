@@ -33,7 +33,7 @@ def fnp(sax_fnt, l_nodes):
             l_nodes[i].active = True
             sax_sn[i, :] = s_out
 
-    return sax_sn.transpose()
+    return sax_sn.transpose(), np.array([n.active for n in l_nodes])
 
 
 def fcp(l_actives, sax_Cm):
@@ -43,6 +43,10 @@ def fcp(l_actives, sax_Cm):
     sax_C -= sax_Cm
 
     return csc_matrix((sax_C.data > 0, sax_C.indices, sax_C.indptr), shape=sax_C.shape)
+
+
+def buffer(sax_C, ax_sa, no, sax_so):
+    return sax_C.copy(), csc_matrix(np.array([ax_sa]).repeat(no, axis=0)), sax_so.copy()
 
 
 def bnt(sax_D, sax_O, sax_snb, sax_sob, sax_activation):

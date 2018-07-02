@@ -8,12 +8,13 @@ from deyep.core.builder import comon
 
 class DeepNetwork(object):
 
-    def __init__(self, w0, input_nodes, output_nodes, network_nodes, graph, seed=None):
+    def __init__(self, w0, input_nodes, output_nodes, network_nodes, graph, n_freq, seed=None):
 
         self.seed = seed
         self.w0 = w0
 
         # Nodes
+        self.n_freq = n_freq
         self.input_nodes = [] if input_nodes is None else input_nodes
         self.output_nodes = [] if output_nodes is None else output_nodes
         self.network_nodes = [] if network_nodes is None else network_nodes
@@ -53,11 +54,12 @@ class DeepNetwork(object):
         return self.graph['Cm']
 
     @staticmethod
-    def from_matrices(mat_net, mat_in, mat_out, capacity, seed=None, w0=1):
-        l_inputs, l_outputs, l_networks = comon.nodes_from_mat(mat_net, mat_in, mat_out, capacity)
+    def from_matrices(mat_net, mat_in, mat_out, capacity, seed=None, w0=10):
+        l_inputs, l_outputs, l_networks, n_freq = comon.nodes_from_mat(mat_net, mat_in, mat_out, capacity)
         d_graph = {'Iw': mat_in, 'Dw': mat_net, 'Ow': mat_out, 'Cm': mat_out}
 
-        return DeepNetwork(w0, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks, graph=d_graph)
+        return DeepNetwork(w0, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
+                           n_freq=n_freq, graph=d_graph, seed=seed)
 
     @staticmethod
     def from_nodes(w0, input_nodes, output_nodes, network_nodes, seed=None):

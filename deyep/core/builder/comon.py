@@ -63,6 +63,7 @@ def nodes_from_mat(mat_net, mat_in, mat_out, capacity, l0=10, tau=5):
 
     # distribute frequencies among network nodes
     d_networks, set_freqs = set_frequencies(d_networks, set_freqs, capacity, l_=d_inputs.values())
+    n_freq = 2 * max(set_freqs)
 
     # Finally, build nodes
     l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
@@ -74,7 +75,7 @@ def nodes_from_mat(mat_net, mat_in, mat_out, capacity, l0=10, tau=5):
     l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
                  for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 
-    return l_inputs, l_outputs, l_networks
+    return l_inputs, l_outputs, l_networks, n_freq
 
 
 def set_nodes_from_mat(mat, key, d_net_nodes={}):

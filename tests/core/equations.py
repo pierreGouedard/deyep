@@ -4,7 +4,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 # Local import
-from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu, bou, biu
+from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu, bou, biu, buffer
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.deep_network import DeepNetwork
 
@@ -35,8 +35,7 @@ class TestEquations(unittest.TestCase):
         python -m unittest tests.core.equations.TestEquations.test_forward_transmiting
 
         """
-        import IPython
-        IPython.embed()
+
         # Create forward messages
         l_input_active = [True, False]
         l_network_active = [True, False, False, True, False]
@@ -82,8 +81,8 @@ class TestEquations(unittest.TestCase):
         res_fnt = fnt(self.dn.D, self.dn.I, sax_sn, sax_si)
 
         # Test FNP
-        _ = fnp(res_fnt, self.dn.network_nodes)
-        sax_C = fcp([n.active for n in self.dn.network_nodes], self.dn.Cm)
+        _, ax_sa = fnp(res_fnt, self.dn.network_nodes)
+        sax_C = fcp(ax_sa, self.dn.Cm)
 
         self.assertEqual([n.active for n in self.dn.network_nodes], [True] * 4 + [False])
         self.assertEqual(len(self.dn.network_nodes[2].frequency_stack.map.items()[0][1]), 2)
@@ -96,16 +95,18 @@ class TestEquations(unittest.TestCase):
         """
         # Compute forward pass
         l_network_active = [False, True, True, False, False]
-        sax_so, sax_C = compute_forward_pass(l_network_active, self.dn)
+        sax_so, sax_C, ax_sa = compute_forward_pass(l_network_active, self.dn)
+
+        # buffer signals of interest
+        sax_Cb, sax_sab, sax_sob = buffer(sax_C, ax_sa, self.dn.O.shape[1], sax_so)
 
         # Compute bop
         sax_sob = bop(sax_so, csc_matrix([1, 0, 0]), self.N)
 
-        sax_actives, sax_snb = csc_matrix(np.array([l_network_active]).repeat(self.dn.O.shape[1], axis=0)), \
-            csc_matrix(np.zeros([self.N, len(l_network_active)]), dtype=np.complex)
+        sax_snb = csc_matrix(np.zeros([self.N, len(l_network_active)]), dtype=np.complex)
 
         # Test BNT sax_bnp is empty
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_actives)
+        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_sab)
 
         for i, b in enumerate(l_network_active):
             if not b:
@@ -123,7 +124,7 @@ class TestEquations(unittest.TestCase):
         sax_snb[:, 1] = sax_sob[:, 0]
         sax_snb[:, 2] = sax_sob[:, 1]
 
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_actives)
+        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_sab)
 
         self.assertEqual(len(sax_snb[0, :].nonzero()[1]), 3)
 
@@ -149,11 +150,10 @@ class TestEquations(unittest.TestCase):
         """
         # Compute forward pass and backward transmiting
         l_network_active = [False, True, True, False, False]
-        sax_so, sax_C = compute_forward_pass(l_network_active, self.dn)
+        sax_so, sax_C, ax_sa = compute_forward_pass(l_network_active, self.dn)
 
-        # Save candidate and active network nodes
-        sax_Cb = sax_C.copy()
-        sax_activation = csc_matrix(np.array([l_network_active]).repeat(self.dn.O.shape[1], axis=0))
+        # buffer signals of interest
+        sax_Cb, sax_sab, sax_sob = buffer(sax_C, ax_sa, self.dn.O.shape[1], sax_so)
 
         # Test BOP
         sax_sob = bop(sax_so, csc_matrix([1, 0, 0]), self.N)
@@ -170,7 +170,7 @@ class TestEquations(unittest.TestCase):
         sax_snb[:, 1] = sax_sob[:, 0]
         sax_snb[:, 2] = sax_sob[:, 1]
 
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_activation)
+        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_sab)
 
         # Test BNP
         sax_snb = bnp(self.dn.network_nodes, sax_snb)
@@ -189,11 +189,11 @@ class TestEquations(unittest.TestCase):
          """
         # Compute forward pass and backward transmiting
         l_network_active = [False, True, True, False, False]
-        sax_so, sax_C = compute_forward_pass(l_network_active, self.dn)
+        sax_so, sax_C, ax_sa = compute_forward_pass(l_network_active, self.dn)
 
         # Save candidate and active network nodes
-        sax_Cb = sax_C.copy()
-        sax_activation = csc_matrix(np.array([l_network_active]).repeat(self.dn.O.shape[1], axis=0))
+        # buffer signals of interest
+        sax_Cb, sax_sab, sax_sob = buffer(sax_C, ax_sa, self.dn.O.shape[1], sax_so)
         sax_got = csc_matrix([1, 0, 0])
 
         # Create backward signals for output and network
@@ -205,7 +205,7 @@ class TestEquations(unittest.TestCase):
         sax_snb[:, 2] = np.array([-1 * self.dn.network_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
         Dw_ = self.dn.Dw.copy()
 
-        # Test BDU & BLU
+        # Test BDU
         bdu(sax_snb, self.dn)
         self.assertTrue(self.dn.Dw[0, 1] == Dw_[0, 1] + 1)
         self.assertTrue(self.dn.Dw[0, 2] == Dw_[0, 2] - 1)
@@ -216,7 +216,7 @@ class TestEquations(unittest.TestCase):
 
         # Test BOU
         Ow_ = self.dn.Ow
-        bou(sax_sob, sax_activation, self.dn)
+        bou(sax_sob, sax_sab, self.dn)
 
         self.assertTrue(self.dn.Ow[1, 0] == Ow_[1, 0] + 1)
         self.assertTrue(self.dn.Ow[2, 1] == Ow_[2, 1] - 1)
@@ -262,6 +262,6 @@ def compute_forward_pass(l_na, dn):
     sax_so = fot(dn.O, sax_sn)
     sax_C = fcp(l_na, dn.O)
 
-    return sax_so, sax_C
+    return sax_so, sax_C, np.array(l_na)
 
 
