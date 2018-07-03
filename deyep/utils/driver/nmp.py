@@ -1,6 +1,6 @@
 # Global import
 import numpy as np
-from scipy.sparse import save_npz, load_npz, vstack, hstack, coo_matrix
+from scipy.sparse import save_npz, load_npz, vstack, hstack, coo_matrix, csc_matrix, csr_matrix
 
 
 # Local import
@@ -12,11 +12,11 @@ class NumpyDriver(FileDriver):
 
     def __init__(self,):
         self.d_stream = None
-        FileDriver.__init__(self, 'audio driver', 'Driver use to read / write any numpy arrays')
+        FileDriver.__init__(self, 'numpy driver', 'Driver use to read / write any numpy arrays')
 
     def read_file(self, url, **kwargs):
         if kwargs.get('is_sparse', False):
-            ax = load_npz(url).tolil()
+            ax = load_npz(url).tocsc()
         else:
             ax = np.load(url)
 

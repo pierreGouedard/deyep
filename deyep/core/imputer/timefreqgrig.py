@@ -6,18 +6,18 @@ from deyep.utils.driver.nmp import NumpyDriver
 from deyep.utils.driver.audio import AudioDriver
 
 # Local import
-from deyep.core.imputer.comon import Imputer
+from deyep.core.imputer.comon import ImputerSingleSource
 from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, \
     butter_lowpass_filter, inverse_stft_decomposition
 from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
 
-class SingleTimeFreqGridGenerator(Imputer):
+class SingleTimeFreqGridGenerator(ImputerSingleSource):
 
     def __init__(self, project, dirin, dirout, window='boxcar', noverlap=0, nperseg=2210, maxdurationsegment=10,
                  segoverlap=0.5, maxfrequency=6000, nb_channel=1, n_discrete=100):
 
-        Generators.__init__(self, project, dirin, dirout)
+        ImputerSingleSource.__init__(self, project, dirin, dirout)
 
         # Get source filename for input raw data
         self.src = os.listdir(self.dirin)[0]
@@ -120,12 +120,12 @@ class SingleTimeFreqGridGenerator(Imputer):
             # update meta for stft inversion
             self.meta_stft.update({k: {'window': d_stft[k]['window'], 'size': len(d_stft[k]['freq'])}})
 
-    def run_postprocessing(self, d_raw_features):
+    def run_postprocessing(self, d_features):
         # Build spectograms from features
         d_stft = self.meta_stft.copy()
-        for k in d_raw_features.keys():
+        for k in d_features.keys():
             # Decode signal
-            ax = self.discretizer.decode_2d_array(d_raw_features[k], sparse=True, orient='columns')
+            ax = self.discretizer.decode_2d_array(d_features[k], sparse=True, orient='columns')
 
             # Fill real and imaginary part
             d_stft[k]['re'] = ax[:d_stft[k]['size'], :]

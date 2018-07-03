@@ -28,7 +28,6 @@ class TestEquations(unittest.TestCase):
         self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
         self.dn = DeepNetwork.from_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity)
         self.N = self.dn.network_nodes[0].frequency_stack.N
-        # Create another very large to test complecity
 
     def test_forward_transmiting(self):
         """
