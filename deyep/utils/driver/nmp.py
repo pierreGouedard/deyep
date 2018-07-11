@@ -12,7 +12,7 @@ class NumpyDriver(FileDriver):
 
     def __init__(self,):
         self.d_stream = None
-        FileDriver.__init__(self, 'numpy driver', 'Driver use to read / write any numpy arrays')
+        FileDriver.__init__(self, 'numpy driver', 'Driver use to read / write any numpy arrays', streamable=True)
 
     def read_file(self, url, **kwargs):
         if kwargs.get('is_sparse', False):
@@ -53,8 +53,15 @@ class NumpyDriver(FileDriver):
             else:
                 self.write_file(v, self.join(url, '{}.{}'.format(k, 'npy')))
 
-    def init_stream_partionned_file(self, url, key_partition=lambda x: x, n_cache=2, orient=None, is_sparse=False,
-                                    is_cyclic=False):
+    def init_stream(self, url, is_sparse=False, is_cyclic=False, orient=None):
+        # Initialize file and element cursor
+        self.d_stream = {'orient': orient, 'is_sparse': is_sparse, 'url': url, 'is_cyclic': is_cyclic, 'step': 0,
+                         'cache': self.read_file(url, is_sparse=is_sparse)}
+
+        return self
+
+    def init_stream_partition(self, url, key_partition=lambda x: x, n_cache=2, orient=None, is_sparse=False,
+                              is_cyclic=False):
         """
 
         :param url:
@@ -85,6 +92,44 @@ class NumpyDriver(FileDriver):
 
         # Assert stream has been initiated
         assert self.d_stream is not None, 'Streaming has not been initiated'
+
+        # Case no partition
+        if 'partitions' not in self.d_stream:
+
+            if self.d_stream['cache'].ndim == 1:
+                if self.d_stream['step'] < self.d_stream['cache'].shape[0]:
+                    next_ = self.d_stream['cache'][self.d_stream['step']]
+                else:
+                    return None
+
+                self.d_stream['step'] += 1
+
+                if self.d_stream['is_cyclic']:
+                    self.d_stream['step'] = self.d_stream['step'] % self.d_stream['cache'].shape[0]
+
+            elif self.d_stream['orient'] == 'columns':
+                if self.d_stream['step'] < self.d_stream['cache'].shape[-1]:
+                    next_ = self.d_stream['cache'][:, self.d_stream['step']]
+
+                else:
+                    return None
+
+                self.d_stream['step'] += 1
+
+                if self.d_stream['is_cyclic']:
+                    self.d_stream['step'] = self.d_stream['step'] % self.d_stream['cache'].shape[-1]
+            else:
+                if self.d_stream['step'] < self.d_stream['cache'].shape[0]:
+                    next_ = self.d_stream['cache'][self.d_stream['step'], :]
+                else:
+                    return None
+
+                self.d_stream['step'] += 1
+
+                if self.d_stream['is_cyclic']:
+                    self.d_stream['step'] = self.d_stream['step'] % self.d_stream['cache'].shape[0]
+
+            return next_
 
         # Case stream has ended
         if self.d_stream['cache'] is None:

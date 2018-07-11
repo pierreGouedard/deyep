@@ -9,8 +9,9 @@ import settings
 
 class Driver(object):
 
-    def __init__(self, name, desc):
+    def __init__(self, name, desc, streamable=False):
         self.settings = settings
+        self.streamable = streamable
         self.name = name
         self.desc = desc
 
@@ -138,7 +139,7 @@ class Driver(object):
 
 class FileDriver(Driver):
 
-    def __init__(self, name, desc):
+    def __init__(self, name, desc, streamable=False):
         Driver.__init__(self, name, desc)
 
     def TempFile(self, prefix='tmp', suffix='', dir=None, destination=None, create=False):

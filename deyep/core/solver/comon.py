@@ -40,7 +40,7 @@ class DeepNetSolver(object):
 
             else:
                 # Run backward transmit
-                if self.t / 2 >= self.delay:
+                if (self.t / 2) + 1 >= self.delay:
                     self.backward_transmiting()
 
                 # Run forward processing

@@ -5,10 +5,11 @@ from scipy.sparse import csc_matrix
 
 # Local import
 from tests.utils import testPattern as tp
-from deyep.core.imputer import identity
+from deyep.core.solver.comon import DeepNetSolver
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.deep_network import DeepNetwork
-
+from deyep.utils.driver.nmp import NumpyDriver
+from deyep.core.imputer.identity import DoubleIdentityImputer
 __maintainer__ = 'Pierre Gouedard'
 
 
@@ -35,9 +36,32 @@ class TestSolver(unittest.TestCase):
 
     def test_and_pattern(self):
         """
-        python -m unittest tests.core.solver.TestSolver.test_forward_transmiting
+        python -m unittest tests.core.solver.TestSolver.test_and_pattern
 
         """
+        # Create temporary directory for test
+        driver = NumpyDriver()
+        tmpdirin, tmpdirout = driver.TempDir('test_and_pattern', suffix='in', create=True),  \
+                              driver.TempDir('test_and_pattern', suffix='out', create=True)
+
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.and_pat.generate_io_sequence(100)
+        driver.write_file(csc_matrix(ax_input), driver.join(tmpdirin.path, 'forward.npz'), is_sparse=True)
+        driver.write_file(csc_matrix(ax_output), driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
+
+        # Create and init imputer
+        imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
+        imputer.read_raw_data('forward.npz', 'backward.npz')
+        imputer.run_preprocessing()
+        imputer.write_features('forward.npz', 'backward.npz')
+        imputer.stream_features()
+
+        # Create solver
+        solver = DeepNetSolver(self.and_dn, delay, imputer, p0)
+
+        import IPython
+        IPython.embed()
+
 
 
     def test_xor_pattern(self):

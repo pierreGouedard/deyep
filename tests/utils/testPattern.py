@@ -7,14 +7,14 @@ import numpy as np
 
 
 class TestPattern(object):
-    delay = 2
 
-    def __init__(self, name, input_nodes, network_nodes, output_nodes):
+    def __init__(self, name, input_nodes, network_nodes, output_nodes, delay):
 
         self.name = name
         self.input_nodes = input_nodes
         self.network_nodes = network_nodes
         self.output_nodes = output_nodes
+        self.delay = 0
 
     def build_graph_pattern(self):
         raise NotImplementedError
@@ -45,7 +45,7 @@ class TreePattern(TestPattern):
         network_nodes = ['network_{}'.format(i) for i in range(self.get_size(d, k))]
         output_nodes = ['output_{}'.format(i) for i in range(self.get_size(d, k))]
 
-        TestPattern.__init__(self, 'tree', input_nodes, network_nodes, output_nodes)
+        TestPattern.__init__(self, 'tree', input_nodes, network_nodes, output_nodes, 1)
 
     @staticmethod
     def get_size(d, k):
@@ -121,7 +121,7 @@ class AndPattern(TestPattern):
         network_nodes = ['network_0']
         output_nodes = ['output_0']
 
-        TestPattern.__init__(self, 'and', input_nodes, network_nodes, output_nodes)
+        TestPattern.__init__(self, 'and', input_nodes, network_nodes, output_nodes, 1)
 
     def build_graph_pattern(self):
 
@@ -129,7 +129,7 @@ class AndPattern(TestPattern):
         l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.n)]
 
         # Build output edges
-        l_edges += [zip(self.network_nodes, self.output_nodes)]
+        l_edges += zip(self.network_nodes, self.output_nodes)
 
         return l_edges
 
@@ -183,7 +183,7 @@ class XorPattern(TestPattern):
         network_nodes = ['network_0', 'network_1']
         output_nodes = ['output_0', 'output_1']
 
-        TestPattern.__init__(self, 'xor', input_nodes, network_nodes, output_nodes)
+        TestPattern.__init__(self, 'xor', input_nodes, network_nodes, output_nodes, 1)
 
     def build_graph_pattern(self):
 
@@ -192,7 +192,7 @@ class XorPattern(TestPattern):
         l_edges += [(self.input_nodes[i], self.network_nodes[1]) for i in range(self.na + self.nb)]
 
         # Build output edges
-        l_edges += [zip(self.network_nodes, self.output_nodes)]
+        l_edges += zip(self.network_nodes, self.output_nodes)
 
         return l_edges
 

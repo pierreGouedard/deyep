@@ -100,7 +100,7 @@ class TestDriverNumpy(unittest.TestCase):
 
         # Stream numpy array case 1: non cyclic, n_cahce divide number of partittion
         key = lambda x: int(x.split('_')[1].split('.')[0])
-        stream = self.driver.init_stream_partionned_file(tmp_dir.path, key_partition=key, n_cache=2, orient='columns')
+        stream = self.driver.init_stream_partition(tmp_dir.path, key_partition=key, n_cache=2, orient='columns')
 
         # Make sure the stream is ok
         for k in range(4):
@@ -119,7 +119,7 @@ class TestDriverNumpy(unittest.TestCase):
         assert stream.stream_next() is None
 
         # Stream numpy array case 2: non cyclic, n_cache does not divide number of partittion
-        stream = self.driver.init_stream_partionned_file(tmp_dir.path, key_partition=key, n_cache=4, orient='columns')
+        stream = self.driver.init_stream_partition(tmp_dir.path, key_partition=key, n_cache=4, orient='columns')
 
         # Make sure the stream is ok
         for k in range(2):
@@ -138,7 +138,7 @@ class TestDriverNumpy(unittest.TestCase):
         assert stream.stream_next() is None
 
         # Stream numpy array case 3: cyclic, n_cache does not divide number of partittion
-        stream = self.driver.init_stream_partionned_file(tmp_dir.path, key_partition=key, n_cache=4, orient='columns',
+        stream = self.driver.init_stream_partition(tmp_dir.path, key_partition=key, n_cache=4, orient='columns',
                                                          is_cyclic=True)
 
         # Make sure the stream is ok

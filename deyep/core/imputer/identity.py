@@ -3,50 +3,64 @@ import os
 import scipy.sparse
 import numpy as np
 from deyep.utils.driver.nmp import NumpyDriver
-from deyep.utils.driver.audio import AudioDriver
 
 # Local import
 from deyep.core.imputer.comon import ImputerDoubleSource
-from deyep.utils.signal_processing.sounds import compute_stft_decomposition, optimize_segmentation, \
-    butter_lowpass_filter, inverse_stft_decomposition
-from deyep.utils.signal_processing.various import Discretizer, Normalizer
 
 
-class SingleTimeFreqGridGenerator(ImputerDoubleSource):
+class DoubleIdentityImputer(ImputerDoubleSource):
 
-    def __init__(self, project, dirin, dirout, driver):
+    def __init__(self, project, dirin, dirout, is_sparse=True):
 
         ImputerDoubleSource.__init__(self, project, dirin, dirout)
+        self.driver = NumpyDriver()
+        self.is_sparse = is_sparse
+        self.name_forward, self.name_backward = None, None
 
-        # Get source filename for input raw data
-        self.srcin, self.srcout = {x for x in os.listdir(self.dirin) if 'in' in x}.pop(), \
-                                  {x for x in os.listdir(self.dirin) if 'in' in x}.pop()
+    def read_raw_data(self, name_forward, name_backward):
 
-        self.driver = driver
+        # Read raw data
+        self.raw_data_forward = self.driver.read_file(self.driver.join(self.dirin, name_forward),
+                                                      is_sparse=self.is_sparse)
+        self.raw_data_backward = self.driver.read_file(self.driver.join(self.dirin, name_backward),
+                                                       is_sparse=self.is_sparse)
 
-    def read_raw_data(self, urlin=None, urlout=None):
+    def read_features(self):
 
-        # Set driver and url if necessary
-        driver = AudioDriver()
-        if urlin is None:
-            urlin = driver.join(self.dirin, self.srcin)
+        # Read data
+        self.features_forward = self.driver.read_file(self.driver.join(self.dirout, self.name_forward),
+                                                      is_sparse=self.is_sparse)
+        self.features_backward = self.driver.read_file(self.driver.join(self.dirout, self.name_backward),
+                                                       is_sparse=self.is_sparse)
 
-        if urlout is None:
-            urlout = driver.join(self.dirin, self.srcout)
+    def write_features(self, name_forward, name_backward):
 
-        # read raw data
-        self.raw_data_in = self.driver.read_file(urlin)
-        self.raw_data_out = self.driver.read_file(urlout)
+        # Set urls
+        self.name_forward, self.name_backward = name_forward, name_backward
+        # Write data
+        self.driver.write_file(self.features_forward, self.driver.join(self.dirout, name_forward), is_sparse=True)
+        self.driver.write_file(self.features_backward, self.driver.join(self.dirout, name_backward), is_sparse=True)
 
-    def read_raw_features(self, urlin=None, urlout=None):
-        raise NotImplementedError
+    def stream_features(self, partition=None):
 
-    def write_raw_features(self, urlin=None, urlout=None):
-        raise NotImplementedError
+        # Set urls
+        urlf, urlb = self.driver.join(self.dirout, self.name_forward), self.driver.join(self.dirout, self.name_backward)
+
+        # Stream I/O
+        if partition is not None:
+            self.stream_forward = self.driver.init_stream_partition(urlf, n_cache=1, orient='row',
+                                                                    is_sparse=self.is_sparse, is_cyclic=True)
+            self.stream_backward = self.driver.init_stream_partition(urlb, n_cache=1, orient='row',
+                                                                     is_sparse=self.is_sparse, is_cyclic=True)
+        else:
+            self.stream_forward = self.driver.init_stream(urlf, is_sparse=self.is_sparse, is_cyclic=True,
+                                                          orient='row')
+            self.stream_backward = self.driver.init_stream(urlb, is_sparse=self.is_sparse, is_cyclic=True,
+                                                           orient='row')
 
     def run_preprocessing(self):
-        self.raw_features_in = self.raw_data_in.copy()
-        self.raw_features_out = self.raw_data_out.copy()
+        self.features_forward = self.raw_data_forward.copy()
+        self.features_backward = self.raw_data_backward.copy()
 
     def run_postprocessing(self, d_features):
         raise NotImplementedError

@@ -41,54 +41,52 @@ class SingleTimeFreqGridGenerator(ImputerSingleSource):
         self.discretizer = Discretizer(n_discrete, method='bins')
         self.normalizer = Normalizer()
 
-    def read_raw_data(self, url=None):
+    def read_raw_data(self, name):
 
         # Set driver and url if necessary
         driver = AudioDriver()
-        if url is None:
-            url = driver.join(self.dirin, self.src)
 
         # read raw data
-        self.raw_data, self.samplingrate, _ = driver.read_array_from_file(url, **{'nb_channel': self.nb_channel})
+        self.raw_data, self.samplingrate, _ = driver.read_array_from_file(driver.join(self.dirin, name),
+                                                                          **{'nb_channel': self.nb_channel})
 
         # Assert that attributes are ok
         assert self.maxdurationsegment * self.segoverlap * self.samplingrate > self.nperseg, \
             "The number of sample used for fft of each segment is higher than the length of overlapping windows for " \
             "decomposition"
 
-    def read_raw_features(self, url):
+    def read_features(self):
 
-        # Set driver
+        # Set driver and urls
         driver = NumpyDriver()
+        urlf, urlb = driver.join(self.dirout, self.name_forward), driver.join(self.dirout, self.name_backward)
 
         # Save input and output file as partitioner numpy array
-        d_raw_features = driver.read_partitioned_file(url, is_sparse=True)
+        self.features_forward = driver.read_partitioned_file(urlf, is_sparse=True)
+        self.features_backward = driver.read_partitioned_file(urlb, is_sparse=True)
 
-        return d_raw_features
-
-    def write_raw_features(self, url=None):
+    def write_features(self, name_forward, name_backward):
 
         # Set driver
         driver = NumpyDriver()
 
-        # Set url if necessary
-        if url is None:
-            url = self.dirout
+        # Save names
+        self.name_forward, self.name_backward = name_forward, name_backwards
 
         # Remove raw features if previously built
-        if driver.exists(driver.join(url, 'input')):
-            driver.remove(driver.join(url, 'input'), recursive=True)
+        if driver.exists(driver.join(self.dirout, name_forward)):
+            driver.remove(driver.join(self.dirout, name_forward), recursive=True)
 
-        if driver.exists(driver.join(url, 'output')):
-            driver.remove(driver.join(url, 'output'), recursive=True)
+        if driver.exists(driver.join(self.dirout, name_backward)):
+            driver.remove(driver.join(self.dirout, name_backward), recursive=True)
 
         # Create  output directory
-        driver.makedirs(driver.join(url, 'input'))
-        driver.makedirs(driver.join(url, 'output'))
+        driver.makedirs(driver.join(self.dirout, name_forward))
+        driver.makedirs(driver.join(self.dirout, name_backward))
 
         # Save input and output file as partitionner numpy array
-        driver.write_partioned_file(self.raw_features, driver.join(url, 'input'), is_sparse=True)
-        driver.write_partioned_file(self.raw_features, driver.join(url, 'output'), is_sparse=True)
+        driver.write_partioned_file(self.features_forward, driver.join(self.dirout, name_forward), is_sparse=True)
+        driver.write_partioned_file(self.features_forward, driver.join(self.dirout, name_backward), is_sparse=True)
 
     def run_preprocessing(self):
 
@@ -110,15 +108,17 @@ class SingleTimeFreqGridGenerator(ImputerSingleSource):
                                               method='treshold', **{'treshold': 1e-3})
 
         # Encode the stft and build Input / Output features
-        self.raw_features = dict()
+        self.features_forward = dict()
         for k in d_stft.keys():
-            self.raw_features[k] = scipy.sparse.vstack(
+            self.features_forward[k] = scipy.sparse.vstack(
                 [self.discretizer.encode_2d_array(d_stft[k]['re'], sparse=True, orient='columns'),
                  self.discretizer.encode_2d_array(d_stft[k]['im'], sparse=True, orient='columns')]
             )
 
             # update meta for stft inversion
             self.meta_stft.update({k: {'window': d_stft[k]['window'], 'size': len(d_stft[k]['freq'])}})
+
+        self.features_backward = self.features_backward.copy()
 
     def run_postprocessing(self, d_features):
         # Build spectograms from features
