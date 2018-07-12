@@ -11,9 +11,9 @@ from deyep.core.tools.frequencies import FrequencyStack
 def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
 
     # Init matrices
-    mat_in = csc_matrix(np.zeros([n_i, n_rn]))
-    mat_net = csc_matrix(np.zeros([n_rn, n_rn]))
-    mat_out = csc_matrix(np.zeros([n_rn, n_o]))
+    sax_in = csc_matrix(np.zeros([n_i, n_rn]))
+    sax_net = csc_matrix(np.zeros([n_rn, n_rn]))
+    sax_out = csc_matrix(np.zeros([n_rn, n_o]))
 
     i = 0
     for (_n, n_) in l_edges:
@@ -23,7 +23,7 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
             else:
                 v = weights[i]
 
-            mat_in[int(_n.split('_')[1]), int(n_.split('_')[1])] = v
+            sax_in[int(_n.split('_')[1]), int(n_.split('_')[1])] = v
 
         elif 'network' in _n:
             if 'network' in n_:
@@ -32,7 +32,7 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
                 else:
                     v = weights[i]
 
-                mat_net[int(_n.split('_')[1]), int(n_.split('_')[1])] = v
+                sax_net[int(_n.split('_')[1]), int(n_.split('_')[1])] = v
 
             elif 'output' in n_:
                 if weights == 'random':
@@ -40,23 +40,23 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
                 else:
                     v = weights[i]
 
-                mat_out[int(_n.split('_')[1]), int(n_.split('_')[1])] = v
+                sax_out[int(_n.split('_')[1]), int(n_.split('_')[1])] = v
 
         i += 1
 
-    return mat_in, mat_net, mat_out
+    return sax_in, sax_net, sax_out
 
 
 def mat_from_nodes(l_nodes):
     raise NotImplementedError
 
 
-def nodes_from_mat(mat_net, mat_in, mat_out, capacity, l0=10, tau=5):
+def nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=10):
 
     # Get dict of nodes
-    d_inputs, d_net_ = set_nodes_from_mat(mat_in, 'input')
-    d_outputs, d_net_ = set_nodes_from_mat(mat_out, 'output', d_net_nodes=d_net_)
-    d_networks, _ = set_nodes_from_mat(mat_net, 'network', d_net_nodes=d_net_)
+    d_inputs, d_net_ = set_nodes_from_mat(sax_in, 'input')
+    d_outputs, d_net_ = set_nodes_from_mat(sax_out, 'output', d_net_nodes=d_net_)
+    d_networks, _ = set_nodes_from_mat(sax_net, 'network', d_net_nodes=d_net_)
 
     # distribute frequency among input nodes,
     d_inputs, set_freqs = set_frequencies(d_inputs, {0}, 1)
@@ -69,7 +69,7 @@ def nodes_from_mat(mat_net, mat_in, mat_out, capacity, l0=10, tau=5):
     l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
                 for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)]
     l_networks = [
-        nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'], l0, tau)
+        nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'], l0)
         for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
         ]
     l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
@@ -154,3 +154,18 @@ def set_frequencies(d_nodes, freqs, capacity, l_=None):
             d_nodes[k]['freqs'] = list(set(new_freqs).union(set(freqs_)))
 
     return d_nodes, freqs
+
+
+def gather_matrices(ax_in, ax_net, ax_out):
+
+    ax_dn = np.vstack((ax_in, ax_net))
+
+    ax_dn = np.hstack((np.zeros((ax_dn.shape[0], ax_in.shape[0])), ax_dn))
+
+    ax_out_ = np.vstack((np.zeros((ax_in.shape[0], ax_out.shape[1])), ax_out))
+
+    ax_dn = np.hstack((ax_dn,  ax_out_))
+
+    ax_dn = np.vstack((ax_dn, np.zeros((ax_out.shape[1], ax_dn.shape[1]))))
+
+    return ax_dn

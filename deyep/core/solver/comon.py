@@ -29,7 +29,7 @@ class DeepNetSolver(object):
             if self.t % 2 == 0:
 
                 # Get new input and transmit forward
-                self.sax_si = self.imputer.get_next_input()
+                self.sax_si = generate_input_signals(self.imputer.get_next_input(), self.deep_network.input_nodes)
                 self.forward_transmiting()
 
                 # Run backward processing if delay is reached
@@ -41,7 +41,7 @@ class DeepNetSolver(object):
             else:
                 # Run backward transmit
                 if (self.t / 2) + 1 >= self.delay:
-                    self.backward_transmiting()
+                    self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.delay)
 
                 # Run forward processing
                 self.forward_processing()
@@ -57,25 +57,26 @@ class DeepNetSolver(object):
 
     def forward_processing(self):
         # transform signals
-        self.sax_sn, self.ax_sa = fnp(self.sax_sn, self.deep_network.network_nodes)
+        self.sax_sn, self.ax_sa = fnp(self.sax_sn, self.deep_network.network_nodes, self.deep_network.tau)
 
         # Update candidate
         self.sax_C = fcp(self.ax_sa, self.deep_network.Cm)
 
-    def backward_transmiting(self):
+    def backward_transmiting(self, only_buffer=False):
 
-        # Cache result of backward transmit
-        sax_snb_ = bnt(self.deep_network.D, self.deep_network.O, self.sax_snb, self.sax_sob, self.sax_sab)
-        sax_sib_ = bit(self.deep_network.I, self.sax_snb)
+        if not only_buffer:
+            # Cache result of backward transmit
+            sax_snb_ = bnt(self.deep_network.D, self.deep_network.O, self.sax_snb, self.sax_sob, self.sax_sab)
+            sax_sib_ = bit(self.deep_network.I, self.sax_snb)
 
-        # Update deep network structure
-        bdu(self.sax_snb, self.deep_network, penalty=self.p)
-        bou(self.sax_sob, self.sax_sab, self.deep_network, penalty=self.p)
-        biu(self.sax_snb, self.deep_network, penalty=self.p)
+            # Update deep network structure
+            bdu(self.sax_snb, self.deep_network, penalty=self.p)
+            bou(self.sax_sob, self.sax_sab, self.deep_network, penalty=self.p)
+            biu(self.sax_snb, self.deep_network, penalty=self.p)
 
-        # Save result of backward transmit
-        self.sax_snb = sax_snb_
-        self.sax_sib = sax_sib_
+            # Save result of backward transmit
+            self.sax_snb = sax_snb_
+            self.sax_sib = sax_sib_
 
         # Buffer forward signals
         self.sax_Cb, self.sax_sab, self.sax_sob = buffer(self.sax_C, self.ax_sa, len(self.deep_network.output_nodes),
@@ -114,6 +115,20 @@ def init_core_backward_signal(dn):
     sax_Cb = csc_matrix((len(dn.network_nodes), len(dn.network_nodes)))
 
     return sax_sib, sax_snb, sax_sob, sax_sab, sax_Cb
+
+
+def generate_input_signals(sax_i, input_nodes):
+
+    sax_si = csc_matrix((len(input_nodes), input_nodes[0].frequency_stack.N))
+
+    for i,  n in enumerate(input_nodes):
+        if sax_i[0, i] >= 1:
+            sax_si[i, :] = n.frequency_stack.fourrier_basis()[0]
+
+    return sax_si.transpose()
+
+
+
 
 
 

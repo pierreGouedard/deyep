@@ -17,7 +17,7 @@ def fot(sax_O, sax_sn):
     return res
 
 
-def fnp(sax_fnt, l_nodes):
+def fnp(sax_fnt, l_nodes, tau):
 
     sax_sn = csc_matrix((sax_fnt.shape[1], sax_fnt.shape[0]))
 
@@ -29,7 +29,7 @@ def fnp(sax_fnt, l_nodes):
     for i in np.unique(sax_fnt.nonzero()[1]):
         s_out, level = l_nodes[i].frequency_stack.encode(sax_fnt[:, i].toarray()[:, 0], return_level=True)
 
-        if l_nodes[i].d_levels[level] >= l_nodes[i].tau:
+        if l_nodes[i].d_levels[level] >= tau:
             l_nodes[i].active = True
             sax_sn[i, :] = s_out
 

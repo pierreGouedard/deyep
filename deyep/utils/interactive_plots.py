@@ -1,5 +1,6 @@
 # Global import
 import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
 
 
@@ -60,3 +61,18 @@ def plot_fft(N, xf, yf):
     plt.plot(xf, 1.0 / N * np.abs(yf))
     plt.grid()
     plt.show()
+
+
+def plot_graph(ax_graph):
+    """
+    plot simple graph
+    :param ax_graph: numpy.ndarray
+    :return:
+    """
+    nx_graph = nx.from_numpy_array(ax_graph)
+    import IPython
+    IPython.embed()
+    nx.draw(nx_graph)
+    plt.show()
+
+

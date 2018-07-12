@@ -1,7 +1,4 @@
 # global import
-import os
-import scipy.sparse
-import numpy as np
 from deyep.utils.driver.nmp import NumpyDriver
 
 # Local import

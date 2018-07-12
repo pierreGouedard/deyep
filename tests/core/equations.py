@@ -80,7 +80,7 @@ class TestEquations(unittest.TestCase):
         res_fnt = fnt(self.dn.D, self.dn.I, sax_sn, sax_si)
 
         # Test FNP
-        _, ax_sa = fnp(res_fnt, self.dn.network_nodes)
+        _, ax_sa = fnp(res_fnt, self.dn.network_nodes, self.dn.tau)
         sax_C = fcp(ax_sa, self.dn.Cm)
 
         self.assertEqual([n.active for n in self.dn.network_nodes], [True] * 4 + [False])

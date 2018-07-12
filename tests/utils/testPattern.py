@@ -7,6 +7,7 @@ import numpy as np
 
 
 class TestPattern(object):
+    l_seq_types = ['det', 'rand']
 
     def __init__(self, name, input_nodes, network_nodes, output_nodes, delay):
 
@@ -14,7 +15,9 @@ class TestPattern(object):
         self.input_nodes = input_nodes
         self.network_nodes = network_nodes
         self.output_nodes = output_nodes
-        self.delay = 0
+        self.delay = delay
+        self.ax_isequence = None
+        self.ax_osequence = None
 
     def build_graph_pattern(self):
         raise NotImplementedError
@@ -25,8 +28,27 @@ class TestPattern(object):
     def build_random_io(self):
         raise NotImplementedError
 
-    def generate_io_sequence(self, length):
+    def init_io_sequence(self,):
         raise NotImplementedError
+
+    def generate_io_sequence(self, length, p=0.5):
+
+        ax_isequence, ax_osequence = self.init_io_sequence()
+
+        for _ in range(length):
+            seqtype = np.random.choice(self.l_seq_types, p=[p, 1-p])
+
+            if seqtype == 'det':
+                # Add deterministic pattern
+                ax_inputs, ax_outputs = self.build_deterministic_io()
+                ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
+
+            else:
+                # Add random pattern
+                ax_inputs, ax_outputs = self.build_random_io()
+                ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
+
+        return self.ax_isequence, self.ax_osequence
 
 
 class TreePattern(TestPattern):
@@ -45,7 +67,7 @@ class TreePattern(TestPattern):
         network_nodes = ['network_{}'.format(i) for i in range(self.get_size(d, k))]
         output_nodes = ['output_{}'.format(i) for i in range(self.get_size(d, k))]
 
-        TestPattern.__init__(self, 'tree', input_nodes, network_nodes, output_nodes, 1)
+        TestPattern.__init__(self, 'tree', input_nodes, network_nodes, output_nodes, 2)
 
     @staticmethod
     def get_size(d, k):
@@ -93,21 +115,8 @@ class TreePattern(TestPattern):
 
         return ax_inputs, ax_outputs
 
-    def generate_io_sequence(self, length):
-        ax_isequence = np.zeros((1, 1))
-        ax_osequence = np.zeros((1, self.get_size(self.d, self.k)))
-
-        for _ in range(length):
-
-            # Add deterministic pattern
-            ax_inputs, ax_outputs = self.build_deterministic_io()
-            ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
-
-            # Add random pattern
-            ax_inputs, ax_outputs = self.build_random_io()
-            ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
-
-        return ax_isequence, ax_osequence
+    def init_io_sequence(self):
+        return np.zeros((1, 1)), np.zeros((1, self.get_size(self.d, self.k)))
 
 
 class AndPattern(TestPattern):
@@ -121,7 +130,7 @@ class AndPattern(TestPattern):
         network_nodes = ['network_0']
         output_nodes = ['output_0']
 
-        TestPattern.__init__(self, 'and', input_nodes, network_nodes, output_nodes, 1)
+        TestPattern.__init__(self, 'and', input_nodes, network_nodes, output_nodes, 2)
 
     def build_graph_pattern(self):
 
@@ -135,10 +144,7 @@ class AndPattern(TestPattern):
 
     def build_deterministic_io(self):
         ax_inputs = np.ones((1, self.n))
-        ax_inputs = np.vstack((ax_inputs, np.zeros((self.delay, self.n))))
-
-        ax_outputs = np.zeros((self.delay, 1))
-        ax_outputs = np.vstack((ax_outputs, np.ones((1, 1))))
+        ax_outputs = np.ones((1, 1))
 
         return ax_inputs, ax_outputs
 
@@ -155,21 +161,8 @@ class AndPattern(TestPattern):
 
         return ax_inputs, ax_outputs
 
-    def generate_io_sequence(self, length):
-        ax_isequence = np.zeros((1, self.n))
-        ax_osequence = np.zeros((1, 1))
-
-        for _ in range(length):
-
-            # Add deterministic pattern
-            ax_inputs, ax_outputs = self.build_deterministic_io()
-            ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
-
-            # Add random pattern
-            ax_inputs, ax_outputs = self.build_random_io()
-            ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
-
-        return ax_isequence, ax_osequence
+    def init_io_sequence(self):
+        return np.zeros((1, self.n)), np.zeros((1, 1))
 
 
 class XorPattern(TestPattern):
@@ -183,7 +176,7 @@ class XorPattern(TestPattern):
         network_nodes = ['network_0', 'network_1']
         output_nodes = ['output_0', 'output_1']
 
-        TestPattern.__init__(self, 'xor', input_nodes, network_nodes, output_nodes, 1)
+        TestPattern.__init__(self, 'xor', input_nodes, network_nodes, output_nodes, 2)
 
     def build_graph_pattern(self):
 
@@ -203,8 +196,8 @@ class XorPattern(TestPattern):
         ax_inputs_right = np.ones((1, self.na + self.nb))
         ax_inputs_right[0, :self.na] = 0
 
-        ax_inputs = np.vstack((ax_inputs_left, ax_inputs_right, np.zeros((self.delay, self.na + self.nb))))
-        ax_outputs = np.vstack((np.zeros((self.delay, 2)), np.array([[1, 0], [0, 1]])))
+        ax_inputs = np.vstack((ax_inputs_left, ax_inputs_right))
+        ax_outputs = np.array([[1, 0], [0, 1]])
 
         return ax_inputs, ax_outputs
 
@@ -222,18 +215,5 @@ class XorPattern(TestPattern):
 
         return ax_inputs, ax_outputs
 
-    def generate_io_sequence(self, length):
-        ax_isequence = np.zeros((1, self.na + self.nb))
-        ax_osequence = np.zeros((1, 1))
-
-        for _ in range(length):
-
-            # Add deterministic pattern
-            ax_inputs, ax_outputs = self.build_deterministic_io()
-            ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
-
-            # Add random pattern
-            ax_inputs, ax_outputs = self.build_random_io()
-            ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
-
-        return ax_isequence, ax_osequence
+    def init_io_sequence(self):
+        return np.zeros((1, self.na + self.nb)), np.zeros((1, 2))
