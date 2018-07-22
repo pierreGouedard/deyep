@@ -29,9 +29,9 @@ class TestConstructor(unittest.TestCase):
         """
 
         # Build dictionary of nodes
-        d_inputs, d_net_ = set_nodes_from_mat(self.mat_in, 'input')
-        d_outputs, d_net_ = set_nodes_from_mat(self.mat_out, 'output', d_net_nodes=d_net_)
-        d_networks, _ = set_nodes_from_mat(self.mat_net, 'network', d_net_nodes=d_net_)
+        d_inputs = set_nodes_from_mat(self.mat_in, 'input')
+        d_outputs = set_nodes_from_mat(self.mat_out, 'output')
+        d_networks = set_nodes_from_mat(self.mat_net, 'network')
 
         self.assertEqual(len(d_inputs), self.mat_in.shape[0])
         self.assertEqual(len(d_networks), self.mat_net.shape[0])

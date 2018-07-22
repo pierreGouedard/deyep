@@ -2,6 +2,7 @@
 
 # Global imports
 import numpy as np
+import networkx as nx
 
 # local import
 
@@ -16,10 +17,11 @@ class TestPattern(object):
         self.network_nodes = network_nodes
         self.output_nodes = output_nodes
         self.delay = delay
-        self.ax_isequence = None
-        self.ax_osequence = None
 
-    def build_graph_pattern(self):
+    def build_graph_pattern_final(self):
+        raise NotImplementedError
+
+    def build_graph_pattern_init(self):
         raise NotImplementedError
 
     def build_deterministic_io(self):
@@ -31,8 +33,8 @@ class TestPattern(object):
     def init_io_sequence(self,):
         raise NotImplementedError
 
-    def generate_io_sequence(self, length, p=0.5):
-
+    def generate_io_sequence(self, length, p=0.5, seed=1830):
+        np.random.seed(seed)
         ax_isequence, ax_osequence = self.init_io_sequence()
 
         for _ in range(length):
@@ -48,11 +50,15 @@ class TestPattern(object):
                 ax_inputs, ax_outputs = self.build_random_io()
                 ax_isequence, ax_osequence = np.vstack((ax_isequence, ax_inputs)), np.vstack((ax_osequence, ax_outputs))
 
-        return self.ax_isequence, self.ax_osequence
+        return ax_isequence, ax_osequence
 
 
 class TreePattern(TestPattern):
-
+    """
+    The primary test purpose of this pattern is to test for connection of network nodes with outputs nodes. It is also
+    convenient to test the forward backward synchronisation. after a significant number of iteration, 1 to 1 edges from
+    network and output nodes should appears
+    """
     def __init__(self, d, k):
 
         self.d = d
@@ -73,7 +79,7 @@ class TreePattern(TestPattern):
     def get_size(d, k):
         return sum([pow(k, i + 1) for i in range(d)])
 
-    def build_graph_pattern(self):
+    def build_graph_pattern_final(self):
 
         # Build input edges
         l_edges = []
@@ -91,16 +97,33 @@ class TreePattern(TestPattern):
 
         return l_edges
 
+    def build_graph_pattern_init(self):
+
+        # Build input edges
+        l_edges = []
+        for i in range(self.k):
+            l_edges += [(self.input_nodes[0], self.network_nodes[i])]
+
+        for k, v in sorted(self.d_nodes.items(), key=lambda (k_, v_): k_)[:-1]:
+            for n, i in enumerate(sorted(v)):
+                for j in range(self.k):
+                    n_child = sorted(self.d_nodes[k + 1])[j + (n * self.k)]
+                    l_edges += [(self.network_nodes[i], self.network_nodes[n_child])]
+
+        return l_edges
+
     def build_deterministic_io(self):
-        ax_inputs = np.zeros((self.d + self.delay, 1))
+        ax_inputs = np.zeros((self.d, 1))
         ax_inputs[0, 0] = 1
 
-        ax_outputs = np.zeros((self.delay, self.get_size(self.d, self.k)))
+        ax_outputs = None
         for k, v in sorted(self.d_nodes.items(), key=lambda (k_, v_): k_):
             ax = np.zeros((1, self.get_size(self.d, self.k)))
             ax[0, v] = 1
-
-            ax_outputs = np.vstack((ax_outputs, ax))
+            if ax_outputs is not None:
+                ax_outputs = np.vstack((ax_outputs, ax))
+            else:
+                ax_outputs = ax.copy()
 
         return ax_inputs, ax_outputs
 
@@ -118,8 +141,23 @@ class TreePattern(TestPattern):
     def init_io_sequence(self):
         return np.zeros((1, 1)), np.zeros((1, self.get_size(self.d, self.k)))
 
+    def layout(self, ax_graph):
+
+        ni, n, no = len(self.input_nodes), len(self.network_nodes), len(self.output_nodes)
+        pos, pos_ = {}, nx.spring_layout(nx.from_numpy_array(ax_graph))
+
+        pos.update({'inputs': {'pos': {i: pos_[i] for i in range(ni)}, 'color': 'r'}})
+        pos.update({'networks': {'pos': {ni + i: pos_[ni + i] for i in range(n)}, 'color': 'k'}})
+        pos.update({'outputs': {'pos': {ni + n + i: pos_[ni + n + i] for i in range(no)}, 'color': 'b'}})
+
+        return pos
+
 
 class AndPattern(TestPattern):
+    """
+    The primary test purpose of this pattern is to test for level convergence of network nodes. After a significant
+    number of iteration, all edges should remain and only the level self.n of network nodes should be activable
+    """
 
     def __init__(self, n):
 
@@ -132,7 +170,7 @@ class AndPattern(TestPattern):
 
         TestPattern.__init__(self, 'and', input_nodes, network_nodes, output_nodes, 2)
 
-    def build_graph_pattern(self):
+    def build_graph_pattern_final(self):
 
         # Build input edges
         l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.n)]
@@ -141,6 +179,9 @@ class AndPattern(TestPattern):
         l_edges += zip(self.network_nodes, self.output_nodes)
 
         return l_edges
+
+    def build_graph_pattern_init(self):
+        return self.build_graph_pattern_final()
 
     def build_deterministic_io(self):
         ax_inputs = np.ones((1, self.n))
@@ -151,7 +192,7 @@ class AndPattern(TestPattern):
     def build_random_io(self):
 
         # Generate random 1 in inputs
-        ax_one = np.random.choice(np.arange(self.n), size=np.random.randint(1, self.n - 1), replace=False)
+        ax_one = np.random.choice(np.arange(self.n), size=np.random.randint(1, self.n), replace=False)
 
         ax_inputs = np.zeros((1, self.n))
         ax_inputs[0, ax_one] = 1
@@ -164,9 +205,23 @@ class AndPattern(TestPattern):
     def init_io_sequence(self):
         return np.zeros((1, self.n)), np.zeros((1, 1))
 
+    def layout(self):
+        pos = dict()
+
+        pos.update({'inputs': {'pos': {i: (0, i) for i in range(self.n)}, 'color': 'r'}})
+        pos.update({'networks': {'pos': {self.n: (1, self.n / 2)}, 'color': 'k'}})
+        pos.update({'outputs': {'pos': {self.n + 1: (2, self.n / 2)}, 'color': 'b'}})
+
+        return pos
+
 
 class XorPattern(TestPattern):
-
+    """
+    The primary test purpose of this pattern is to test for the removal of wrong edges from input to network nodes.
+    After a significant number of iteration, self.na first input nodes should be linked to network node 0 and the
+    self.nb following input nodes should be linked to network node 1, no other edges from inouts to network nodes should
+    persist.
+    """
     def __init__(self, na, nb):
 
         self.na, self.nb = na, nb
@@ -178,7 +233,18 @@ class XorPattern(TestPattern):
 
         TestPattern.__init__(self, 'xor', input_nodes, network_nodes, output_nodes, 2)
 
-    def build_graph_pattern(self):
+    def build_graph_pattern_final(self):
+
+        # Build input edges
+        l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.na)]
+        l_edges += [(self.input_nodes[i], self.network_nodes[1]) for i in range(self.na, self.na + self.nb)]
+
+        # Build output edges
+        l_edges += zip(self.network_nodes, self.output_nodes)
+
+        return l_edges
+
+    def build_graph_pattern_init(self):
 
         # Build input edges
         l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.na + self.nb)]
@@ -204,16 +270,25 @@ class XorPattern(TestPattern):
     def build_random_io(self):
 
         # Generate random 1 in inputs
-        ax_onea = np.random.choice(np.arange(self.na), size=np.random.randint(1, self.na - 1), replace=False)
-        ax_oneb = np.random.choice(np.arange(self.nb), size=np.random.randint(1, self.nb - 1), replace=False)
+        ax_onea = np.random.choice(np.arange(self.na), size=np.random.randint(1, self.na), replace=False)
+        ax_oneb = np.random.choice(np.arange(self.nb), size=np.random.randint(1, self.nb), replace=False)
 
         ax_inputs = np.zeros((1, self.na + self.nb))
-        ax_inputs[0, np.hstack((ax_onea, ax_oneb))] = 1
+        ax_inputs[0, np.hstack((ax_onea, self.na + ax_oneb))] = 1
 
         # Generate outputs
-        ax_outputs = np.zeros((1, 1))
+        ax_outputs = np.zeros((1, 2))
 
         return ax_inputs, ax_outputs
 
     def init_io_sequence(self):
         return np.zeros((1, self.na + self.nb)), np.zeros((1, 2))
+
+    def layout(self):
+        pos = dict()
+        n = self.na + self.nb
+        pos.update({'inputs': {'pos': {i: (0, i) for i in range(n)}, 'color': 'r'}})
+        pos.update({'networks': {'pos': {n: (1, (n / 2) - (n / 4)), n + 1: (1, (n / 2) + (n / 4))}, 'color': 'k'}})
+        pos.update({'outputs': {'pos': {n + 2: (2, (n / 2) - (n / 4)), n + 3: (2, (n / 2) + (n / 4))}, 'color': 'b'}})
+
+        return pos

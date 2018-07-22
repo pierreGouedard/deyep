@@ -54,16 +54,16 @@ def mat_from_nodes(l_nodes):
 def nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=10):
 
     # Get dict of nodes
-    d_inputs, d_net_ = set_nodes_from_mat(sax_in, 'input')
-    d_outputs, d_net_ = set_nodes_from_mat(sax_out, 'output', d_net_nodes=d_net_)
-    d_networks, _ = set_nodes_from_mat(sax_net, 'network', d_net_nodes=d_net_)
+    d_inputs = set_nodes_from_mat(sax_in, 'input')
+    d_outputs = set_nodes_from_mat(sax_out, 'output')
+    d_networks = set_nodes_from_mat(sax_net, 'network')
 
     # distribute frequency among input nodes,
     d_inputs, set_freqs = set_frequencies(d_inputs, {0}, 1)
 
     # distribute frequencies among network nodes
     d_networks, set_freqs = set_frequencies(d_networks, set_freqs, capacity, l_=d_inputs.values())
-    n_freq = 2 * max(set_freqs)
+    n_freq = 2 * (max(set_freqs) + 1)
 
     # Finally, build nodes
     l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
@@ -78,46 +78,26 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=10):
     return l_inputs, l_outputs, l_networks, n_freq
 
 
-def set_nodes_from_mat(mat, key, d_net_nodes={}):
-    d_nodes = {}
-    d_net_nodes = d_net_nodes
+def set_nodes_from_mat(mat, key):
 
     if key == 'input':
-        x_coord, y_coord = mat.nonzero()
-        for i in set(x_coord):
-            d_nodes[i] = {'children': [], 'freqs': []}
-            for j in y_coord[x_coord == i]:
-                d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
-
-                if j not in d_net_nodes.keys():
-                    d_net_nodes[j] = {'children': [], 'freqs': []}
+        d_nodes = {i: {'children': [], 'freqs': []} for i in range(mat.shape[0])}
+        for i, j in zip(*mat.nonzero()):
+            d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
 
     elif key == 'output':
-        x_coord, y_coord = mat.nonzero()
-        for j in set(y_coord):
-            d_nodes[j] = {'parents': [], 'freqs': []}
-            for i in x_coord[y_coord == j]:
-                d_nodes[j]['parents'] += [('network_{}'.format(i), mat[i, j])]
-
-                if i not in d_net_nodes.keys():
-                    d_net_nodes[i] = {'children': [], 'freqs': []}
+        d_nodes = {i: {'parents': [], 'freqs': []} for i in range(mat.shape[1])}
+        for i, j in zip(*mat.nonzero()):
+            d_nodes[j]['parents'] += [('network_{}'.format(i), mat[i, j])]
 
     elif key == 'network':
-        x_coord, y_coord = mat.nonzero()
-        for i in set(x_coord):
-
-            if i in d_net_nodes.keys():
-                d_net_nodes.pop(i)
-            d_nodes[i] = {'children': [], 'freqs': []}
-            for j in y_coord[x_coord == i]:
-                d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
-
-        d_nodes.update(d_net_nodes)
-
+        d_nodes = {i: {'children': [], 'freqs': []} for i in range(mat.shape[0])}
+        for i, j in zip(*mat.nonzero()):
+            d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
     else:
         raise ValueError('Choose key between \'input\', \'output\' or \'network\'')
 
-    return d_nodes.copy(), d_net_nodes
+    return d_nodes.copy()
 
 
 def set_frequencies(d_nodes, freqs, capacity, l_=None):

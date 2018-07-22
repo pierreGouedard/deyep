@@ -55,7 +55,7 @@ class ChiFourrierParallel(object):
             res = Chi(np.round(np.real(inner_product(t[0], get_fourrier_series(t[1], N=self.N)))))
             res *= get_fourrier_series(t[1])
         else:
-            res = Chi(np.round(np.real(inner_product(t[0], t[1]))))
+            res = Chi(np.round(np.real(inner_product(t[0], t[1])))) * t[1]
             res *= t[1]
 
         return res

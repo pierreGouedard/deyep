@@ -23,30 +23,47 @@ class DeepNetSolver(object):
 
         self.t = 0
 
-    def run_epoch(self, n):
+    def run_epoch(self, n, evaluate_running_time=False):
         i = 0
-        while i <= n:
-            if self.t % 2 == 0:
 
+        import time
+        l_t_epoch, l_t_forwardp, l_t_forwardt, l_t_backwardp, l_t_backwardt = [], [], [], [], []
+
+        while i <= n:
+            t = time.time()
+            if self.t % 2 == 0:
                 # Get new input and transmit forward
-                self.sax_si = generate_input_signals(self.imputer.get_next_input(), self.deep_network.input_nodes)
+                t0 = time.time()
+                self.sax_si = generate_input_signals(self.imputer.stream_next_forward(), self.deep_network.input_nodes)
                 self.forward_transmiting()
+                l_t_forwardt += [time.time() - t0]
 
                 # Run backward processing if delay is reached
                 if self.t / 2 >= self.delay:
-                    sax_got = self.imputer.get_next_output()
+                    t0 = time.time()
+                    sax_got = self.imputer.stream_next_backward()
                     self.backward_processing(sax_got)
+                    l_t_backwardp += [time.time() - t0]
+
                 i += 1
 
             else:
                 # Run backward transmit
                 if (self.t / 2) + 1 >= self.delay:
+                    t0 = time.time()
                     self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.delay)
+                    l_t_backwardt += [time.time() - t0]
 
                 # Run forward processing
+                t0 = time.time()
                 self.forward_processing()
+                l_t_forwardp += [time.time() - t0]
 
             self.t += 1
+            l_t_epoch += [time.time() - t]
+
+        if evaluate_running_time:
+            return l_t_epoch, l_t_forwardp, l_t_forwardt, l_t_backwardp, l_t_backwardt
 
     def forward_transmiting(self):
         # Output transmit
@@ -96,9 +113,9 @@ class DeepNetSolver(object):
 def init_core_forward_signal(dn):
 
     N = dn.n_freq
-    sax_si = csc_matrix((N, len(dn.input_nodes)))
-    sax_sn = csc_matrix((N, len(dn.network_nodes)))
-    sax_so = csc_matrix((N, len(dn.output_nodes)))
+    sax_si = csc_matrix((N, len(dn.input_nodes)), dtype=complex)
+    sax_sn = csc_matrix((N, len(dn.network_nodes)), dtype=complex)
+    sax_so = csc_matrix((N, len(dn.output_nodes)), dtype=complex)
     ax_sa = np.array([False] * len(dn.network_nodes))
     sax_C = csc_matrix((len(dn.network_nodes), len(dn.network_nodes)))
 
@@ -108,9 +125,9 @@ def init_core_forward_signal(dn):
 def init_core_backward_signal(dn):
     N = dn.n_freq
 
-    sax_sib = csc_matrix((N, len(dn.input_nodes)))
-    sax_snb = csc_matrix((N, len(dn.network_nodes)))
-    sax_sob = csc_matrix((N, len(dn.output_nodes)))
+    sax_sib = csc_matrix((N, len(dn.input_nodes)), dtype=complex)
+    sax_snb = csc_matrix((N, len(dn.network_nodes)), dtype=complex)
+    sax_sob = csc_matrix((N, len(dn.output_nodes)), dtype=complex)
     sax_sab = csc_matrix(np.array([[False] * len(dn.network_nodes)]).repeat(len(dn.output_nodes), axis=0))
     sax_Cb = csc_matrix((len(dn.network_nodes), len(dn.network_nodes)))
 
@@ -118,8 +135,7 @@ def init_core_backward_signal(dn):
 
 
 def generate_input_signals(sax_i, input_nodes):
-
-    sax_si = csc_matrix((len(input_nodes), input_nodes[0].frequency_stack.N))
+    sax_si = csc_matrix((len(input_nodes), input_nodes[0].frequency_stack.N), dtype=complex)
 
     for i,  n in enumerate(input_nodes):
         if sax_i[0, i] >= 1:

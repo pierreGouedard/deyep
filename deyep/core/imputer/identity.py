@@ -34,6 +34,7 @@ class DoubleIdentityImputer(ImputerDoubleSource):
 
         # Set urls
         self.name_forward, self.name_backward = name_forward, name_backward
+
         # Write data
         self.driver.write_file(self.features_forward, self.driver.join(self.dirout, name_forward), is_sparse=True)
         self.driver.write_file(self.features_backward, self.driver.join(self.dirout, name_backward), is_sparse=True)
@@ -42,18 +43,17 @@ class DoubleIdentityImputer(ImputerDoubleSource):
 
         # Set urls
         urlf, urlb = self.driver.join(self.dirout, self.name_forward), self.driver.join(self.dirout, self.name_backward)
+        driverf, driverb = NumpyDriver(), NumpyDriver()
 
         # Stream I/O
         if partition is not None:
-            self.stream_forward = self.driver.init_stream_partition(urlf, n_cache=1, orient='row',
-                                                                    is_sparse=self.is_sparse, is_cyclic=True)
-            self.stream_backward = self.driver.init_stream_partition(urlb, n_cache=1, orient='row',
-                                                                     is_sparse=self.is_sparse, is_cyclic=True)
+            self.stream_forward = driverf.init_stream_partition(urlf, n_cache=1, orient='row',
+                                                                is_sparse=self.is_sparse, is_cyclic=True)
+            self.stream_backward = driverb.init_stream_partition(urlb, n_cache=1, orient='row',
+                                                                 is_sparse=self.is_sparse, is_cyclic=True)
         else:
-            self.stream_forward = self.driver.init_stream(urlf, is_sparse=self.is_sparse, is_cyclic=True,
-                                                          orient='row')
-            self.stream_backward = self.driver.init_stream(urlb, is_sparse=self.is_sparse, is_cyclic=True,
-                                                           orient='row')
+            self.stream_forward = driverf.init_stream(urlf, is_sparse=self.is_sparse, is_cyclic=True, orient='row')
+            self.stream_backward = driverb.init_stream(urlb, is_sparse=self.is_sparse, is_cyclic=True, orient='row')
 
     def run_preprocessing(self):
         self.features_forward = self.raw_data_forward.copy()

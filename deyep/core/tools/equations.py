@@ -19,7 +19,7 @@ def fot(sax_O, sax_sn):
 
 def fnp(sax_fnt, l_nodes, tau):
 
-    sax_sn = csc_matrix((sax_fnt.shape[1], sax_fnt.shape[0]))
+    sax_sn = csc_matrix((sax_fnt.shape[1], sax_fnt.shape[0]), dtype=complex)
 
     # Init activation param of the nodes
     for n in l_nodes:
@@ -70,11 +70,12 @@ def bop(sax_so, sax_got, N):
     sax_active = csc_matrix([sax_so[0, i] != 0 for i in range(sax_so.shape[-1])])
 
     # Init result
-    sax_so_ = csc_matrix((sax_so.shape[1], sax_so.shape[0]))
+    sax_so_ = csc_matrix((sax_so.shape[1], sax_so.shape[0]), dtype=complex)
 
     # Apply function chi (fourrier series domain) to output signal
     l_basis = [la.get_fourrier_coef_from_params(N, k) for k in range(N / 2)]
-    for i in range(sax_so.shape[-1]):
+
+    for i in np.unique(sax_so.nonzero()[1]):
         sax_so_[i, :] = la.Chi_fourrier(sax_so[:, i].toarray()[:, 0], l_basis,  n_jobs=0)
 
     # Compute feedback
@@ -89,16 +90,15 @@ def bop(sax_so, sax_got, N):
 
 def bnp(l_nodes, sax_snb):
 
-    sax_snb_ = csc_matrix((sax_snb.shape[1], sax_snb.shape[0]))
-    for i in range(sax_snb.shape[1]):
-        if sax_snb[:, i].nnz > 0:
-            s, d_levels = l_nodes[i].frequency_stack.decode(sax_snb.toarray()[:, i], d_levels={})
+    sax_snb_ = csc_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=complex)
+    for i in np.unique(sax_snb.nonzero()[1]):
+        s, d_levels = l_nodes[i].frequency_stack.decode(sax_snb.toarray()[:, i], d_levels={})
 
-            # Update Levels and backward signal
-            for k, v in d_levels.items():
-                l_nodes[i].d_levels[k] += v
+        # Update Levels and backward signal
+        for k, v in d_levels.items():
+            l_nodes[i].d_levels[k] += v
 
-            sax_snb_[i, :] = s
+        sax_snb_[i, :] = s
 
     return sax_snb_.transpose()
 
@@ -127,6 +127,8 @@ def bdu(sax_snb, dn, penalty=1.):
 
     # Decompose Dw
     l_indices = zip(*dn.Dw.nonzero())
+    l_nonzeros = sax_snb.nonzero()[1]
+    l_indices = [(i, j) for i, j in l_indices if j in l_nonzeros]
 
     p = Pool(cpu_count())
 
@@ -157,6 +159,8 @@ def bou(sax_sob, sax_activation, dn, penalty=1.):
 
     # Decompose Dw
     l_indices = zip(*dn.Ow.multiply(sax_activation.transpose()).nonzero())
+    l_nonzeros = sax_sob.nonzero()[1]
+    l_indices = [(i, j) for i, j in l_indices if j in l_nonzeros]
 
     p = Pool(cpu_count())
 
@@ -168,7 +172,7 @@ def bou(sax_sob, sax_activation, dn, penalty=1.):
 
     Ou = csc_matrix(dn.Ow.shape)
 
-    for (i, j), x in filter(lambda x: x!=0, l_res):
+    for (i, j), x in filter(lambda (_, y): y != 0, l_res):
         Ou[i, j] = min(x * penalty, 1.)
 
     dn.graph['Ow'] += Ou
@@ -178,7 +182,7 @@ class BiuParallel(object):
 
     def f(self, t):
         res = 0
-        for x in t[1].frequency_stack.fourrier_basis(free=False):
+        for x in t[1].frequency_stack.fourrier_basis(free=True):
             res += np.round(np.real(la.inner_product(x, t[2])))
 
         return t[0], res
@@ -186,20 +190,21 @@ class BiuParallel(object):
 
 def biu(sax_snb, dn, penalty=1.):
 
-    # Decompose Dw
+    # Decompose Iw
     l_indices = zip(*dn.Iw.nonzero())
+    l_nonzeros = sax_snb.nonzero()[1]
+    l_indices = [(i, j) for i, j in l_indices if j in l_nonzeros]
 
     p = Pool(cpu_count())
 
     # Instantiate class that implement inner product
-    biup = BouParallel()
+    biup = BiuParallel()
 
     # Parallel inner product
     l_res = p.map(biup.f, [((i, j), dn.input_nodes[i], sax_snb[:, j].toarray()[:, 0]) for (i, j) in l_indices])
-
     Iu = csc_matrix(dn.Iw.shape)
 
-    for (i, j), x in filter(lambda x: x!=0, l_res):
+    for (i, j), x in filter(lambda (_, y): y != 0, l_res):
         Iu[i, j] = min(x * penalty, 1.)
 
     dn.graph['Iw'] += Iu

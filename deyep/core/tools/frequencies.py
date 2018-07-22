@@ -87,7 +87,7 @@ class FrequencyStack(object):
         # pop frequency if it exists in mapping
         l_coefs_in, l_coefs = self.coef_from_series(s_in, [self.coef_from_key(k) for k in self.map.keys()], n_jobs=0,
                                                     return_coef=True)
-        s_out = np.zeros(self.N)
+        s_out = np.zeros(self.N, dtype=complex)
         for i, c_in in enumerate(l_coefs_in):
             l_coef_out = map(lambda x: self.coef_from_key(x), self.map[self.key_from_coef(c_in)])
 
@@ -95,7 +95,7 @@ class FrequencyStack(object):
                 d_levels[len(l_coef_out)] = d_levels.get(len(l_coef_out), 0) + Upsilon(l_coefs[i])
 
             for c_out in l_coef_out:
-                s_out = Upsilon(l_coefs[i]) * self.series_from_coef(c_out)
+                s_out += Upsilon(l_coefs[i]) * self.series_from_coef(c_out)
 
         if d_levels is not None:
             return s_out, d_levels
