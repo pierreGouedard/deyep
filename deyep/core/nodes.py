@@ -13,13 +13,13 @@ class Node(object):
 
 class InputNode(Node):
 
-    def __init__(self, id, type, frequency_stack, children, values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
+    def __init__(self, id, type, basis, children, values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
 
         # Set inherited attributes
         Node.__init__(self, id, type, values)
 
         # Set specific attributes
-        self.frequency_stack = frequency_stack
+        self.basis = basis
         self.children = children
 
     def process_forward(self):
@@ -30,7 +30,7 @@ class InputNode(Node):
 
     def to_dict(self):
         d_out = Node.to_dict(self)
-        d_out.update({'frequency_stack': self.frequency_stack.to_dict(), 'children': self.children})
+        d_out.update({'basis': self.basis.to_dict(), 'children': self.children})
         return d_out
 
 
@@ -58,7 +58,7 @@ class OutputNode(Node):
 
 class NetworkNode(Node):
 
-    def __init__(self, id, type, frequency_stack, children, l0,  values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
+    def __init__(self, id, type, basis, children, l0,  values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
         # Set inherited attributes
         Node.__init__(self, id, type, values)
 
@@ -66,7 +66,7 @@ class NetworkNode(Node):
         self.active = False
         self.d_levels = {i: l0 for i in range(1, 100)}
         self.d_levels.update({0: 0})
-        self.frequency_stack = frequency_stack
+        self.basis = basis
         self.children = children
 
     def process_forward(self):
@@ -80,6 +80,6 @@ class NetworkNode(Node):
 
     def to_dict(self):
         d_out = Node.to_dict(self)
-        d_out.update({'frequency_stack': self.frequency_stack.to_dict(), 'children': self.children,
+        d_out.update({'basis': self.basis.to_dict(), 'children': self.children,
                       'level': self.d_levels})
         return d_out

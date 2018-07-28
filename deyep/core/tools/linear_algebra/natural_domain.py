@@ -88,33 +88,15 @@ class UpsilonFourrierParallel(object):
         return res
 
 
-def get_fourrier_coef_from_params(N, k):
-    return np.exp(np.complex(np.log(1. / np.sqrt(N)), - (2. * np.pi * k) / N))
+def get_key_from_series(sax_s, set_keys=None, return_coef=False):
+    N, set_indices, l_res, l_coefs = sax_s.shape[-1], set(sax_s.nonzero()[1]), [], []
 
+    if set_keys is not None:
+        set_indices = set_keys.intersection(set_indices)
 
-def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1, return_coef=False):
-
-    # Build Pool if necessary
-    if n_jobs != 1:
-        p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
-
-        # Instantiate class that implement inner product
-        innerp = InnerProductParallel(keep_real=True, round=True, coef='right')
-
-        # Parallel inner product
-        res_ = csc_matrix(p.map(innerp.f, zip([ax_s] * len(ax_basis), ax_basis)))
-
-        l_res = [ax_basis[i] for i in res_.nonzero()[1]]
-        l_coefs = res_.data
-
-    else:
-        l_res, l_coefs = [], []
-        for base in ax_basis:
-            res = np.round(np.real(inner_product(ax_s, get_fourrier_series(base))))
-
-            if res > 0:
-                l_res += [base]
-                l_coefs += [res]
+    for i in set_indices:
+        l_res += [(N, i)]
+        l_coefs = sax_s[0, i]
 
     if return_coef:
         return l_res, l_coefs
@@ -122,35 +104,8 @@ def get_fourrier_coef_from_series(ax_s, ax_basis, n_jobs=1, return_coef=False):
         return l_res
 
 
-def get_fourrier_params(coef, N=None):
-
-    # Get N
-    if N is None:
-        N, c = int(np.round(1. / pow(np.linalg.norm(coef), 2))), 1.
-    else:
-        c = int(np.round(np.sqrt(N) * np.linalg.norm(coef)))
-
-    # Get k
-    k = (np.angle(coef) * N) / (2. * np.pi)
-
-    if k <= 0:
-        k = int(np.round(- k))
-    else:
-        k, c = int(np.round(N / 2 - k)), - c
-
-    return N, k
-
-
-def get_fourrier_series(coef, N=None):
-
-    # if normalize Get N and k
-    if N is None:
-        N, k = get_fourrier_params(coef)
-
-    else:
-        _, k = get_fourrier_params(coef, N=N)
-
-    return coef * np.exp(-1j * (2. * np.pi * k * np.arange(-1, N - 1)) / N)
+def get_canonical_basis(N, k):
+    return csc_matrix(([1.], ([0], [k])), shape=(1, N), dtype=int).toarray()
 
 
 def inner_product(x, y):
@@ -161,7 +116,7 @@ def inner_product(x, y):
     :param y:
     :return:
     """
-    return x.dot(y.conjugate())
+    return x.dot(y.transpose())[0, 0]
 
 
 def vector_product_type_1(x, y):

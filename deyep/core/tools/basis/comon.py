@@ -1,0 +1,96 @@
+# Global import
+import numpy as np
+
+# Local import
+from deyep.core.tools.linear_algebra.comon import Upsilon
+
+
+class Basis(object):
+
+    def __init__(self, key, N, l_forward_keys, capacity=20):
+        # set base attribute
+        self.N = N
+        self.key = key
+        self.forward_keys = l_forward_keys
+        self.queue_forward = [None] * capacity
+        self.capacity = capacity
+
+    @property
+    def base(self):
+        return self.base_from_key('k={},N={}'.format(self.key, self.N))
+
+    @property
+    def basis(self):
+        return [self.base_from_key('k={},N={}'.format(int(self.key + k), self.N)) for k in np.arange(0., self.capacity)]
+
+    @property
+    def forward_basis(self):
+        return [self.base_from_key('k={},N={}'.format(k, self.N)) for k in self.forward_keys]
+
+    @staticmethod
+    def from_dict(d_basis):
+        return Basis(d_basis.pop('key'), d_basis.pop('N'), d_basis.pop('set_forward_keys'))
+
+    @staticmethod
+    def base_from_key(key, offset=0):
+        raise NotImplementedError
+
+    def keys_from_forward_basis(self, s):
+        raise NotImplementedError
+
+    def depth_from_basis(self, s, n_jobs=0):
+        raise NotImplementedError
+
+    def contain_base(self, s):
+        raise NotImplementedError
+
+    def retrieve_key_from_queue(self, d):
+        raise NotImplementedError
+
+    def encode(self, s_forward, timestamp, return_level=False):
+
+        # add incoming key to queue
+        l_keys_forward = self.keys_from_forward_basis(s_forward)
+        self.queue_forward = [(timestamp, l_keys_forward)] + self.queue_forward[:-1]
+
+        # return base and level if necessay
+        if return_level:
+            return self.base, len(l_keys_forward)
+
+        return self.base
+
+    def decode(self, s_in, d_levels=None):
+
+        # Make sure s_in contains class instance base
+        if not self.contain_base(s_in):
+            return None
+
+        l_depths, l_coefs = self.depth_from_basis(s_in)
+        s_out, d_main_coef = np.zeros(self.N), {}
+
+        for d, c in zip(l_depths, l_coefs):
+            if d == 0:
+                continue
+
+            # retrieve forward identifier in queue from keys and build signal.
+            set_key_out = self.retrieve_key_from_queue(d)
+
+            if d_levels is not None:
+                d_levels[len(set_key_out)] = d_levels.get(len(set_key_out), 0) + Upsilon(c)
+
+            if d < self.capacity:
+                for k_ in set_key_out:
+                    d_main_coef[k_] = d_main_coef.get(k_, 0.) + Upsilon(c)
+                    s_out += c * self.base_from_key(k_, offset=d + 1)
+
+        # build backward signal (adding 1 to keys)
+        for k, c in d_main_coef.items():
+            s_out += c * self.base_from_key(k)
+
+        if d_levels is not None:
+            return s_out, d_levels
+
+        return s_out
+
+    def to_dict(self):
+        return {'N': self.N, 'key': self.key, 'forward_keys': self.forward_keys, 'queue_forward': self.queue_forward}

@@ -11,7 +11,7 @@ class TestConstructor(unittest.TestCase):
     def setUp(self):
 
         # Create a simple deep network (2 input nodes, 3 network nodes,, 2 output nodes)
-        n_i, n_rn, n_o, self.capacity = 2, 5, 3, 2
+        n_i, n_rn, n_o, self.capacity = 2, 5, 3, 20
         l_edges = [('input_0', 'network_0'), ('network_0', 'network_1'), ('network_0', 'network_2'),
                    ('network_1', 'output_0'), ('network_2', 'output_1')] +  \
                   [('input_0', 'network_3'), ('network_3', 'network_2')] + \
@@ -37,16 +37,19 @@ class TestConstructor(unittest.TestCase):
         self.assertEqual(len(d_networks), self.mat_net.shape[0])
         self.assertEqual(len(d_outputs), self.mat_out.shape[-1])
 
-        # Distribute frequencies
-        d_inputs, available_freqs = set_frequencies(d_inputs, {0}, 1)
-        d_networks, available_freqs = set_frequencies(d_networks, available_freqs, self.capacity, l_=d_inputs.values())
+        # distribute frequency among input nodes,
+        d_inputs, set_freqs, d_forward_freqs = set_frequencies(d_inputs, {0}, 1, {})
+
+        # distribute frequencies among network nodes
+        d_networks, set_freqs_, d_forward_freqs = set_frequencies(d_networks, {0}, self.capacity, d_forward_freqs,
+                                                                  offset=len(set_freqs))
 
         # Assert that no frequency are conflicting
-        self.assertEqual(available_freqs, {0, 1, 2, 3, 4})
-        for _, d in d_inputs.items():
-            self.assertEqual(len(d['freqs']), 1)
-
-        for _, d in d_networks.items():
-            self.assertEqual(len(d['freqs']), self.capacity)
-
-        self.assertEqual(len(set(d_networks[0]['freqs']).intersection(d_networks[3]['freqs'])), 0)
+        self.assertEqual(set_freqs_, {0, 1})
+        self.assertEqual(set_freqs, {0})
+        self.assertTrue(all([d['freqs'] == [0] for _, d in d_inputs.items()]))
+        self.assertEqual(d_networks[3]['freqs'], [self.capacity + 1])
+        self.assertEqual(d_networks[0]['freqs'], [1])
+        self.assertEqual(d_forward_freqs, {'network_0': {0}, 'network_1': {1}, 'network_2': {0, 1, 21},
+                                           'network_3': {0}, 'network_4': {0}})
+        self.assertEqual(((max(set_freqs_) + 1) * self.capacity) + len(set_freqs), (self.capacity * 2) + 1 )

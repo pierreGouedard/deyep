@@ -4,14 +4,14 @@ import unittest
 from deyep.utils.names import KVName
 
 # Local import
-from deyep.core.tools.linear_algebra import inner_product
+from deyep.core.tools.linear_algebra.fourrier_domain import inner_product
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.deep_network import DeepNetwork
 
 __maintainer__ = 'Pierre Gouedard'
 
 
-class TestFrequencyStack(unittest.TestCase):
+class TestFourrierBasis(unittest.TestCase):
     def setUp(self):
 
         # Create a simple deep network (2 input nodes, 3 network nodes,, 2 output nodes)
@@ -27,34 +27,38 @@ class TestFrequencyStack(unittest.TestCase):
 
         self.deep_network_1 = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, self.capacity)
 
-    def test_frequency_stack_basics(self):
+    def test_fourrier_basics(self):
         """
         Test basic frequency management
-        python -m unittest tests.core.frequencies.TestFrequencyStack.test_frequency_stack_basics
+        python -m unittest tests.core.fourrier_basis.TestFourrierBasis.test_fourrier_basics
 
         """
-        N = self.deep_network_1.input_nodes[0].frequency_stack.N
+        Basis = self.deep_network_1.network_nodes[2].basis
+        self.assertEqual(len(Basis.basis), self.capacity)
 
-        # Assert correct initialization of stacks
-        for i in range(self.n_i):
-            str_ = KVName.from_dict({'N': str(N), 'k': 0}).to_string()
-            self.assertTrue(str_ in self.deep_network_1.input_nodes[i].frequency_stack.setfree)
-
-        for i in range(self.n_rn):
-            self.assertEqual(len(self.deep_network_1.network_nodes[i].frequency_stack.setfree), self.capacity)
-
-        stack = self.deep_network_1.network_nodes[0].frequency_stack
-        assert ((len(stack.setfree) == self.capacity) & (len(stack.map) == 0) & (len(stack.priorities) == 0))
+        # Make sure that nodes with edges toward same nodes has orthogonal base
+        s_net1, s_net2 = self.deep_network_1.network_nodes[3].basis.base, self.deep_network_1.network_nodes[1].basis.base
+        self.assertEqual(np.round(np.real(inner_product(s_net1,  s_net2))), 0.)
 
         # Test single encoding
-        s_in = self.deep_network_1.network_nodes[1].frequency_stack.fourrier_basis()[0, :]
-        coef_in = stack.coef_from_series(s_in, basis=[stack.coef_from_key(k) for k in stack.setfree])
-        s_out = stack.encode(s_in)
-        coef_out = stack.coef_from_series(s_out, basis=[stack.coef_from_key(k) for k in stack.map.keys()])
+        s_in = self.deep_network_1.network_nodes[1].basis.base
+        keys_in = Basis.keys_from_forward_basis(s_in)
+        s_out = Basis.encode(s_in, 0)
 
-        self.assertTrue(stack.key_from_coef(coef_out) not in stack.setfree)
-        self.assertTrue(stack.key_from_coef(coef_out) in stack.map.keys())
-        self.assertTrue(stack.key_from_coef(coef_in) in stack.map[stack.key_from_coef(coef_out)])
+        self.assertEqual(keys_in, ['N=21,k=1'])
+        self.assertEqual(np.round(np.real(inner_product(s_out,  Basis.base))), 1.)
+        self.assertEqual(len(filter(lambda x: x is not None, Basis.queue_forward)), 1)
+
+        # Test double encoding
+        s_in += self.deep_network_1.network_nodes[3].basis.base
+        keys_in = Basis.keys_from_forward_basis(s_in)
+        s_out = Basis.encode(s_in, 1)
+        import IPython
+        IPython.embed()
+        self.assertEqual(set(keys_in), {'N=21,k=1', 'N=21,k=11'})
+        self.assertEqual(np.round(np.real(inner_product(s_out,  Basis.base))), 1.)
+        w
+
 
         l_ = [inner_product(s_out, s_b) for s_b in stack.fourrier_basis()]
         self.assertAlmostEqual(np.real(sum(l_)), 0., delta=1e-10)

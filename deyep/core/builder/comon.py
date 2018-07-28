@@ -3,9 +3,8 @@ from scipy.sparse import csc_matrix
 import numpy as np
 
 # local import
-import settings
 from deyep.core import nodes
-from deyep.core.tools.frequencies import FrequencyStack
+from deyep.core.tools.basis.fourrier import FourrierBasis
 
 
 def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
@@ -59,18 +58,24 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=10):
     d_networks = set_nodes_from_mat(sax_net, 'network')
 
     # distribute frequency among input nodes,
-    d_inputs, set_freqs = set_frequencies(d_inputs, {0}, 1)
+    d_inputs, set_freqs, d_forward_freqs = set_frequencies(d_inputs, {0}, 1, {})
 
     # distribute frequencies among network nodes
-    d_networks, set_freqs = set_frequencies(d_networks, set_freqs, capacity, l_=d_inputs.values())
-    n_freq = 2 * (max(set_freqs) + 1)
+    d_networks, set_freqs_, d_forward_freqs = set_frequencies(d_networks, {0}, capacity, d_forward_freqs,
+                                                              offset=len(set_freqs))
 
-    # Finally, build nodes
-    l_inputs = [nodes.InputNode(k_, 'input', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'])
-                for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)]
+    n_freq = ((max(set_freqs_) + 1) * capacity) + len(set_freqs)
+
+    # Finally, build nodeskey, N, set_forward_keys, capacity=100
+    l_inputs = [
+        nodes.InputNode(k_, 'input', FourrierBasis(min(v_['freqs']), n_freq, {}, 1),
+                        v_['children']) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
+        ]
     l_networks = [
-        nodes.NetworkNode(k_, 'network', FrequencyStack(len(set_freqs) * 2, v_['freqs']), v_['children'], l0)
-        for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
+        nodes.NetworkNode(
+            k_, 'network', FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs['network_{}'.format(k_)], capacity),
+            v_['children'], l0
+        ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
         ]
     l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
                  for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
@@ -100,40 +105,36 @@ def set_nodes_from_mat(mat, key):
     return d_nodes.copy()
 
 
-def set_frequencies(d_nodes, freqs, capacity, l_=None):
+def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):
 
     for k, v in d_nodes.items():
-
         l_children = [t[0] for t in v['children']]
 
-        if len(l_children) == 0:
-            freqs_ = list(freqs)[:capacity]
-
-        else:
+        if len(l_children) > 0:
             # Look for sibling
             for child in l_children:
-                _freqs = filter(lambda (k_, v_): child in [t[0] for t in v_['children']] and k != k_, d_nodes.items())
-                _freqs = sum(map(lambda (k_, v_): v_['freqs'], _freqs), [])
+                sibling_nodes = filter(lambda (k_, v_): child in [t[0] for t in v_['children']] and k != k_, d_nodes.items())
+                occupied_freqs = sum(map(lambda (k_, v_): v_['freqs'], sibling_nodes), [])
+                freqs_ = freqs.difference(set(occupied_freqs))
 
-                if l_ is not None:
-                    _freqs += sum(map(lambda v_: v_['freqs'], filter(lambda v_: child in [t[0] for t in v_['children']],
-                                                                     l_)), [])
+            if len(freqs_) > 0:
+                d_nodes[k]['freqs'] = [list(freqs_)[0]]
 
-                freqs_ = freqs.difference(set(_freqs))
-
-        if len(freqs_) >= capacity:
-            d_nodes[k]['freqs'] = list(freqs_)[:capacity]
-
+            else:
+                # Add new frequencies
+                d_nodes[k]['freqs'] = [max(freqs) + 1]
+                freqs = freqs.union([max(freqs) + 1])
         else:
-            # Compute new frequencies
-            new_freqs = range(max(freqs) + 1, max(freqs) + capacity + 1 - len(freqs_))
+            d_nodes[k]['freqs'] = [list(freqs)[0]]
 
-            # Update available freq
-            freqs = freqs.union(set(new_freqs))
+        if d_forward_freqs is not None:
+            for child in l_children:
+                d_forward_freqs[child] = d_forward_freqs.get(child, []) + [offset + (d_nodes[k]['freqs'][0] * capacity)]
 
-            d_nodes[k]['freqs'] = list(set(new_freqs).union(set(freqs_)))
+    for k, v in d_nodes.items():
+        v['freqs'] = [offset + (min(v['freqs']) * capacity)]
 
-    return d_nodes, freqs
+    return d_nodes, freqs, d_forward_freqs
 
 
 def gather_matrices(ax_in, ax_net, ax_out):
