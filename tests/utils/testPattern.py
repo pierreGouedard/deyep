@@ -292,3 +292,39 @@ class XorPattern(TestPattern):
         pos.update({'outputs': {'pos': {n + 2: (2, (n / 2) - (n / 4)), n + 3: (2, (n / 2) + (n / 4))}, 'color': 'b'}})
 
         return pos
+
+
+class RandomPattern(TestPattern):
+    """
+        random generation with the correcct convergence sentence
+    """
+    def __init__(self, na, nb):
+
+        self.na, self.nb = na, nb
+
+        # Build list of nodess
+        input_nodes = []
+        network_nodes = []
+        output_nodes = []
+
+        TestPattern.__init__(self, 'random', input_nodes, network_nodes, output_nodes, 2)
+
+    def build_graph_pattern_final(self):
+        raise NotImplementedError
+
+    def build_graph_pattern_init(self):
+        raise NotImplementedError
+
+    def build_deterministic_io(self):
+        raise NotImplementedError
+
+    def build_random_io(self):
+        raise NotImplementedError
+
+    def init_io_sequence(self):
+        raise NotImplementedError
+
+    def layout(self):
+        raise NotImplementedError
+
+
