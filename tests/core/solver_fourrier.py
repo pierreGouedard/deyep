@@ -48,7 +48,7 @@ class TestSolver(unittest.TestCase):
 
     def test_and_pattern(self):
         """
-        python -m unittest tests.core.solver.TestSolver.test_and_pattern
+        python -m unittest tests.core.solver_fourrier.TestSolver.test_and_pattern
 
         """
         # Create temporary directory for test
@@ -82,7 +82,7 @@ class TestSolver(unittest.TestCase):
 
     def test_xor_pattern(self):
         """
-        python -m unittest tests.core.solver.TestSolver.test_xor_pattern
+        python -m unittest tests.core.solver_fourrier.TestSolver.test_xor_pattern
 
         """
 
@@ -133,7 +133,7 @@ class TestSolver(unittest.TestCase):
 
     def test_tree_pattern(self):
         """
-        python -m unittest tests.core.solver.TestSolver.test_tree_pattern
+        python -m unittest tests.core.solver_fourrier.TestSolver.test_tree_pattern
 
         """
 
