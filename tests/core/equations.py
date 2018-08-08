@@ -4,9 +4,11 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 # Local import
-from deyep.core.tools.equations import fnt, fot, fnp, fcp, bop, bnt, bit, bnp, bcu, bdu, bou, biu, buffer
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.deep_network import DeepNetwork
+from deyep.core.solver.comon import DeepNetSolver
+from deyep.utils.driver.nmp import NumpyDriver
+from deyep.core.imputer.identity import DoubleIdentityImputer
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -17,250 +19,262 @@ class TestEquations(unittest.TestCase):
         np.random.seed(392)
 
         # Create a simple deep network (2 input nodes, 3 network nodes,, 2 output nodes)
-        self.n_i, self.n_rn, self.n_o, self.capacity = 2, 5, 3, 2
-        l_edges = [('input_0', 'network_0'), ('network_0', 'network_1'), ('network_0', 'network_2'),
-                   ('network_1', 'output_0'), ('network_2', 'output_1')] +  \
-                  [('input_0', 'network_3'), ('network_3', 'network_2')] + \
-                  [('input_1', 'network_4'), ('network_4', 'output_2')] + \
-                  [('input_1', 'network_2')]
+        self.n_i, self.n_rn, self.n_o, self.capacity = 2, 4, 2, 10
+        l_edges = [('input_0', 'network_0'), ('network_0', 'network_1')] +  \
+                  [('input_0', 'network_2'), ('network_2', 'network_1')] + \
+                  [('input_1', 'network_3'), ('network_3', 'output_1')]
 
         # Get matrices from list of edges and build network
         self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
-        self.dn = DeepNetwork.from_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity)
-        self.N = self.dn.network_nodes[0].frequency_stack.N
+        self.dn_fourrier = DeepNetwork.from_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity, 'fourrier')
+        self.dn_canoncial = DeepNetwork.from_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity,
+                                                      'canonical')
 
-    def test_forward_transmiting(self):
+    def test_forward_equations_fourrier(self):
         """
-        python -m unittest tests.core.equations.TestEquations.test_forward_transmiting
-
-        """
-
-        # Create forward messages
-        l_input_active = [True, False]
-        l_network_active = [True, False, False, True, False]
-        sax_si, sax_sn = create_signals_forward(l_input_active, l_network_active, self.dn)
-
-        # Test FNT
-        res_fnt = fnt(self.dn.D, self.dn.I, sax_sn, sax_si)
-
-        # Compute variable for test
-        stack = self.dn.network_nodes[0].frequency_stack
-        set_coefs = set(stack.coef_from_series(res_fnt.toarray()[:, 2], stack.basis_generic, n_jobs=0))
-        coef_a = stack.coef_from_series(sax_sn.toarray()[:, 0], stack.basis_generic, n_jobs=0)[0]
-        coef_b = stack.coef_from_series(sax_sn.toarray()[:, 3], stack.basis_generic, n_jobs=0)[0]
-
-        # Assert expected result
-        self.assertEqual(res_fnt.shape, (10, 5))
-        self.assertTrue((res_fnt.toarray()[:, 0] == sax_si.toarray()[:, 0]).all())
-        self.assertEqual(set_coefs, {coef_a, coef_b})
-
-        # Create forward messages
-        l_network_active = [False, True, True, False, False]
-        _, sax_sn = create_signals_forward(l_input_active, l_network_active, self.dn)
-
-        # Test FOT
-        res_fot = fot(self.dn.O, sax_sn)
-
-        # Assert expected result
-        self.assertTrue((res_fot.toarray()[:, -1] == np.zeros(stack.N)).all())
-        self.assertTrue((res_fot.toarray()[:, 0] == sax_sn.toarray()[:, 1]).all() &
-                        (res_fot.toarray()[:, 1] == sax_sn.toarray()[:, 1]).all())
-
-    def test_forward_processing(self):
-        """
-        python -m unittest tests.core.equations.TestEquations.test_forward_processing
+        python -m unittest tests.core.equations.TestEquations.test_forward_equations_fourrier
 
         """
 
-        l_input_active = [True, False]
-        l_network_active = [True, False, False, True, False]
-        sax_si, sax_sn = create_signals_forward(l_input_active, l_network_active, self.dn)
+        imputer = init_imputer()
+        solver = DeepNetSolver(self.dn_fourrier, 2, imputer, 'fourrier', p0=1)
 
-        # Get FNT
-        res_fnt = fnt(self.dn.D, self.dn.I, sax_sn, sax_si)
+        # Run for one epoch (forward transmitting)
+        solver.run_epoch(1)
+        self.assertAlmostEqual(len(solver.sax_so.nonzero()[0]), 0)
+        self.assertAlmostEqual(len(np.unique(solver.sax_sn.nonzero()[1])), 1)
+        self.assertAlmostEqual(np.unique(solver.sax_sn.nonzero()[1])[0], 3)
 
-        # Test FNP
-        _, ax_sa = fnp(res_fnt, self.dn.network_nodes, self.dn.tau)
-        sax_C = fcp(ax_sa, self.dn.Cm)
+        # Run for one epoch (forward processing)
+        solver.run_epoch(1)
+        node = solver.deep_network.network_nodes[3]
+        self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), 1)
+        self.assertEqual(node.basis.queue_forward[0], (0, ['N=21,k=0']))
+        self.assertTrue((solver.sax_C.toarray() == np.array([[False, False]] * 3 + [[True, False]], dtype=bool)).all())
 
-        self.assertEqual([n.active for n in self.dn.network_nodes], [True] * 4 + [False])
-        self.assertEqual(len(self.dn.network_nodes[2].frequency_stack.map.items()[0][1]), 2)
-        self.assertEqual(len(set(zip(*sax_C.nonzero())).intersection(zip(*self.dn.O.nonzero()))), 0)
+        for node in solver.deep_network.network_nodes[:-1]:
+            self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), 0)
 
-    def test_backward_transmiting(self):
+        # Run epoch (2nd forward transmitting)
+        solver.run_epoch(1)
+        self.assertAlmostEqual(len(np.unique(solver.sax_so.nonzero()[1])), 1)
+        self.assertAlmostEqual(np.unique(solver.sax_so.nonzero()[1])[0], 1)
+        self.assertAlmostEqual(len(np.unique(solver.sax_sn.nonzero()[1])), 2)
+
+        # Run one epoch (backward buffer and 2nd forward processing)
+        solver.run_epoch(1)
+        d_test = {0: 1, 1: 0, 2: 1, 3: 1}
+        for i, v in d_test.items():
+            node = solver.deep_network.network_nodes[i]
+            self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), v)
+
+        self.assertTrue((solver.sax_C == np.array([[True] * 2, [False] * 2, [True] * 2, [False] * 2])).all())
+        self.assertTrue((solver.sax_Cb.toarray() == np.array([[False, False]] * 3 + [[True, False]], dtype=bool)).all())
+        self.assertTrue((solver.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
+        self.assertTrue((solver.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
+        self.assertEqual(np.unique(solver.sax_sob.nonzero()[1])[0], 1)
+
+    def test_backward_equations_fourrier(self):
         """
-        python -m unittest tests.core.equations.TestEquations.test_backward_transmiting
-
-        """
-        # Compute forward pass
-        l_network_active = [False, True, True, False, False]
-        sax_so, sax_C, ax_sa = compute_forward_pass(l_network_active, self.dn)
-
-        # buffer signals of interest
-        sax_Cb, sax_sab, sax_sob = buffer(sax_C, ax_sa, self.dn.O.shape[1], sax_so)
-
-        # Compute bop
-        sax_sob = bop(sax_so, csc_matrix([1, 0, 0]), self.N)
-
-        sax_snb = csc_matrix(np.zeros([self.N, len(l_network_active)]), dtype=np.complex)
-
-        # Test BNT sax_bnp is empty
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_sab)
-
-        for i, b in enumerate(l_network_active):
-            if not b:
-                self.assertTrue((sax_snb.toarray()[:, i] == np.zeros(self.N)).all())
-            else:
-                stack = self.dn.network_nodes[i].frequency_stack
-                l_coefs_in, l_infos = stack.coef_from_series(sax_snb.toarray()[:, i], stack.basis_specific,
-                                                             return_coef=True, n_jobs=0)
-
-                self.assertTrue(len(l_coefs_in) > 0)
-                self.assertTrue(all([c in [1, -1] for c in l_infos]))
-
-        # Test BNT sax_bnp is not empty
-        sax_snb = csc_matrix(np.zeros([self.N, len(l_network_active)], dtype=np.complex))
-        sax_snb[:, 1] = sax_sob[:, 0]
-        sax_snb[:, 2] = sax_sob[:, 1]
-
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_sab)
-
-        self.assertEqual(len(sax_snb[0, :].nonzero()[1]), 3)
-
-        stack = self.dn.network_nodes[3].frequency_stack
-        _, l_infos = stack.coef_from_series(sax_snb.toarray()[:, 3], stack.basis_generic,
-                                            return_coef=True, n_jobs=0)
-        self.assertEqual(l_infos[0], -1)
-
-        # Test BIT
-        sax_snb[:, 2] = csc_matrix(np.zeros([self.N, 1], dtype=np.complex))
-
-        sax_sib = bit(self.dn.I, sax_snb)
-
-        stack = self.dn.input_nodes[0].frequency_stack
-        _, l_infos = stack.coef_from_series(sax_sib.toarray()[:, 0], stack.basis_generic,
-                                            return_coef=True, n_jobs=0)
-        self.assertEqual(l_infos[0], -1)
-
-    def test_backward_processing(self):
-        """
-        python -m unittest tests.core.equations.TestEquations.test_backward_processing
+        python -m unittest tests.core.equations.TestEquations.test_backward_equations_fourrier
 
         """
-        # Compute forward pass and backward transmiting
-        l_network_active = [False, True, True, False, False]
-        sax_so, sax_C, ax_sa = compute_forward_pass(l_network_active, self.dn)
 
-        # buffer signals of interest
-        sax_Cb, sax_sab, sax_sob = buffer(sax_C, ax_sa, self.dn.O.shape[1], sax_so)
+        imputer = init_imputer()
+        solver = DeepNetSolver(self.dn_fourrier, 2, imputer, 'fourrier', p0=1)
 
-        # Test BOP
-        sax_sob = bop(sax_so, csc_matrix([1, 0, 0]), self.N)
+        # Run for sufficient number of epoch to reach first backward processing
+        ax_out = solver.deep_network.O.toarray()
+        solver.run_epoch(5)
 
-        # Assert expected result
-        feedback = np.zeros(sax_sob.shape[1])
-        for i in np.unique(sax_sob.nonzero()[1]):
-            feedback[i] = np.sign(sax_sob[0, i])
+        node = solver.deep_network.network_nodes[-1]
+        self.assertTrue((ax_out == solver.deep_network.O.toarray()).all())
 
-        self.assertTrue((feedback == np.array([1, -1, 0])).all())
+        ax_out = solver.sax_sob.toarray().transpose()
+        ax_test = node.basis.base
+        self.assertTrue((np.round(np.real(ax_out.dot(ax_test.conjugate()))) == np.array([0, 1])).all())
 
-        # add signal to test other processing
-        sax_snb = csc_matrix(np.zeros([self.N, len(l_network_active)], dtype=np.complex))
-        sax_snb[:, 1] = sax_sob[:, 0]
-        sax_snb[:, 2] = sax_sob[:, 1]
+        ax_test = node.basis.base_from_key('N={},k={}'.format(node.basis.N, node.basis.key), offset=1)
+        self.assertTrue((np.round(np.real(ax_out.dot(ax_test.conjugate()))) == np.array([0, 1])).all())
+        self.assertTrue((solver.sax_snb.toarray() == 0).all())
 
-        sax_snb = bnt(self.dn.D, self.dn.O, sax_snb, sax_sob, sax_sab)
+        # Run first backward transmitting
+        ax_Ow, ax_Dw, ax_Iw = solver.deep_network.Ow, solver.deep_network.Dw, solver.deep_network.Iw
+        solver.run_epoch(1)
 
-        # Test BNP
-        sax_snb = bnp(self.dn.network_nodes, sax_snb)
+        # Make sure update of network is ok
+        self.assertEqual(ax_Ow[-1, 1], solver.deep_network.Ow[-1, 1] - 1)
+        self.assertEqual(len(solver.deep_network.Ow.nonzero()[0]), 1)
+        self.assertTrue((ax_Dw == solver.deep_network.Dw).toarray().all())
+        self.assertTrue((ax_Iw == solver.deep_network.Iw).toarray().all())
 
-        # Assertion on expected result
-        self.assertTrue((sax_snb.toarray()[:, 0] == np.zeros(self.N)).all())
-        self.assertTrue((sax_snb.toarray()[:, 1] != np.zeros(self.N)).all() and sax_snb.toarray()[0, 1] > 0)
-        self.assertTrue((sax_snb.toarray()[:, 2] != np.zeros(self.N)).all() and sax_snb.toarray()[0, 2] < 0)
-        self.assertEqual(self.dn.network_nodes[1].d_levels[1], 11)
-        self.assertEqual(self.dn.network_nodes[2].d_levels[1], 9)
+        # Make sure nodes has received their backward message
+        self.assertEqual(len(np.unique(solver.sax_snb.nonzero()[1])), 1)
 
-    def test_network_update(self):
+        # Run second backward processing
+        solver.run_epoch(1)
+
+        # Make sure no candidate has been updated
+        self.assertEqual(len(solver.deep_network.Ow.nonzero()[0]), 1)
+        self.assertEqual(len(solver.deep_network.Cm.nonzero()[0]), 1)
+
+        # Make sure sax_sob is all zero
+        self.assertEqual(solver.sax_sob.nnz, 0)
+
+        # make sure backward messages are correct
+        node = solver.deep_network.input_nodes[-1]
+        self.assertEqual(np.round(np.real(solver.sax_snb.toarray()[:, -1].dot(node.basis.base.conjugate()))), 1)
+        self.assertEqual(node.basis.depth_from_basis(solver.sax_snb.toarray()[:, -1]), ([0], [1.]))
+
+        # Backward transitting
+        Iw = solver.deep_network.Iw
+        solver.run_epoch(1)
+
+        # Assert Iw has been updated
+        self.assertEqual(solver.deep_network.Iw[1, -1], Iw[1, -1] + 1)
+
+        # Test update of Ow
+        solver.run_epoch(1)
+        self.assertTrue(solver.sax_Cb[1, 0])
+        solver.run_epoch(1)
+        self.assertEqual(solver.deep_network.Ow[1, 0], 5)
+
+        # just to make sure
+        solver.run_epoch(10)
+
+    def test_forward_equations_canonical(self):
         """
-         python -m unittest tests.core.equations.TestEquations.test_network_update
+        python -m unittest tests.core.equations.TestEquations.test_forward_equations_canonical
 
-         """
-        # Compute forward pass and backward transmiting
-        l_network_active = [False, True, True, False, False]
-        sax_so, sax_C, ax_sa = compute_forward_pass(l_network_active, self.dn)
+        """
 
-        # Save candidate and active network nodes
-        # buffer signals of interest
-        sax_Cb, sax_sab, sax_sob = buffer(sax_C, ax_sa, self.dn.O.shape[1], sax_so)
-        sax_got = csc_matrix([1, 0, 0])
+        imputer = init_imputer()
+        solver = DeepNetSolver(self.dn_canoncial, 2, imputer, 'canonical', p0=1)
 
-        # Create backward signals for output and network
-        sax_sob = bop(sax_so, sax_got, self.N)
+        # Run for one epoch (forward transmitting)
+        solver.run_epoch(1)
+        self.assertAlmostEqual(len(solver.sax_so.nonzero()[0]), 0)
+        self.assertAlmostEqual(len(np.unique(solver.sax_sn.nonzero()[1])), 1)
+        self.assertAlmostEqual(np.unique(solver.sax_sn.nonzero()[1])[0], 3)
 
-        sax_snb = csc_matrix(np.zeros([self.N, len(l_network_active)], dtype=np.complex))
+        # Run for one epoch (forward processing)
+        solver.run_epoch(1)
+        node = solver.deep_network.network_nodes[3]
+        self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), 1)
+        self.assertEqual(node.basis.queue_forward[0], (0, ['N=21,k=0']))
+        self.assertTrue((solver.sax_C.toarray() == np.array([[False, False]] * 3 + [[True, False]], dtype=bool)).all())
 
-        sax_snb[:, 1] = np.array([self.dn.network_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
-        sax_snb[:, 2] = np.array([-1 * self.dn.network_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
-        Dw_ = self.dn.Dw.copy()
+        for node in solver.deep_network.network_nodes[:-1]:
+            self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), 0)
 
-        # Test BDU
-        bdu(sax_snb, self.dn)
-        self.assertTrue(self.dn.Dw[0, 1] == Dw_[0, 1] + 1)
-        self.assertTrue(self.dn.Dw[0, 2] == Dw_[0, 2] - 1)
+        # Run epoch (2nd forward transmitting)
+        solver.run_epoch(1)
+        self.assertAlmostEqual(len(np.unique(solver.sax_so.nonzero()[1])), 1)
+        self.assertAlmostEqual(np.unique(solver.sax_so.nonzero()[1])[0], 1)
+        self.assertAlmostEqual(len(np.unique(solver.sax_sn.nonzero()[1])), 2)
 
-        bdu(sax_snb, self.dn, penalty=100)
-        self.assertTrue(self.dn.D[0, 2] == 0)
-        self.dn.graph['Dw'] = Dw_
+        # Run one epoch (backward buffer and 2nd forward processing)
+        solver.run_epoch(1)
+        d_test = {0: 1, 1: 0, 2: 1, 3: 1}
+        for i, v in d_test.items():
+            node = solver.deep_network.network_nodes[i]
+            self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), v)
 
-        # Test BOU
-        Ow_ = self.dn.Ow
-        bou(sax_sob, sax_sab, self.dn)
+        self.assertTrue((solver.sax_C == np.array([[True] * 2, [False] * 2, [True] * 2, [False] * 2])).all())
+        self.assertTrue((solver.sax_Cb.toarray() == np.array([[False, False]] * 3 + [[True, False]], dtype=bool)).all())
+        self.assertTrue((solver.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
+        self.assertTrue((solver.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
+        self.assertEqual(np.unique(solver.sax_sob.nonzero()[1])[0], 1)
 
-        self.assertTrue(self.dn.Ow[1, 0] == Ow_[1, 0] + 1)
-        self.assertTrue(self.dn.Ow[2, 1] == Ow_[2, 1] - 1)
-        self.dn.graph['Ow'] = Ow_
+    def test_backward_equations_canonical(self):
+        """
+        python -m unittest tests.core.equations.TestEquations.test_backward_equations_canonical
 
-        # Test BIU
-        Iw_ = self.dn.Iw
-        sax_snb[:, 0] = np.array([self.dn.input_nodes[0].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
-        sax_snb[:, 2] = np.array([-1 * self.dn.input_nodes[1].frequency_stack.encode(sax_sob[:, 0].toarray()[:, 0])]).transpose()
+        """
 
-        biu(sax_snb, self.dn)
+        imputer = init_imputer()
+        solver = DeepNetSolver(self.dn_canoncial, 2, imputer, 'canonical', p0=1)
 
-        self.assertTrue(self.dn.Iw[0, 0] == Iw_[0, 0] + 1)
-        self.assertTrue(self.dn.Iw[1, 2] == Iw_[1, 2] - 1)
+        # Run for sufficient number of epoch to reach first backward processing
+        ax_out = solver.deep_network.O.toarray()
+        solver.run_epoch(5)
 
-        # Test BCU
-        Cm_ = self.dn.Cm.copy()
-        bcu(sax_got, sax_Cb, self.dn, w0=10)
+        node = solver.deep_network.network_nodes[-1]
+        self.assertTrue((ax_out == solver.deep_network.O.toarray()).all())
 
-        self.assertTrue(self.dn.Ow[sax_Cb] == 10)
-        self.assertTrue((self.dn.Ow[~sax_Cb.toarray()] == Cm_[~sax_Cb.toarray()]).all())
+        ax_out = solver.sax_sob.toarray().transpose()
+        ax_test = node.basis.base.toarray()[0]
+        self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
+
+        ax_test = node.basis.base_from_key('N={},k={}'.format(node.basis.N, node.basis.key), offset=1).toarray()[0]
+        self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
+        self.assertTrue((solver.sax_snb.toarray() == 0).all())
+
+        # Run first backward transmitting
+        ax_Ow, ax_Dw, ax_Iw = solver.deep_network.Ow, solver.deep_network.Dw, solver.deep_network.Iw
+        solver.run_epoch(1)
+
+        # Make sure update of network is ok
+        self.assertEqual(ax_Ow[-1, 1], solver.deep_network.Ow[-1, 1] - 1)
+        self.assertEqual(len(solver.deep_network.Ow.nonzero()[0]), 1)
+        self.assertTrue((ax_Dw == solver.deep_network.Dw).toarray().all())
+        self.assertTrue((ax_Iw == solver.deep_network.Iw).toarray().all())
+
+        # Make sure nodes has received their backward message
+        self.assertEqual(len(np.unique(solver.sax_snb.nonzero()[1])), 1)
+
+        # Run second backward processing
+        solver.run_epoch(1)
+
+        # Make sure no candidate has been updated
+        self.assertEqual(len(solver.deep_network.Ow.nonzero()[0]), 1)
+        self.assertEqual(len(solver.deep_network.Cm.nonzero()[0]), 1)
+
+        # Make sure sax_sob is all zero
+        self.assertEqual(solver.sax_sob.nnz, 0)
+
+        # make sure backward messages are correct
+        node = solver.deep_network.input_nodes[-1]
+        self.assertEqual(solver.sax_snb[:, -1].toarray()[:, 0].dot(node.basis.base.toarray()[0]), 1)
+        self.assertEqual(node.basis.depth_from_basis(solver.sax_snb[:, -1].transpose()), ([0], [1.]))
+
+        # Backward transitting
+        Iw = solver.deep_network.Iw
+        solver.run_epoch(1)
+
+        # Assert Iw has been updated
+        self.assertEqual(solver.deep_network.Iw[1, -1], Iw[1, -1] + 1)
+
+        # Test update of Ow
+        solver.run_epoch(1)
+        self.assertTrue(solver.sax_Cb[1, 0])
+        solver.run_epoch(1)
+        self.assertEqual(solver.deep_network.Ow[1, 0], 5)
+
+        # just to make sure that the rest is ok
+        solver.run_epoch(10)
 
 
-def create_signals_forward(l_ia, l_na, dn):
+def init_imputer():
+    # Create temporary directory for test
+    driver = NumpyDriver()
+    tmpdirin, tmpdirout = driver.TempDir('test_and_pattern', suffix='in', create=True), \
+                          driver.TempDir('test_and_pattern', suffix='out', create=True)
 
-    sax_si = csc_matrix([n.frequency_stack.fourrier_basis()[0] if l_ia[i] else np.zeros(n.frequency_stack.N)
-                         for i, n in enumerate(dn.input_nodes)]).transpose()
+    # Create I/O and save it into tmpdir files
+    ax_input = csc_matrix(([1., 1.], ([0, 1], [1, 0])), shape=(10, 2), dtype=int)
+    ax_output = csc_matrix(([1., 1.], ([0, 2], [1, 0])), shape=(10, 2), dtype=int)
+    driver.write_file(ax_input, driver.join(tmpdirin.path, 'forward.npz'), is_sparse=True)
+    driver.write_file(ax_output, driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
 
-    sax_sn = csc_matrix([n.frequency_stack.fourrier_basis()[0] if l_na[i] else np.zeros(n.frequency_stack.N)
-                         for i, n in enumerate(dn.network_nodes)]).transpose()
+    # Create and init imputer
+    imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
+    imputer.read_raw_data('forward.npz', 'backward.npz')
+    imputer.run_preprocessing()
+    imputer.write_features('forward.npz', 'backward.npz')
+    imputer.stream_features()
 
-    return sax_si, sax_sn
+    tmpdirin.remove()
+    tmpdirout.remove()
 
-
-def compute_forward_pass(l_na, dn):
-
-    # Generate Signal
-    s = dn.input_nodes[0].frequency_stack.fourrier_basis()[0]
-    sax_sn = csc_matrix([n.frequency_stack.encode(s) if l_na[i] else np.zeros(n.frequency_stack.N)
-                         for i, n in enumerate(dn.network_nodes)]).transpose()
-
-    # Compute forward transitting
-    sax_so = fot(dn.O, sax_sn)
-    sax_C = fcp(l_na, dn.O)
-
-    return sax_so, sax_C, np.array(l_na)
-
-
+    return imputer

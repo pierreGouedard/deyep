@@ -2,8 +2,7 @@
 import numpy as np
 
 # Local import
-from deyep.core.tools.linear_algebra.fourrier_domain import get_fourrier_coef_from_params, \
-    get_fourrier_series, get_fourrier_coef_from_series, inner_product
+from deyep.core.tools.linear_algebra.fourrier_domain import get_fourrier_series, get_fourrier_basis_from_series
 from deyep.utils.names import KVName
 from deyep.core.tools.basis.comon import Basis
 
@@ -19,13 +18,13 @@ class FourrierBasis(Basis):
         return get_fourrier_series(N, k)
 
     def keys_from_forward_basis(self, s):
-        l_indices = get_fourrier_coef_from_series(s, np.array(self.forward_basis, dtype=complex))
+        l_indices = get_fourrier_basis_from_series(s, np.array(self.forward_basis, dtype=complex))
         return map(lambda x: 'N={},k={}'.format(self.N, self.forward_keys[x]), l_indices)
 
-    def depth_from_basis(self, s, return_coef=False):
-        l_indices, l_coefs = get_fourrier_coef_from_series(s, self.basis, return_coef=return_coef)
+    def depth_from_basis(self, s, return_coef=True):
+        l_indices, l_coefs = get_fourrier_basis_from_series(s, np.array(self.basis, dtype=complex),
+                                                            return_coef=return_coef)
         return l_indices, l_coefs
 
     def contain_base(self, s):
-        return np.round(np.real(inner_product(self.base_from_key(self.key), s))) != 0.
-
+        return np.round(np.real(self.base_from_key('k={},N={}'.format(self.key, self.N)).dot(s.conjugate()))) != 0.

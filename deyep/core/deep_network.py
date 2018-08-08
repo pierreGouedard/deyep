@@ -26,8 +26,7 @@ class DeepNetwork(object):
 
     @property
     def D(self):
-        return csc_matrix((np.ones(len((self.Dw > 0).data)), (self.Dw > 0).indices, (self.Dw > 0).indptr),
-                          shape=self.Dw.shape)
+        return self.Dw > 0
 
     @property
     def Dw(self):
@@ -35,8 +34,7 @@ class DeepNetwork(object):
 
     @property
     def O(self):
-        return csc_matrix((np.ones(len((self.Ow > 0).data)), (self.Ow > 0).indices, (self.Ow > 0).indptr),
-                          shape=self.Ow.shape)
+        return self.Ow > 0
 
     @property
     def Ow(self):
@@ -44,8 +42,7 @@ class DeepNetwork(object):
 
     @property
     def I(self):
-        return csc_matrix((np.ones(len((self.Iw > 0).data)), (self.Iw > 0).indices, (self.Iw > 0).indptr),
-                          shape=self.Iw.shape)
+        return self.Iw > 0
 
     @property
     def Iw(self):
@@ -56,8 +53,8 @@ class DeepNetwork(object):
         return self.graph['Cm']
 
     @staticmethod
-    def from_matrices(sax_net, sax_in, sax_out, capacity, seed=None, w0=5, l0=10, tau=5):
-        l_inputs, l_outputs, l_networks, n_freq = comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=l0)
+    def from_matrices(sax_net, sax_in, sax_out, capacity, basis, seed=None, w0=5, l0=10, tau=5):
+        l_inputs, l_outputs, l_networks, n_freq = comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=l0)
         d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': sax_out}
 
         return DeepNetwork(w0, l0, tau, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,

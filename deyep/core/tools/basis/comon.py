@@ -44,8 +44,12 @@ class Basis(object):
     def contain_base(self, s):
         raise NotImplementedError
 
-    def retrieve_key_from_queue(self, d):
-        raise NotImplementedError
+    def retrieve_key_from_queue(self, d, t):
+        l_keys = [v for k, v in filter(lambda x: x is not None, self.queue_forward) if k == t - (2 * d)]
+        if len(l_keys) > 0:
+            return set(l_keys[0])
+
+        return []
 
     def encode(self, s_forward, timestamp, return_level=False):
 
@@ -59,33 +63,44 @@ class Basis(object):
 
         return self.base
 
-    def decode(self, s_in, d_levels=None):
+    def decode(self, s_in, t, l_keys_input=[], d_levels=None):
 
         # Make sure s_in contains class instance base
         if not self.contain_base(s_in):
             return None
 
         l_depths, l_coefs = self.depth_from_basis(s_in)
-        s_out, d_main_coef = np.zeros(self.N), {}
+        s_out, d_main_coef = None, {}
 
         for d, c in zip(l_depths, l_coefs):
             if d == 0:
                 continue
 
             # retrieve forward identifier in queue from keys and build signal.
-            set_key_out = self.retrieve_key_from_queue(d)
+            set_key_out = self.retrieve_key_from_queue(d, t)
+
+            if len(set_key_out) == 0:
+                continue
 
             if d_levels is not None:
                 d_levels[len(set_key_out)] = d_levels.get(len(set_key_out), 0) + Upsilon(c)
 
-            if d < self.capacity:
+            if 2 * (d + 1) < self.capacity:
                 for k_ in set_key_out:
                     d_main_coef[k_] = d_main_coef.get(k_, 0.) + Upsilon(c)
-                    s_out += c * self.base_from_key(k_, offset=d + 1)
+
+                    if k_ not in l_keys_input:
+                        if s_out is None:
+                            s_out = c * self.base_from_key(k_, offset=d + 1)
+                        else:
+                            s_out += c * self.base_from_key(k_, offset=d + 1)
 
         # build backward signal (adding 1 to keys)
         for k, c in d_main_coef.items():
-            s_out += c * self.base_from_key(k)
+            if s_out is None:
+                s_out = c * self.base_from_key(k)
+            else:
+                s_out += c * self.base_from_key(k)
 
         if d_levels is not None:
             return s_out, d_levels

@@ -156,7 +156,7 @@ class TreePattern(TestPattern):
 class AndPattern(TestPattern):
     """
     The primary test purpose of this pattern is to test for level convergence of network nodes. After a significant
-    number of iteration, all edges should remain and only the level self.n of network nodes should be activable
+    number of iteration, all edges should remain and only the level self.n (or higher) of network nodes should be activable
     """
 
     def __init__(self, n):
