@@ -87,3 +87,12 @@ def plot_graph(ax_graph, layout=None):
     plt.show()
 
 
+def plot_hist(ax_values):
+
+    import IPython
+    IPython.embed()
+    plt.hist(x=ax_values, bins='auto', color='#0504aa', alpha=0.7, rwidth=0.85)
+    plt.grid()
+    plt.show()
+
+

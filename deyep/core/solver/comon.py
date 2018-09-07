@@ -19,7 +19,7 @@ class DeepNetSolver(object):
         # Data structure
         self.deep_network = deep_network
         self.imputer = imputer
-        self.l_keys_input = ['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.deep_network.input_nodes]
+        self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.deep_network.input_nodes])
 
         # Init signals
         self.dtype = int if basis == 'canonical' else complex
@@ -30,7 +30,6 @@ class DeepNetSolver(object):
         self.t_fp = 0
 
     def run_epoch(self, n):
-        print self.basis
         if self.basis == 'fourrier':
             self.run_epoch_fourrier(n)
         elif self.basis == 'canonical':
@@ -65,7 +64,7 @@ class DeepNetSolver(object):
                 self.f_forward_processing(self.t_fp)
                 self.t_fp += 1
                 i += 1
-
+            print self.t
             self.t += 1
 
     def run_epoch_canonical(self, n):
@@ -95,7 +94,7 @@ class DeepNetSolver(object):
                 self.c_forward_processing(self.t_fp)
                 self.t_fp += 1
                 i += 1
-
+            print self.t
             self.t += 1
 
     def run_fourrier_epoch_analysis(self, n):
@@ -194,7 +193,7 @@ class DeepNetSolver(object):
         self.sax_sn, self.ax_sa = f_fnp(self.sax_sn, self.deep_network.network_nodes, self.deep_network.tau, t)
 
         # Update candidate
-        self.sax_C = f_fcp(self.ax_sa, self.deep_network.Cm)
+        self.sax_C = f_fcp(self.ax_sa, self.deep_network.Cm, self.sax_C)
 
     def f_backward_transmiting(self, only_buffer=False):
 
@@ -223,7 +222,7 @@ class DeepNetSolver(object):
         self.sax_sob = f_bop(self.sax_sob, sax_got, l_nodes)
 
         # Backward network process
-        self.sax_snb = f_bnp(self.deep_network.network_nodes, self.sax_snb, t, self.l_keys_input)
+        self.sax_snb = f_bnp(self.deep_network.network_nodes, self.sax_snb, t, self.key_inputs)
 
         # Validate candidate
         self.sax_Cb = bcv(sax_got, self.sax_Cb)
@@ -233,7 +232,7 @@ class DeepNetSolver(object):
         self.sax_sn, self.ax_sa = c_fnp(self.sax_sn, self.deep_network.network_nodes, self.deep_network.tau, t)
 
         # Update candidate
-        self.sax_C = c_fcp(self.ax_sa, self.deep_network.Cm)
+        self.sax_C = c_fcp(self.ax_sa, self.deep_network.Cm, self.sax_C)
 
     def c_backward_transmiting(self, only_buffer=False):
 
@@ -258,14 +257,14 @@ class DeepNetSolver(object):
 
     def c_backward_processing(self, sax_got, t):
 
+        # Validate candidate
+        self.sax_Cb = bcv(sax_got, self.sax_sob, self.sax_Cb)
+
         # Generate feedback
         self.sax_sob = c_bop(self.sax_sob, sax_got)
 
         # Backward network process
-        self.sax_snb = c_bnp(self.deep_network.network_nodes, self.sax_snb, t, self.l_keys_input)
-
-        # Validate candidate
-        self.sax_Cb = bcv(sax_got, self.sax_Cb)
+        self.sax_snb = c_bnp(self.deep_network.network_nodes, self.sax_snb, t, self.key_inputs)
 
 
 def init_core_forward_signal(dn, dtype):
@@ -275,7 +274,7 @@ def init_core_forward_signal(dn, dtype):
     sax_sn = csc_matrix((N, len(dn.network_nodes)), dtype=dtype)
     sax_so = csc_matrix((N, len(dn.output_nodes)), dtype=dtype)
     ax_sa = np.array([False] * len(dn.network_nodes))
-    sax_C = csc_matrix((len(dn.network_nodes), len(dn.network_nodes)))
+    sax_C = csc_matrix((len(dn.network_nodes), len(dn.output_nodes)))
 
     return sax_si, sax_sn, sax_so, ax_sa, sax_C
 
@@ -287,7 +286,7 @@ def init_core_backward_signal(dn):
     sax_snb = csc_matrix((N, len(dn.network_nodes)), dtype=dtype)
     sax_sob = csc_matrix((N, len(dn.output_nodes)), dtype=dtype)
     sax_sab = csc_matrix(np.array([[False] * len(dn.network_nodes)]).repeat(len(dn.output_nodes), axis=0))
-    sax_Cb = csc_matrix((len(dn.network_nodes), len(dn.network_nodes)))
+    sax_Cb = csc_matrix((len(dn.network_nodes), len(dn.output_nodes)))
 
     return sax_sib, sax_snb, sax_sob, sax_sab, sax_Cb
 

@@ -298,33 +298,68 @@ class RandomPattern(TestPattern):
     """
         random generation with the correcct convergence sentence
     """
-    def __init__(self, na, nb):
+    def __init__(self, ni, nd, no, delay, p, seed=666):
 
-        self.na, self.nb = na, nb
+        self.ni, self.nd, self.no, self.delay, self.p, self.seed = ni, nd, no, delay, p, seed
 
         # Build list of nodess
-        input_nodes = []
-        network_nodes = []
-        output_nodes = []
+        input_nodes = ['input_{}'.format(i) for i in range(self.ni)]
+        network_nodes = ['network_{}'.format(i) for i in range(self.nd)]
+        output_nodes = ['output_{}'.format(i) for i in range(self.no)]
 
-        TestPattern.__init__(self, 'random', input_nodes, network_nodes, output_nodes, 2)
+        TestPattern.__init__(self, 'random', input_nodes, network_nodes, output_nodes, self.delay)
 
     def build_graph_pattern_final(self):
         raise NotImplementedError
 
-    def build_graph_pattern_init(self):
-        raise NotImplementedError
+    def build_graph_pattern_init(self, decrease='linear'):
+        np.random.seed(self.seed)
+
+        l_selected = [c for c in self.network_nodes if np.random.choice([0, 1], p=[1 - self.p, self.p]) == 1]
+        l_candidates = [n for n in self.network_nodes if n not in l_selected]
+        l_edges = [(np.random.choice(self.input_nodes), c) for c in l_selected]
+
+        for i in range(100):
+
+            if decrease == 'linear':
+                p = self.p / (i + 2)
+
+            elif decrease == 'exponential':
+                p = pow(self.p, i)
+
+            l_selected_ = [c for c in l_candidates if np.random.choice([0, 1], p=[1 - p, p]) == 1]
+
+            if len(l_selected_) == 0:
+                break
+
+            l_edges += [(np.random.choice(l_selected), c) for c in l_selected_]
+            l_selected = list(l_selected_)
+            l_candidates = [n for n in self.network_nodes if n not in l_selected]
+
+        return l_edges
 
     def build_deterministic_io(self):
-        raise NotImplementedError
+        return self.build_random_io()
 
     def build_random_io(self):
-        raise NotImplementedError
+        ax_inputs = np.array([np.random.choice([0, 1]) for _ in range(self.ni)])
+        ax_outputs = np.array([np.random.choice([0, 1]) for _ in range(self.ni)])
+
+        return ax_inputs, ax_outputs
 
     def init_io_sequence(self):
-        raise NotImplementedError
+        return np.zeros((1, self.ni)), np.zeros((1, self.no))
 
-    def layout(self):
-        raise NotImplementedError
+    def layout(self, ax_graph):
+        ni, n, no = len(self.input_nodes), len(self.network_nodes), len(self.output_nodes)
+        pos, pos_ = {}, nx.spring_layout(nx.from_numpy_array(ax_graph))
+
+        pos.update({'inputs': {'pos': {i: pos_[i] for i in range(self.ni)}, 'color': 'r'}})
+        pos.update({'networks': {'pos': {self.ni + i: pos_[self.ni + i] for i in range(self.nd)}, 'color': 'k'}})
+        pos.update({'outputs': {'pos': {self.ni + self.nd + i: pos_[self.ni + self.nd + i] for i in range(self.no)},
+                                'color': 'b'}})
+
+        return pos
+
 
 

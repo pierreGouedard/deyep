@@ -21,13 +21,16 @@ def bit(sax_I, sax_snb):
     return sax_sib
 
 
-def bcv(sax_got, sax_Cb):
+def bcv(sax_got, sax_sob, sax_Cb):
     for i in range(sax_got.shape[1]):
-        sax_Cb[:, i] = sax_Cb[:, i] * sax_got[0, i] > 0
+        sax_Cb[:, i] = sax_Cb[:, i] * (sax_got[0, i] - sax_sob[0, i]) > 0
 
     return sax_Cb
 
 
 def bcu(sax_Cb, dn, w0=1):
     dn.graph['Cm'] += sax_Cb
+    t_nz_c = set(zip(*sax_Cb.nonzero()))
+    t_nz_o = set(zip(*dn.O.nonzero()))
+    print 'Number of common indices is {}'.format((len(t_nz_c.intersection(t_nz_o))))
     dn.graph['Ow'] += sax_Cb * w0

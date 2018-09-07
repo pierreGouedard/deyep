@@ -75,7 +75,8 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10):
             ]
         l_networks = [
             nodes.NetworkNode(
-                k_, 'network', FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs['network_{}'.format(k_)], capacity),
+                k_, 'network', FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []),
+                                             capacity),
                 v_['children'], l0
             ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
             ]
@@ -86,7 +87,8 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10):
             ]
         l_networks = [
             nodes.NetworkNode(
-                k_, 'network', CanonicalBasis(min(v_['freqs']), n_freq, d_forward_freqs['network_{}'.format(k_)], capacity),
+                k_, 'network', CanonicalBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []),
+                                              capacity),
                 v_['children'], l0
             ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
             ]
@@ -127,10 +129,12 @@ def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):
 
         if len(l_children) > 0:
             # Look for sibling
+            occupied_freqs = []
             for child in l_children:
                 sibling_nodes = filter(lambda (k_, v_): child in [t[0] for t in v_['children']] and k != k_, d_nodes.items())
-                occupied_freqs = sum(map(lambda (k_, v_): v_['freqs'], sibling_nodes), [])
-                freqs_ = freqs.difference(set(occupied_freqs))
+                occupied_freqs += sum(map(lambda (k_, v_): v_['freqs'], sibling_nodes), [])
+
+            freqs_ = freqs.difference(set(occupied_freqs))
 
             if len(freqs_) > 0:
                 d_nodes[k]['freqs'] = [list(freqs_)[0]]

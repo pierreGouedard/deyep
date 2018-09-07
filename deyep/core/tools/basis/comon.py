@@ -3,6 +3,7 @@ import numpy as np
 
 # Local import
 from deyep.core.tools.linear_algebra.comon import Upsilon
+from deyep.utils.names import KVName
 
 
 class Basis(object):
@@ -21,7 +22,8 @@ class Basis(object):
 
     @property
     def basis(self):
-        return [self.base_from_key('k={},N={}'.format(int(self.key + k), self.N)) for k in np.arange(0., self.capacity)]
+        return [self.base_from_key('k={},N={}'.format(int(self.key + k), self.N))
+                for k in np.arange(0., self.capacity / 2)]
 
     @property
     def forward_basis(self):
@@ -33,6 +35,10 @@ class Basis(object):
 
     @staticmethod
     def base_from_key(key, offset=0):
+        raise NotImplementedError
+
+    @staticmethod
+    def signal_from_keys(d_keys):
         raise NotImplementedError
 
     def keys_from_forward_basis(self, s):
@@ -49,7 +55,7 @@ class Basis(object):
         if len(l_keys) > 0:
             return set(l_keys[0])
 
-        return []
+        return set()
 
     def encode(self, s_forward, timestamp, return_level=False):
 
@@ -63,46 +69,39 @@ class Basis(object):
 
         return self.base
 
-    def decode(self, s_in, t, l_keys_input=[], d_levels=None):
-
+    def decode(self, s_in, t, keys_input={}, d_levels=None):
         # Make sure s_in contains class instance base
         if not self.contain_base(s_in):
             return None
 
         l_depths, l_coefs = self.depth_from_basis(s_in)
-        s_out, d_main_coef = None, {}
+        if len(l_depths) < 2:
+            raise ValueError('Node receive signal without any depth informations')
 
+        d_out, s_out = {}, None
         for d, c in zip(l_depths, l_coefs):
             if d == 0:
                 continue
 
             # retrieve forward identifier in queue from keys and build signal.
             set_key_out = self.retrieve_key_from_queue(d, t)
-
             if len(set_key_out) == 0:
-                continue
+                raise ValueError('Node received signal with depth matching None of the encoding informations')
 
             if d_levels is not None:
                 d_levels[len(set_key_out)] = d_levels.get(len(set_key_out), 0) + Upsilon(c)
 
             if 2 * (d + 1) < self.capacity:
-                for k_ in set_key_out:
-                    d_main_coef[k_] = d_main_coef.get(k_, 0.) + Upsilon(c)
+                for k in set_key_out:
+                    d_out[k] = d_out.get(k, 0) + Upsilon(c)
+                    if k not in keys_input:
+                        k_ = KVName.from_dict({'k': int(KVName.from_string(k)['k']) + d + 1, 'N': self.N}).to_string()
+                        d_out[k_] = d_out.get(k_, 0) + c
 
-                    if k_ not in l_keys_input:
-                        if s_out is None:
-                            s_out = c * self.base_from_key(k_, offset=d + 1)
-                        else:
-                            s_out += c * self.base_from_key(k_, offset=d + 1)
+        if len(d_out) > 0:
+            s_out = self.signal_from_keys(d_out)
 
-        # build backward signal (adding 1 to keys)
-        for k, c in d_main_coef.items():
-            if s_out is None:
-                s_out = c * self.base_from_key(k)
-            else:
-                s_out += c * self.base_from_key(k)
-
-        if d_levels is not None:
+        if d_levels is not None and s_out is not None:
             return s_out, d_levels
 
         return s_out

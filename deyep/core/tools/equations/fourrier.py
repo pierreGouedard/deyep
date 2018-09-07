@@ -24,13 +24,13 @@ def f_fnp(sax_fnt, l_nodes, tau, t):
     return sax_sn.transpose(), np.array([n.active for n in l_nodes])
 
 
-def f_fcp(l_actives, sax_Cm):
+def f_fcp(l_actives, sax_Cm, sax_C):
 
     # Build candidate matrix
-    sax_C = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
-    sax_C -= sax_Cm
+    sax_C_ = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
+    sax_C_ -= (sax_Cm + sax_C)
 
-    return csc_matrix((sax_C.data > 0, sax_C.indices, sax_C.indptr), shape=sax_C.shape)
+    return csc_matrix((sax_C_.data > 0, sax_C_.indices, sax_C_.indptr), shape=sax_C_.shape)
 
 
 def f_buffer(sax_C, ax_sa, no, sax_so):
@@ -89,6 +89,10 @@ class BnpParallel(object):
 
     def f(self, t):
         res = t[1].basis.decode(t[2], self.t, self.l_key_inputs, d_levels={})
+
+        if res is None:
+            return res
+
         return t[0], res[0], res[1]
 
 

@@ -1,5 +1,5 @@
 # Global import
-from scipy.sparse import csc_matrix
+from scipy.sparse import lil_matrix
 
 
 def get_key_from_series(sax_s, set_keys=None, return_coef=False):
@@ -19,7 +19,16 @@ def get_key_from_series(sax_s, set_keys=None, return_coef=False):
 
 
 def get_canonical_basis(N, k):
-    return csc_matrix(([1.], ([0], [k])), shape=(1, N), dtype=int)
+    sax_m = lil_matrix((1, N), dtype=int)
+    sax_m[0, k] = 1
+    return sax_m
+
+
+def get_canonical_signal(N, d_keys):
+    sax_m = lil_matrix((1, N), dtype=int)
+    for k, v in d_keys.items():
+        sax_m[0, k] = v
+    return sax_m
 
 
 def inner_product(x, y):

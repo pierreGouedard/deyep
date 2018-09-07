@@ -17,6 +17,10 @@ class FourrierBasis(Basis):
         N, k = int(KVName.from_string(key)['N']), int(KVName.from_string(key)['k']) + offset
         return get_fourrier_series(N, k)
 
+    @staticmethod
+    def signal_from_keys(d_keys):
+        return sum([v * FourrierBasis.base_from_key(k) for k, v in d_keys.items()])
+
     def keys_from_forward_basis(self, s):
         l_indices = get_fourrier_basis_from_series(s, np.array(self.forward_basis, dtype=complex))
         return map(lambda x: 'N={},k={}'.format(self.N, self.forward_keys[x]), l_indices)

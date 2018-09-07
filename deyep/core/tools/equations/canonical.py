@@ -1,6 +1,6 @@
 # Global import
 import numpy as np
-from scipy.sparse import csc_matrix, vstack
+from scipy.sparse import csc_matrix, vstack, csr_matrix, lil_matrix
 from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 
 # Local import
@@ -8,7 +8,7 @@ from deyep.core.tools.linear_algebra.comon import Chi_sax
 
 
 def c_fnp(sax_fnt, l_nodes, tau, t):
-    sax_sn = csc_matrix((sax_fnt.shape[1], sax_fnt.shape[0]), dtype=int)
+    sax_sn = lil_matrix((sax_fnt.shape[1], sax_fnt.shape[0]), dtype=int)
 
     # Init activation param of the nodes
     for n in l_nodes:
@@ -21,16 +21,16 @@ def c_fnp(sax_fnt, l_nodes, tau, t):
             l_nodes[i].active = True
             sax_sn[i, :] = s_out
 
-    return sax_sn.transpose(), np.array([n.active for n in l_nodes])
+    return sax_sn.tocsc().transpose(), np.array([n.active for n in l_nodes])
 
 
-def c_fcp(l_actives, sax_Cm):
+def c_fcp(l_actives, sax_Cm, sax_C):
 
     # Build candidate matrix
-    sax_C = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
-    sax_C -= sax_Cm
+    sax_C_ = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
+    sax_C_ -= (sax_Cm + sax_C)
 
-    return csc_matrix((sax_C.data > 0, sax_C.indices, sax_C.indptr), shape=sax_C.shape)
+    return csc_matrix((sax_C_.data > 0, sax_C_.indices, sax_C_.indptr), shape=sax_C_.shape)
 
 
 def c_buffer(sax_C, ax_sa, no, sax_so):
@@ -38,6 +38,7 @@ def c_buffer(sax_C, ax_sa, no, sax_so):
 
 
 def c_bop(sax_so, sax_got):
+
     sax_so = Chi_sax(vstack([csc_matrix((1, sax_so.shape[1])), sax_so[:-1, :]]) + sax_so).transpose()
 
     # Compute feedback TODO: may be optimized
@@ -49,35 +50,38 @@ def c_bop(sax_so, sax_got):
 
 
 class BnpParallel(object):
-    def __init__(self, t, l_key_inputs):
+    def __init__(self, t, key_inputs):
         self.t = t
-        self.l_key_inputs = l_key_inputs
+        self.key_inputs = key_inputs
 
     def f(self, t):
-        res = t[1].basis.decode(t[2], self.t, self.l_key_inputs, d_levels={})
+        res = t[1].basis.decode(t[2], self.t, self.key_inputs, d_levels={})
+
+        if res is None:
+            return res
+
         return t[0], res[0], res[1]
 
 
-def c_bnp(l_nodes, sax_snb, t, l_key_inputs, n_jobs=0):
+def c_bnp(l_nodes, sax_snb, t, key_inputs, n_jobs=0):
     p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
     # Instantiate class that implement parallel operations
-    bnpp = BnpParallel(t, l_key_inputs)
+    bnpp = BnpParallel(t, key_inputs)
 
     # Parallel operations
     l_ins = [(i, l_nodes[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
     l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
 
     # Fill
-    sax_snb = csc_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=int)
+    sax_snb = lil_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=int)
     for i, s, d_levels in l_res:
         # Update Levels and backward signal
         for k, v in d_levels.items():
             l_nodes[i].d_levels[k] += v
-
         sax_snb[i, :] = s
 
-    return sax_snb.transpose()
+    return sax_snb.tocsc().transpose()
 
 
 class ParallelUpdate(object):
@@ -92,7 +96,7 @@ class ParallelUpdate(object):
 def c_bdu(sax_snb, dn, penalty=1., n_jobs=1):
 
     if penalty != 1.:
-        sax_snb = (sax_snb < 0) * penalty + (sax_snb > 0)
+        sax_snb = ((sax_snb < 0) * -1 * penalty) + (sax_snb > 0)
 
     if n_jobs != 1:
         p = Pool(cpu_count())
@@ -110,8 +114,8 @@ def c_bdu(sax_snb, dn, penalty=1., n_jobs=1):
 
 def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
 
-    if penalty != 1.:
-        sax_sob = (sax_sob < 0) * penalty + (sax_sob > 0)
+    if penalty != 1. and (sax_sob < 0).nnz > 0:
+        sax_sob[sax_sob < 0] = sax_sob[sax_sob < 0] * penalty
 
     if n_jobs != 1:
         p = Pool(cpu_count())
@@ -133,7 +137,7 @@ def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
 def c_biu(sax_snb, dn, penalty=1., n_jobs=1):
 
     if penalty != 1.:
-        sax_snb = (sax_snb < 0) * penalty + (sax_snb > 0)
+        sax_snb = ((sax_snb < 0) * -1 * penalty) + (sax_snb > 0)
 
     if n_jobs != 1:
         p = Pool(cpu_count())
