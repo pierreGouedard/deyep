@@ -32,5 +32,4 @@ def bcu(sax_Cb, dn, w0=1):
     dn.graph['Cm'] += sax_Cb
     t_nz_c = set(zip(*sax_Cb.nonzero()))
     t_nz_o = set(zip(*dn.O.nonzero()))
-    print 'Number of common indices is {}'.format((len(t_nz_c.intersection(t_nz_o))))
     dn.graph['Ow'] += sax_Cb * w0
