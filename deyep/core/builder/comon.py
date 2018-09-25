@@ -130,7 +130,6 @@ def set_nodes_from_mat(mat, key):
 def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):
 
     for k, v in d_nodes.items():
-        print k
         if len(v['children_name']) > 0:
             # Look for sibling
             freqs_ = freqs.difference(get_occupied_freqs(k, v['children_name'], d_nodes))

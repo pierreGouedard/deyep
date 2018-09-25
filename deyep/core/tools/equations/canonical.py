@@ -127,9 +127,13 @@ def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
         sax_Ou = vstack(p.map(boup.f, [(n.basis.base, dn.O[i, :].multiply(sax_A[:, i].transpose()))
                                        for i, n in enumerate(dn.network_nodes)]))
     else:
-        sax_Ou = vstack([n.basis.base for n in dn.network_nodes])\
-            .dot(sax_sob)\
-            .multiply(dn.O.multiply(sax_A.transpose()))
+        try:
+            sax_Ou = vstack([n.basis.base for n in dn.network_nodes])\
+                .dot(sax_sob)\
+                .multiply(dn.O.multiply(sax_A.transpose()))
+        except:
+            import IPython
+            IPython.embed()
 
     dn.graph['Ow'] += sax_Ou
 

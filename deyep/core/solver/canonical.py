@@ -10,7 +10,7 @@ from deyep.core.solver.comon import DeepNetSolver
 
 class CanonicalDeepNetSolver(DeepNetSolver):
 
-    def __init__(self, deep_network, delay, imputer, p0=1, verbose=0):
+    def __init__(self, deep_network, delay, imputer, p0=1, verbose=1):
         DeepNetSolver.__init__(self, deep_network, delay, imputer, p0, 'canonical', verbose=verbose)
 
     def fit_epoch(self, n):

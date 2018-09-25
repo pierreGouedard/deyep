@@ -8,7 +8,7 @@ class Node(object):
         self.type = type
 
     def to_dict(self):
-        return {'id': self.id, 'value': self.values, 'statue': self.type}
+        return {'id': self.id, 'values': self.values, 'type': self.type}
 
 
 class InputNode(Node):
@@ -60,8 +60,8 @@ class OutputNode(Node):
         return d_out
 
     @staticmethod
-    def from_dict(d_node, basis):
-        return NetworkNode(d_node['id'], d_node['type'], d_node['parents'])
+    def from_dict(d_node):
+        return OutputNode(d_node['id'], d_node['type'], d_node['parents'])
 
 
 class NetworkNode(Node):

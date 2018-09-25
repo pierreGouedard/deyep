@@ -9,6 +9,7 @@ import settings
 from deyep.utils.driver.driver import FileDriver
 from deyep.core.tools.basis.canonical import CanonicalBasis
 from deyep.core.tools.basis.fourrier import FourrierBasis
+from deyep.core.nodes import InputNode as ni, OutputNode as no, NetworkNode as nd
 driver = FileDriver('network_file_driver', '')
 
 
@@ -17,9 +18,9 @@ class DeepNetwork(object):
     def __init__(self, project, w0, l0, tau, input_nodes, output_nodes, network_nodes, graph, n_freq, network_id=None):
 
         if network_id is None:
-            network_id = random.choice(string.ascii_letters)
+            network_id = ''.join([random.choice(string.ascii_letters) for _ in range(5)])
 
-        self.pth_network = driver.join(settings.deyep_imputer_path.format(project), '{}.pckl'.format(network_id))
+        self.dir_network = driver.join(settings.deyep_network_path.format(project))
         self.network_id = network_id
 
         # Paramter
@@ -81,9 +82,10 @@ class DeepNetwork(object):
         d_basis = {'canonical': CanonicalBasis, 'fourrier': FourrierBasis}
         dn = DeepNetwork(
             project, d_network['w0'], d_network['l0'], d_network['tau'], graph=d_network['graph'],
-            n_freq=d_network['n_freq'], input_nodes=[n.from_dict(d_basis[basis]) for n in d_network['input_nodes']],
-            output_nodes=[n.from_dict() for n in d_network['output_nodes']],
-            network_nodes=[n.from_dict(d_basis[basis]) for n in d_network['network_nodes']],
+            n_freq=d_network['n_freq'],
+            input_nodes=[ni.from_dict(d_n, d_basis[basis]) for d_n in d_network['input_nodes']],
+            output_nodes=[no.from_dict(d_n) for d_n in d_network['output_nodes']],
+            network_nodes=[nd.from_dict(d_n, d_basis[basis]) for d_n in d_network['network_nodes']],
             network_id=network_id
         )
 
@@ -97,9 +99,12 @@ class DeepNetwork(object):
         return d_network
 
     def save(self):
+        if not driver.exists(self.dir_network):
+            driver.makedirs(self.dir_network)
+
         d_network = self.to_dict()
 
-        with open(self.pth_network, 'wb') as handle:
+        with open(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)), 'wb') as handle:
             pickle.dump(d_network, handle)
 
     @staticmethod

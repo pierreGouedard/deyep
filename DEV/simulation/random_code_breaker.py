@@ -27,32 +27,28 @@ if not driver.exists(dir_out):
 n_i, n_o = 10, 5
 code_builder = CodeBuilder(20, [n_i, n_o], p=0.5, seed=1234)\
     .generate_code()\
-    .save_random_sequence(1000, dir_in, 'forward.npz', 'backwward.npz', driver, sparse=True)
+    .save_random_sequence(1000, dir_in, 'forward.npz', 'backward.npz', driver, sparse=True)
 
 # Set core deyep parameters
-ni, nd, no, depth, p0, l0, tau, w0, basis, capacity, delay = n_i, 1000, n_o, 5, 0.1, 10, 5, 10, 'canonical', 10, 0
+ni, nd, no, depth, p0, l0, tau, w0, basis, capacity, delay = n_i, 100, n_o, 5, 0.1, 10, 5, 10, 'canonical', 10, 0
 
 # Core element
 imputer = init_imputer(identity.DoubleIdentityImputer(simulation, dir_in, dir_out))
 network = BinomialGraphBuilder(ni, nd, no, depth, p0, w0, l0, tau, capacity).build_network(simulation, 1)
-
-import IPython
-IPython.embed()
 
 # Buffer period: save imputer and network
 imputer.save()
 network.save()
 
 # TODO: After this step initialize imputer and save both the networks and the imputer
-import IPython
-IPython.embed()
-
 imputer = identity.DoubleIdentityImputer.load(simulation)
 network = DeepNetwork.load(simulation, 1)
 
 imputer.stream_features()
-solver = CanonicalDeepNetSolver(network, delay, imputer)
+solver = CanonicalDeepNetSolver(network, delay + 2, imputer)
 
+import IPython
+IPython.embed()
 
 # Fir solver
 solver.fit_epoch(500)

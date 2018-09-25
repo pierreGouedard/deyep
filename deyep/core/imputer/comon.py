@@ -4,6 +4,8 @@ import os
 
 # Local imports
 import settings
+from deyep.utils.driver.driver import FileDriver
+base_driver = FileDriver('imputer file driver', '')
 
 
 class Imputer(object):
@@ -46,14 +48,17 @@ class Imputer(object):
         raise NotImplementedError
 
     def save(self):
-        with open(os.path.join(self.dir_imputer, 'imputer.pickle'), 'wb') as handle:
+        if not base_driver.exists(self.dir_imputer):
+            base_driver.makedirs(self.dir_imputer)
+
+        with open(base_driver.join(self.dir_imputer, 'imputer.pickle'), 'wb') as handle:
             pickle.dump(self, handle)
 
     @staticmethod
     def load(project):
         pth = settings.deyep_imputer_path.format(project)
 
-        with open(os.path.join(pth, 'imputer.pickle'), 'rb') as handle:
+        with open(base_driver.join(pth, 'imputer.pickle'), 'rb') as handle:
             imputer = pickle.load(handle)
 
         return imputer
