@@ -1,9 +1,9 @@
-# Global import
-import numpy as npy
+import numpy as np
 from scipy.sparse import csc_matrix
 
+
 class Discretizer:
-    bins_method = ['bounds', 'signal', 'treshold']
+    bins_method = ['bounds', 'signal', 'signal_clustering', 'treshold']
 
     def __init__(self, k, method='bins', bins=None):
         self.method = method
@@ -14,39 +14,54 @@ class Discretizer:
     def set_discretizer_bins(self, s=None, method='bounds', **kwargs):
 
         if method == 'bounds':
-            self.bins = {i: x for i, x in enumerate(npy.linspace(kwargs['min'], kwargs['max'], self.k))}
+            self.bins = {i: x for i, x in enumerate(np.linspace(kwargs['min'], kwargs['max'], self.k))}
 
         elif method == 'signal':
             max_, min_ = max(s), min(s)
             self.set_bins_from_bound(max_, min_)
 
+        elif method == 'signal_clustering':
+            n = kwargs['n_cluster']
+            l_clusters = [np.percentile(s, 100 * (float(i) / n)) for i in range(n + 1)]
+            self.set_bins_from_clusters(l_clusters, self.k / n)
+
         elif method == 'treshold':
             max_, min_ = max(max(s - 2 * kwargs['treshold']), 0), min(min(s + 2 * kwargs['treshold']), 0)
-            self.set_bins_from_bound(max_, min_, kwargs['treshold'])
+            self.set_bins_from_bound(max_, min_, treshold=kwargs['treshold'])
 
         else:
             raise ValueError('method to compute bins not understood: {}. choose from {}'.format(method,
                                                                                                 self.bins_method))
+        return self
 
-    def set_bins_from_bound(self, max_, min_, treshold=None):
+    def set_bins_from_bound(self, max_, min_, treshold=None, res=1e-4):
 
         # Computes bins
         r = int(treshold is not None)
-        self.bins = {i: x for i, x in enumerate(npy.linspace(min_, max_, self.k - r))}
+
+        if max_ - res < min_:
+            max_ = min_
+
+        self.bins = {i: x for i, x in enumerate(np.unique(np.linspace(min_, max_, self.k - r)))}
 
         if treshold is not None:
-            nn, np, nz = len([x for _, x in self.bins.items() if x < 0]), \
-                         len([x for _, x in self.bins.items() if x > 0]), \
-                         len([x for _, x in self.bins.items() if x == 0])
+            nneg, npos, nz = len([x for _, x in self.bins.items() if x < 0]), \
+                             len([x for _, x in self.bins.items() if x > 0]), \
+                             len([x for _, x in self.bins.items() if x == 0])
 
             self.bins, offset = {0: 0.0}, 1
 
-            if nn > 0:
-                self.bins.update({i + offset: x for i, x in enumerate(npy.linspace(min_, - 2 * treshold, nn + nz))})
+            if nneg > 0:
+                self.bins.update({i + offset: x for i, x in enumerate(np.linspace(min_, - 2 * treshold, nneg + nz))})
                 offset = len(self.bins)
 
-            if np > 0:
-                self.bins.update({i + offset: x for i, x in enumerate(npy.linspace(2 * treshold, max_, np + nz))})
+            if npos > 0:
+                self.bins.update({i + offset: x for i, x in enumerate(np.linspace(2 * treshold, max_, npos + nz))})
+
+    def set_bins_from_clusters(self, l_clusters, k_):
+        self.bins = {}
+        for i, (min_, max_) in enumerate(zip(l_clusters[:-1], l_clusters[1:])):
+            self.bins.update({i * k_ + j: x for j, x in enumerate(np.unique(np.linspace(min_, max_, k_ + 1))[:-1])})
 
     def discretize_value(self, x):
 
@@ -60,21 +75,25 @@ class Discretizer:
     def discretize_array(self, ax):
 
         # Vectorize discretie value function
-        vdicretizer = npy.vectorize(lambda x: self.discretize_value(x))
+        vdicretizer = np.vectorize(lambda x: self.discretize_value(x))
 
         # Apply to array
         ax_ = vdicretizer(ax)
 
         return ax_
 
+    def arange(self, x_min, x_max):
+        x_min_, x_max_ = self.discretize_value(x_min), self.discretize_value(x_max)
+        return np.array(sorted([v for _, v in self.bins.items() if x_min_ <= v <= x_max_]))
+
     def encode_1d_array(self, ax, sparse=False):
 
-        ax_out = npy.zeros(len(ax) * self.k)
+        ax_out = np.zeros(len(ax) * self.k)
         ax_ = self.discretize_array(ax)
 
         for i, x in enumerate(ax_):
             ax_out[i * self.k: (i + 1) * self.k] = \
-                npy.array([b == x for _, b in sorted(self.bins.items(), key=lambda t: t[0])])
+                np.array([b == x for _, b in sorted(self.bins.items(), key=lambda t: t[0])])
 
         if sparse:
             ax_out = csc_matrix(ax_out)
@@ -85,7 +104,7 @@ class Discretizer:
         if orient == 'columns':
             ax = ax.transpose()
 
-        ax_out = npy.zeros([len(ax), len(ax[0]) * self.k])
+        ax_out = np.zeros([len(ax), len(ax[0]) * self.k])
 
         for i, ax_ in enumerate(ax):
             ax_out[i, :] = self.encode_1d_array(ax_)
@@ -103,10 +122,10 @@ class Discretizer:
         if sparse:
             ax = ax.toarray()[0]
 
-        ax_out = npy.zeros(int(len(ax) / self.k))
+        ax_out = np.zeros(int(len(ax) / self.k))
 
         for i in range(len(ax_out)):
-            ax_out[i] = self.bins.get(npy.where(ax[i * self.k: (i + 1) * self.k])[0][0])
+            ax_out[i] = self.bins.get(np.where(ax[i * self.k: (i + 1) * self.k])[0][0])
 
         return ax_out
 
@@ -118,7 +137,7 @@ class Discretizer:
         if sparse:
             ax = ax.toarray()
 
-        ax_out = npy.zeros([len(ax), int(len(ax[0]) / self.k)])
+        ax_out = np.zeros([len(ax), int(len(ax[0]) / self.k)])
 
         for i, ax_ in enumerate(ax):
             ax_out[i, :] = self.decode_1d_array(ax_)
@@ -141,18 +160,18 @@ class Normalizer:
 
     def set_normalizer(self, s):
         if self.method == 'variance':
-            var = npy.var(s)
+            var = np.var(s)
 
             if var <= 0:
                 raise ValueError('semi negative variance computed from signal passed')
 
-            self.params['sigma'] = npy.sqrt(var)
+            self.params['sigma'] = np.sqrt(var)
 
         elif self.method == 'max':
-            max = npy.max(s)
+            max = np.max(s)
 
             if max < 0:
-                max = - npy.min(s)
+                max = - np.min(s)
 
             if max == 0:
                 raise ValueError('max = 0 computed from signal passed')

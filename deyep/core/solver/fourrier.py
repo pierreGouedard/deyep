@@ -12,7 +12,7 @@ class FourrierDeepNetSolver(DeepNetSolver):
     def __init__(self, deep_network, delay, imputer, p0, verbose=0):
         DeepNetSolver.__init__(self, deep_network, delay, imputer, p0, 'fourrier', verbose=verbose)
 
-    def run_epoch(self, n):
+    def fit_epoch(self, n):
 
         i = 0
 

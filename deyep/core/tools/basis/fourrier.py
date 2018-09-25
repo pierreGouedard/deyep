@@ -32,3 +32,7 @@ class FourrierBasis(Basis):
 
     def contain_base(self, s):
         return np.round(np.real(self.base_from_key('k={},N={}'.format(self.key, self.N)).dot(s.conjugate()))) != 0.
+
+    @staticmethod
+    def from_dict(d_basis):
+        return FourrierBasis(d_basis['key'], d_basis['N'], d_basis['forward_keys'], d_basis['capacity'])

@@ -3,6 +3,7 @@ import numpy as np
 
 # Local import
 from deyep.core.builder.comon import mat_from_tuples
+from deyep.core.deep_network import DeepNetwork
 
 
 class BinomialGraphBuilder(object):
@@ -10,14 +11,17 @@ class BinomialGraphBuilder(object):
     """
     Class that will build a graph based on a binomial method in theoretical report
     """
-    def __init__(self, ni, nd, no, depth_max, p0, w0, ax_p=None):
+    def __init__(self, ni, nd, no, depth_max, p0, w0, l0, tau, capacity, basis='canonical', ax_p=None):
 
-        # Core attribute of graph
+        # Core feature of graph
         self.ni, self.nd, self.no, self.depth_max, self.p0, self.w0 = ni, nd, no, depth_max, p0, w0
+
+        # Core feature of nodes
+        self.l0, self.tau, self.basis, self.capacity = l0, tau, basis, capacity
         self.l_edges = []
 
         # Init binomial construction
-        self.gammas = ['input_{}'.format(i) for i in range(self.ni)]
+        self.gammas = [['input_{}'.format(i) for i in range(self.ni)]]
         self.delta = ['network_{}'.format(i) for i in range(self.nd)]
 
         # Build probas
@@ -46,8 +50,10 @@ class BinomialGraphBuilder(object):
 
         :return:
         """
+
         l_edges, gamma_, i, offset = [], set(), 1, 0
         while len(self.gammas[i - 1]) > 0 and self.depth_max > i:
+
             for j in range(i):
                 l_edges, gamma_ = self.generate_random_link(i, j, gamma_, l_edges)
 
@@ -73,7 +79,7 @@ class BinomialGraphBuilder(object):
 
         for nx in self.gammas[j]:
             for ny in self.delta:
-                if np.random.choice([True, False], p=[p, 1 - p]):
+                if np.random.choice([True, False], p=[p, 1. - p]):
                     l_edges += [(nx, ny)]
                     gamma_ = gamma_.union({ny})
 
@@ -107,3 +113,17 @@ class BinomialGraphBuilder(object):
             self.build_tuples()
 
         return mat_from_tuples(self.l_edges, self.ni, self.nd, self.no, weights=[self.w0] * len(self.l_edges))
+
+    def build_network(self, project, network_id=None):
+        """
+
+        :return:
+        """
+
+        if len(self.l_edges) == 0:
+            self.build_tuples()
+
+        mat_in, mat_net, mat_out = self.build_matrices()
+
+        return DeepNetwork.from_matrices(project, mat_net, mat_in, mat_out, self.capacity, self.basis, w0=self.w0,
+                                         l0=self.l0, tau=self.tau, network_id=network_id)

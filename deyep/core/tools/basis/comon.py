@@ -106,5 +106,9 @@ class Basis(object):
 
         return s_out
 
+    @staticmethod
+    def from_dict(self, d_basis):
+        raise NotImplementedError
+
     def to_dict(self):
-        return {'N': self.N, 'key': self.key, 'forward_keys': self.forward_keys, 'queue_forward': self.queue_forward}
+        return {'N': self.N, 'key': self.key, 'forward_keys': self.forward_keys, 'capacity': len(self.queue_forward)}

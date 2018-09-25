@@ -10,7 +10,7 @@ class Imputer(object):
 
     def __init__(self, project, dirin, dirout):
 
-        self.dir_gen = settings.deyep_generator_path.format(project)
+        self.dir_imputer = settings.deyep_imputer_path.format(project)
         self.project = project
 
         self.dirin = dirin
@@ -46,8 +46,17 @@ class Imputer(object):
         raise NotImplementedError
 
     def save(self):
-        with open(os.path.join(self.dir_gen, 'imputer.pickle'), 'wb') as handle:
+        with open(os.path.join(self.dir_imputer, 'imputer.pickle'), 'wb') as handle:
             pickle.dump(self, handle)
+
+    @staticmethod
+    def load(project):
+        pth = settings.deyep_imputer_path.format(project)
+
+        with open(os.path.join(pth, 'imputer.pickle'), 'rb') as handle:
+            imputer = pickle.load(handle)
+
+        return imputer
 
 
 class ImputerSingleSource(Imputer):

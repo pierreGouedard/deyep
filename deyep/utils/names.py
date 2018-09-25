@@ -4,7 +4,7 @@
 
 
 class KVName(object):
-    def __init__(self, obj=None, sep=','):
+    def __init__(self, obj=None, sep=',', equ='='):
         """
         Key-Value name manager.
 
@@ -17,8 +17,11 @@ class KVName(object):
                                If None, the store will be empty.
         :param str sep: String separator
         """
+        assert(sep != equ, 'separator and equlaty must be different')
+
         self._splits = {}
         self._sep = sep
+        self._equ = equ
 
         if obj is None:
             pass
@@ -31,7 +34,7 @@ class KVName(object):
                             'Try KVName.from_string or KVName.from_dict.'.format(type(obj)))
 
     @staticmethod
-    def from_string(s, sep=','):
+    def from_string(s, sep=',', equ='='):
         """
         Create a KVName from a string.
 
@@ -39,12 +42,12 @@ class KVName(object):
         :param str sep:
         :rtype: KVName
         """
-        out = KVName(sep=sep)
+        out = KVName(sep=sep, equ=equ)
         out.set_from_string(s)
         return out
 
     @staticmethod
-    def from_dict(d, sep=','):
+    def from_dict(d, sep=',', equ='='):
         """
         Create a KVName from a dict.
 
@@ -52,7 +55,7 @@ class KVName(object):
         :param str sep:
         :rtype: KVName
         """
-        out = KVName(sep=sep)
+        out = KVName(sep=sep, equ=equ)
         out.set_from_dict(d)
         return out
 
@@ -65,9 +68,10 @@ class KVName(object):
         :rtype: KVName
         """
         try:
-            self._splits = dict([tuple(k.split('=')) for k in s.split(self._sep)])
+            self._splits = dict([tuple(k.split(self._equ)) for k in s.split(self._sep)])
         except Exception as e:
-            raise e.__class__('Could not parse "{}" (separator="{}"): {}'.format(s, self._sep, e.args))
+            raise e.__class__('Could not parse "{}" (separator="{}", equality="{}"): {}'.format(s, self._sep, self._equ,
+                                                                                                e.args))
         return self
 
     def set_from_dict(self, d):
@@ -87,7 +91,7 @@ class KVName(object):
 
         :rtype: str
         """
-        name = self._sep.join(['{}={}'.format(k, v) for k, v in sorted(self._splits.items())])
+        name = self._sep.join(['{}{}{}'.format(k, self._equ, v) for k, v in sorted(self._splits.items())])
         return name
 
     def to_dict(self):
@@ -172,5 +176,16 @@ class KVName(object):
         :rtype: KVName
         """
         self._sep = new_sep
+        return self
+
+    def change_equ(self, new_equ):
+        """
+        Change the string separator.
+
+        :param str new_sep:
+        :return: The class itself
+        :rtype: KVName
+        """
+        self._equ = new_equ
         return self
 

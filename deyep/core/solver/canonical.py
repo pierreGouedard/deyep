@@ -1,5 +1,5 @@
 # Global import
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, vstack
 import numpy as np
 
 # Local import
@@ -10,10 +10,10 @@ from deyep.core.solver.comon import DeepNetSolver
 
 class CanonicalDeepNetSolver(DeepNetSolver):
 
-    def __init__(self, deep_network, delay, imputer, p0, verbose=0):
+    def __init__(self, deep_network, delay, imputer, p0=1, verbose=0):
         DeepNetSolver.__init__(self, deep_network, delay, imputer, p0, 'canonical', verbose=verbose)
 
-    def run_epoch(self, n):
+    def fit_epoch(self, n):
         i = 0
         while i < n:
             if self.t % 2 == 0:
@@ -86,6 +86,36 @@ class CanonicalDeepNetSolver(DeepNetSolver):
 
         return l_t_epoch, l_t_forwardp, l_t_forwardt, l_t_backwardp, l_t_backwardt
 
+    def transform(self, imputer, n=int(1e6)):
+
+        # reset signal just in case
+        self.reset_forward_signals()
+
+        ax_so, i = None, 0
+        while n > i:
+
+            # Get input signal
+            sax_si = imputer.stream_next_forward()
+
+            if sax_si is None:
+                break
+
+            # Transform and transmit forward
+            self.sax_si = self.generate_input_signals(sax_si, self.deep_network.input_nodes, self.dtype)
+            self.forward_transmiting()
+
+            if ax_so is None:
+                ax_so = self.sax_so.toarray().sum(axis=0) > 0
+            else:
+                ax_so = np.vstack((ax_so, self.sax_so.toarray().sum(axis=0) > 0))
+
+            # Run forward processing
+            self.forward_processing(0, update_candidate=False)
+
+            i += 1
+
+        return ax_so
+
     def forward_transmiting(self):
         # Output transmit
         self.sax_so = fot(self.deep_network.O, self.sax_sn)
@@ -93,12 +123,13 @@ class CanonicalDeepNetSolver(DeepNetSolver):
         # network transmit
         self.sax_sn = fnt(self.deep_network.D, self.deep_network.I, self.sax_sn, self.sax_si)
 
-    def forward_processing(self, t):
+    def forward_processing(self, t, update_candidate=True):
         # transform signals
         self.sax_sn, self.ax_sa = c_fnp(self.sax_sn, self.deep_network.network_nodes, self.deep_network.tau, t)
 
         # Update candidate
-        self.sax_C = c_fcp(self.ax_sa, self.deep_network.Cm, self.sax_C)
+        if update_candidate:
+            self.sax_C = c_fcp(self.ax_sa, self.deep_network.Cm, self.sax_C)
 
     def backward_transmiting(self, only_buffer=False):
 

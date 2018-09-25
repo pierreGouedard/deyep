@@ -24,7 +24,7 @@ class TestCanonicalBasis(unittest.TestCase):
         # Get matrices from list of edges and build network
         mat_in, mat_net, mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
 
-        self.deep_network_1 = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, self.capacity, 'canonical')
+        self.deep_network_1 = DeepNetwork.from_matrices('test', mat_net, mat_in, mat_out, self.capacity, 'canonical')
 
     def test_canonical_basics(self):
         """

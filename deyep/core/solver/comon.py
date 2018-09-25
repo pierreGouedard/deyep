@@ -27,7 +27,15 @@ class DeepNetSolver(object):
         self.t = 0
         self.t_fp = 0
 
-    def run_epoch(self, n):
+    def reset_forward_signals(self):
+        self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = \
+            init_core_forward_signal(self.deep_network, self.dtype)
+
+    def reset_backward_signals(self):
+        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = \
+            init_core_forward_signal(self.deep_network, self.dtype)
+
+    def fit_epoch(self, n):
         raise NotImplementedError
 
     def epoch_analysis(self, n):

@@ -26,7 +26,7 @@ class TestSolver(unittest.TestCase):
         mat_in, mat_net, mat_out = mat_from_tuples(self.and_pat.build_graph_pattern_init(), len(self.and_pat.input_nodes),
                                                    len(self.and_pat.network_nodes), len(self.and_pat.output_nodes),
                                                    weights=[20] * len(self.and_pat.build_graph_pattern_init()))
-        self.and_dn = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, 100, 'canonical', w0=self.wo, l0=self.l0,
+        self.and_dn = DeepNetwork.from_matrices('test', mat_net, mat_in, mat_out, 100, 'canonical', w0=self.wo, l0=self.l0,
                                                 tau=self.tau)
 
         # Create Xor pattern
@@ -35,7 +35,7 @@ class TestSolver(unittest.TestCase):
         mat_in, mat_net, mat_out = mat_from_tuples(self.xor_pat.build_graph_pattern_init(), len(self.xor_pat.input_nodes),
                                                    len(self.xor_pat.network_nodes), len(self.xor_pat.output_nodes),
                                                    weights=[10] * len(self.xor_pat.build_graph_pattern_init()))
-        self.xor_dn = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, 100, 'canonical', w0=self.wo, l0=self.l0,
+        self.xor_dn = DeepNetwork.from_matrices('test', mat_net, mat_in, mat_out, 100, 'canonical', w0=self.wo, l0=self.l0,
                                                 tau=self.tau)
 
         # Create Tree patter
@@ -43,7 +43,7 @@ class TestSolver(unittest.TestCase):
         mat_in, mat_net, mat_out = mat_from_tuples(self.tree_pat.build_graph_pattern_init(), len(self.tree_pat.input_nodes),
                                                    len(self.tree_pat.network_nodes), len(self.tree_pat.output_nodes),
                                                    weights=[10] * len(self.tree_pat.build_graph_pattern_init()))
-        self.tree_dn = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, 100, 'canonical', w0=self.wo, l0=self.l0,
+        self.tree_dn = DeepNetwork.from_matrices('test', mat_net, mat_in, mat_out, 100, 'canonical', w0=self.wo, l0=self.l0,
                                                  tau=self.tau)
 
     def test_and_pattern(self):

@@ -36,3 +36,7 @@ class CanonicalBasis(Basis):
 
     def contain_base(self, s):
         return inner_product(self.base_from_key('k={},N={}'.format(self.key, self.N)), s) != 0
+
+    @staticmethod
+    def from_dict(d_basis):
+        return CanonicalBasis(d_basis['key'], d_basis['N'], d_basis['forward_keys'], d_basis['capacity'])

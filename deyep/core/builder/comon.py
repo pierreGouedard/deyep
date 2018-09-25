@@ -1,5 +1,5 @@
 # Global imports
-from scipy.sparse import csc_matrix
+from scipy.sparse import lil_matrix, csc_matrix
 import numpy as np
 
 # local import
@@ -11,9 +11,9 @@ from deyep.core.tools.basis.canonical import CanonicalBasis
 def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
 
     # Init matrices
-    sax_in = csc_matrix(np.zeros([n_i, n_rn]))
-    sax_net = csc_matrix(np.zeros([n_rn, n_rn]))
-    sax_out = csc_matrix(np.zeros([n_rn, n_o]))
+    sax_in = lil_matrix(np.zeros([n_i, n_rn]))
+    sax_net = lil_matrix(np.zeros([n_rn, n_rn]))
+    sax_out = lil_matrix(np.zeros([n_rn, n_o]))
 
     i = 0
     for (_n, n_) in l_edges:
@@ -44,14 +44,14 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
 
         i += 1
 
-    return sax_in, sax_net, sax_out
+    return sax_in.tocsc(), sax_net.tocsc(), sax_out.tocsc()
 
 
 def mat_from_nodes(l_nodes):
     raise NotImplementedError
 
 
-def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10):
+def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10, fixed_weight=None):
 
     # Get dict of nodes
     d_inputs = set_nodes_from_mat(sax_in, 'input')
@@ -70,31 +70,33 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10):
     # Finally, build nodes
     if basis == 'fourrier':
         l_inputs = [
-            nodes.InputNode(k_, 'input', FourrierBasis(min(v_['freqs']), n_freq, {}, 1),
-                            v_['children']) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
+            nodes.InputNode(
+                k_, 'input', FourrierBasis(min(v_['freqs']), n_freq, {}, 1),
+                zip(v_['children_name'], v_['children_weight'])
+            ) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
             ]
         l_networks = [
             nodes.NetworkNode(
-                k_, 'network', FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []),
-                                             capacity),
-                v_['children'], l0
+                k_, 'network',
+                FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
+                zip(v_['children_name'], v_['children_weight']), l0
             ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
             ]
     elif basis == 'canonical':
         l_inputs = [
             nodes.InputNode(k_, 'input', CanonicalBasis(min(v_['freqs']), n_freq, {}, 1),
-                            v_['children']) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
+                            zip(v_['children_name'], v_['children_weight'])) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
             ]
         l_networks = [
             nodes.NetworkNode(
-                k_, 'network', CanonicalBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []),
-                                              capacity),
-                v_['children'], l0
+                k_, 'network',
+                CanonicalBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
+                zip(v_['children_name'], v_['children_weight']), l0
             ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
             ]
     else:
         raise ValueError('basis not understood: {}, choose between "fourrier" and "canonical"')
-    l_outputs = [nodes.OutputNode(k_, 'output', v_['parents'])
+    l_outputs = [nodes.OutputNode(k_, 'output', zip(v_['parents_name'], v_['parents_weight']))
                  for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 
     return l_inputs, l_outputs, l_networks, n_freq
@@ -103,19 +105,22 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10):
 def set_nodes_from_mat(mat, key):
 
     if key == 'input':
-        d_nodes = {i: {'children': [], 'freqs': []} for i in range(mat.shape[0])}
+        d_nodes = {i: {'children_name': [], 'children_weight': [], 'freqs': []} for i in range(mat.shape[0])}
         for i, j in zip(*mat.nonzero()):
-            d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
+            d_nodes[i]['children_name'] += ['network_{}'.format(j)]
+            d_nodes[i]['children_weight'] += [mat[i, j]]
 
     elif key == 'output':
-        d_nodes = {i: {'parents': [], 'freqs': []} for i in range(mat.shape[1])}
+        d_nodes = {i: {'parents_name': [], 'parents_weight': [], 'freqs': []} for i in range(mat.shape[1])}
         for i, j in zip(*mat.nonzero()):
-            d_nodes[j]['parents'] += [('network_{}'.format(i), mat[i, j])]
+            d_nodes[j]['parents_name'] += ['network_{}'.format(i)]
+            d_nodes[j]['parents_weight'] += [mat[i, j]]
 
     elif key == 'network':
-        d_nodes = {i: {'children': [], 'freqs': []} for i in range(mat.shape[0])}
+        d_nodes = {i: {'children_name': [], 'children_weight': [], 'freqs': []} for i in range(mat.shape[0])}
         for i, j in zip(*mat.nonzero()):
-            d_nodes[i]['children'] += [('network_{}'.format(j), mat[i, j])]
+            d_nodes[i]['children_name'] += ['network_{}'.format(j)]
+            d_nodes[i]['children_weight'] += [mat[i, j]]
     else:
         raise ValueError('Choose key between \'input\', \'output\' or \'network\'')
 
@@ -125,16 +130,10 @@ def set_nodes_from_mat(mat, key):
 def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):
 
     for k, v in d_nodes.items():
-        l_children = [t[0] for t in v['children']]
-
-        if len(l_children) > 0:
+        print k
+        if len(v['children_name']) > 0:
             # Look for sibling
-            occupied_freqs = []
-            for child in l_children:
-                sibling_nodes = filter(lambda (k_, v_): child in [t[0] for t in v_['children']] and k != k_, d_nodes.items())
-                occupied_freqs += sum(map(lambda (k_, v_): v_['freqs'], sibling_nodes), [])
-
-            freqs_ = freqs.difference(set(occupied_freqs))
+            freqs_ = freqs.difference(get_occupied_freqs(k, v['children_name'], d_nodes))
 
             if len(freqs_) > 0:
                 d_nodes[k]['freqs'] = [list(freqs_)[0]]
@@ -147,13 +146,23 @@ def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):
             d_nodes[k]['freqs'] = [list(freqs)[0]]
 
         if d_forward_freqs is not None:
-            for child in l_children:
+            for child in v['children_name']:
                 d_forward_freqs[child] = d_forward_freqs.get(child, []) + [offset + (d_nodes[k]['freqs'][0] * capacity)]
 
     for k, v in d_nodes.items():
         v['freqs'] = [offset + (min(v['freqs']) * capacity)]
 
     return d_nodes, freqs, d_forward_freqs
+
+
+def get_occupied_freqs(k, l_children, d_nodes):
+    occupied_freqs = []
+    for child in l_children:
+        for k_, v_ in d_nodes.items():
+            if child in v_['children_name'] and k != k_ and len(v_['freqs']) > 0:
+                occupied_freqs += v_['freqs']
+
+    return set(occupied_freqs)
 
 
 def gather_matrices(ax_in, ax_net, ax_out):
