@@ -75,8 +75,10 @@ class Basis(object):
             return None
 
         l_depths, l_coefs = self.depth_from_basis(s_in)
+
+        # Sum of coef has annihilated
         if len(l_depths) < 2:
-            raise ValueError('Node receive signal without any depth informations')
+            return None
 
         d_out, s_out = {}, None
         for d, c in zip(l_depths, l_coefs):
@@ -96,7 +98,7 @@ class Basis(object):
                     d_out[k] = d_out.get(k, 0) + Upsilon(c)
                     if k not in keys_input:
                         k_ = KVName.from_dict({'k': int(KVName.from_string(k)['k']) + d + 1, 'N': self.N}).to_string()
-                        d_out[k_] = d_out.get(k_, 0) + c
+                        d_out[k_] = d_out.get(k_, 0) + Upsilon(c)
 
         if len(d_out) > 0:
             s_out = self.signal_from_keys(d_out)

@@ -1,4 +1,5 @@
 # Global import
+import numpy as np
 
 # Local import
 from deyep.utils.simulations import init_imputer
@@ -34,7 +35,8 @@ ni, nd, no, depth, p0, l0, tau, w0, basis, capacity, delay = n_i, 100, n_o, 5, 0
 
 # Core element
 imputer = init_imputer(identity.DoubleIdentityImputer(simulation, dir_in, dir_out))
-network = BinomialGraphBuilder(ni, nd, no, depth, p0, w0, l0, tau, capacity).build_network(simulation, 1)
+network = BinomialGraphBuilder(ni, nd, no, depth, p0, w0, l0, tau, capacity)\
+    .build_network(simulation, 'network_{}'.format(1))
 
 # Buffer period: save imputer and network
 imputer.save()
@@ -42,16 +44,26 @@ network.save()
 
 # TODO: After this step initialize imputer and save both the networks and the imputer
 imputer = identity.DoubleIdentityImputer.load(simulation)
-network = DeepNetwork.load(simulation, 1)
+network = DeepNetwork.load(simulation, 'network_{}'.format(1))
 
 imputer.stream_features()
 solver = CanonicalDeepNetSolver(network, delay + 2, imputer)
 
+# Fir solver
+for i in range(5):
+    solver.p = i + 1
+    solver.fit_epoch(200)
+    solver.clean_network_nodes()
+
+# TODO
+# Visualize whats going on (random network viz
+# Build metrics to evaluate the network
+# Merge multiple networks
+
 import IPython
 IPython.embed()
 
-# Fir solver
-solver.fit_epoch(500)
+
 
 
 

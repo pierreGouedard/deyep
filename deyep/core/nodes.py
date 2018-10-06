@@ -2,21 +2,20 @@
 
 class Node(object):
 
-    def __init__(self, id, type, values):
+    def __init__(self, id, type):
         self.id = id
-        self.values = values
         self.type = type
 
     def to_dict(self):
-        return {'id': self.id, 'values': self.values, 'type': self.type}
+        return {'id': self.id, 'type': self.type}
 
 
 class InputNode(Node):
 
-    def __init__(self, id, type, basis, children, values={'n_p': 0, 'n_r': 0, 'n_f': 0}):
+    def __init__(self, id, type, basis, children):
 
         # Set inherited attributes
-        Node.__init__(self, id, type, values)
+        Node.__init__(self, id, type)
 
         # Set specific attributes
         self.basis = basis
@@ -43,7 +42,7 @@ class OutputNode(Node):
     def __init__(self, id, type, parents):
 
         # Set inherited attributes
-        Node.__init__(self, id, type, None)
+        Node.__init__(self, id, type)
 
         # Set specific attributes
         self.parents = parents
@@ -66,9 +65,9 @@ class OutputNode(Node):
 
 class NetworkNode(Node):
 
-    def __init__(self, id, type, basis, children, l0,  values={'n_p': 0, 'n_r': 0, 'n_f': 0}, level=None):
+    def __init__(self, id, type, basis, children, l0, level=None):
         # Set inherited attributes
-        Node.__init__(self, id, type, values)
+        Node.__init__(self, id, type)
 
         # Set specific attributes
         self.active = False

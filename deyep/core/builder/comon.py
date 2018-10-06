@@ -51,7 +51,7 @@ def mat_from_nodes(l_nodes):
     raise NotImplementedError
 
 
-def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=10, fixed_weight=None):
+def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10, fixed_weight=None):
 
     # Get dict of nodes
     d_inputs = set_nodes_from_mat(sax_in, 'input')

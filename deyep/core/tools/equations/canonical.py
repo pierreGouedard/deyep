@@ -71,7 +71,10 @@ def c_bnp(l_nodes, sax_snb, t, key_inputs, n_jobs=0):
 
     # Parallel operations
     l_ins = [(i, l_nodes[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
-    l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
+    # Put back )parallelisation when debug is done
+    #l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
+    l_res = filter(lambda x: x is not None, map(lambda x: bnpp.f(x), l_ins))
+
 
     # Fill
     sax_snb = lil_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=int)
@@ -109,7 +112,10 @@ def c_bdu(sax_snb, dn, penalty=1., n_jobs=1):
     else:
         sax_Du = vstack([n.basis.base for n in dn.network_nodes]).dot(sax_snb).multiply(dn.D)
 
+    ax_count = np.array(sax_Du.sum(axis=1), dtype=int)
     dn.graph['Dw'] += sax_Du
+
+    return ax_count[:, 0]
 
 
 def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
@@ -127,15 +133,14 @@ def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
         sax_Ou = vstack(p.map(boup.f, [(n.basis.base, dn.O[i, :].multiply(sax_A[:, i].transpose()))
                                        for i, n in enumerate(dn.network_nodes)]))
     else:
-        try:
-            sax_Ou = vstack([n.basis.base for n in dn.network_nodes])\
-                .dot(sax_sob)\
-                .multiply(dn.O.multiply(sax_A.transpose()))
-        except:
-            import IPython
-            IPython.embed()
+        sax_Ou = vstack([n.basis.base for n in dn.network_nodes])\
+            .dot(sax_sob)\
+            .multiply(dn.O.multiply(sax_A.transpose()))
 
+    ax_count = np.array(sax_Ou.sum(axis=1), dtype=int)
     dn.graph['Ow'] += sax_Ou
+
+    return ax_count[:, 0]
 
 
 def c_biu(sax_snb, dn, penalty=1., n_jobs=1):

@@ -3,6 +3,7 @@ from scipy.sparse import csc_matrix
 import numpy as np
 
 # Local import
+from deyep.core.tools.equations.comon import fot, fnt, bnt, bit, bcv, bcu
 
 
 class DeepNetSolver(object):
@@ -22,10 +23,25 @@ class DeepNetSolver(object):
         # Init signals
         self.dtype = int if basis == 'canonical' else complex
         self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = init_core_forward_signal(deep_network, self.dtype)
-        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = init_core_forward_signal(deep_network, self.dtype)
+        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = init_core_backward_signal(deep_network, self.dtype)
 
         self.t = 0
         self.t_fp = 0
+        self.transformed = False
+
+    def reset_solver(self, reset_imputer=False, reset_time=False, reset_inputs=False):
+        if reset_imputer:
+            self.imputer.stream_features()
+
+        if reset_time:
+            self.t, self.t_fp = 0, 0
+
+        if reset_inputs:
+            self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.deep_network.input_nodes])
+
+        # reset signals
+        self.reset_forward_signals()
+        self.reset_backward_signals()
 
     def reset_forward_signals(self):
         self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = \
@@ -33,7 +49,10 @@ class DeepNetSolver(object):
 
     def reset_backward_signals(self):
         self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = \
-            init_core_forward_signal(self.deep_network, self.dtype)
+            init_core_backward_signal(self.deep_network, self.dtype)
+
+    def reset_queues(self):
+        raise NotImplementedError
 
     def fit_epoch(self, n):
         raise NotImplementedError
@@ -42,9 +61,13 @@ class DeepNetSolver(object):
         raise NotImplementedError
 
     def forward_transmiting(self):
-        raise NotImplementedError
+        # Output transmit
+        self.sax_so = fot(self.deep_network.O, self.sax_sn)
 
-    def f_forward_processing(self, t):
+        # network transmit
+        self.sax_sn = fnt(self.deep_network.D, self.deep_network.I, self.sax_sn, self.sax_si)
+
+    def forward_processing(self, t):
         raise NotImplementedError
 
     def backward_transmiting(self, only_buffer=False):
@@ -52,6 +75,10 @@ class DeepNetSolver(object):
 
     def backward_processing(self, sax_got, t):
         raise NotImplementedError
+
+    def backward_transmit_cleaning(self, sax_sob):
+        sax_sab = csc_matrix(np.ones(self.sax_sab.shape))
+        self.sax_snb = bnt(self.deep_network.D, self.deep_network.O, self.sax_snb, sax_sob, sax_sab)
 
     @staticmethod
     def generate_input_signals(sax_i, input_nodes, dtype):
@@ -76,7 +103,7 @@ def init_core_forward_signal(dn, dtype):
     return sax_si, sax_sn, sax_so, ax_sa, sax_C
 
 
-def init_core_backward_signal(dn):
+def init_core_backward_signal(dn, dtype):
     N = dn.n_freq
 
     sax_sib = csc_matrix((N, len(dn.input_nodes)), dtype=dtype)

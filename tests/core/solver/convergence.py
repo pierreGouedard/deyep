@@ -82,8 +82,6 @@ class TestSolverConvergence(unittest.TestCase):
 
         # Create solver and run epoch
         solver = CanonicalDeepNetSolver(self.rand_dn_c, self.rand_pat.delay, imputer, p0=10)
-        import IPython
-        IPython.embed()
         solver.fit_epoch(500)
 
         # Remove tmpdirs
