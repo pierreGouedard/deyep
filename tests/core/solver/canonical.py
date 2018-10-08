@@ -5,7 +5,7 @@ from scipy.sparse import csc_matrix
 
 # Local import
 from tests.utils import testPattern as tp
-from deyep.core.solver.comon import DeepNetSolver
+from deyep.core.solver.canonical import CanonicalDeepNetSolver
 from deyep.core.builder.comon import mat_from_tuples, gather_matrices
 from deyep.utils.interactive_plots import plot_graph
 from deyep.core.deep_network import DeepNetwork
@@ -82,7 +82,7 @@ class TestSolver(unittest.TestCase):
 
     def test_xor_pattern(self):
         """
-        python -m unittest tests.core.solver_canonical.TestSolver.test_xor_pattern
+        python -m unittest tests.core.solver.canonical.TestSolver.test_xor_pattern
 
         """
 
@@ -106,9 +106,8 @@ class TestSolver(unittest.TestCase):
 
         # Create solver
         self.xor_dn.graph['Ow'] *= 10
-        solver = DeepNetSolver(self.xor_dn, self.xor_pat.delay, imputer, 'canonical', p0=1)
-
-        solver.run_epoch(n=800)
+        solver = CanonicalDeepNetSolver(self.xor_dn, self.xor_pat.delay, imputer, p0=1)
+        solver.fit_epoch(n=800)
 
         self.assertTrue(all([solver.deep_network.network_nodes[0].d_levels[i] < self.tau for i in range(self.n_xor)]))
         self.assertTrue(all([solver.deep_network.network_nodes[1].d_levels[i] < self.tau for i in range(self.n_xor)]))
@@ -118,7 +117,8 @@ class TestSolver(unittest.TestCase):
         self.assertTrue((solver.deep_network.Iw.toarray()[self.n_xor:, 1] > 0).all())
 
         # TO TEST: interactive plot
-
+        import IPython
+        IPython.embed()
         # INIT GRAPH
         ax_graph = gather_matrices(self.xor_dn.Iw.toarray(), self.xor_dn.Dw.toarray(), self.xor_dn.Ow.toarray())
         plot_graph(ax_graph, self.xor_pat.layout())
@@ -133,7 +133,7 @@ class TestSolver(unittest.TestCase):
 
     def test_tree_pattern(self):
         """
-        python -m unittest tests.core.solver_canonical.TestSolver.test_tree_pattern
+        python -m unittest tests.core.solver.canonical.TestSolver.test_tree_pattern
 
         """
 

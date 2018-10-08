@@ -25,7 +25,7 @@ class DeepNetwork(object):
             network_id = ''.join([random.choice(string.ascii_letters) for _ in range(5)])
 
         self.project = project
-        self.dir_network = driver.join(settings.deyep_network_path.format(project))
+        self.dir_network = settings.deyep_network_path.format(project)
         self.network_id = network_id
 
         # Parameter

@@ -6,13 +6,15 @@ from scipy.sparse import csc_matrix
 
 class CodeBuilder(object):
 
-    def __init__(self, size, length, p=0.5, seed=1234):
+    def __init__(self, size, length, p=0.5, seed=1234, n_sequence=1000, sparse=True):
         self.size = size
         self.length = map(int, length)
         self.p = p
         self.code = {}
         self.rcode = {}
         self.seed = seed
+        self.n_sequence = n_sequence
+        self.sparse = sparse
 
     def generate_code(self):
 
@@ -35,23 +37,22 @@ class CodeBuilder(object):
         code = self.rcode[tuple(map(bool, ax_code))]
         return np.array(code)
 
-    def generate_random_sequence(self, n, sparse=False, offset=0):
+    def generate_random_sequence(self, offset=0):
         l_codes = self.code.keys()
-
         ax_input, ax_output = np.zeros([1, self.length[0]]), np.zeros([1 + offset, self.length[1]])
 
-        for i in range(n):
+        for i in range(self.n_sequence):
             code = random.choice(l_codes)
             ax_input = np.vstack((ax_input, np.array(code)))
             ax_output = np.vstack((ax_output, np.array(self.code[code])))
 
-        if sparse:
+        if self.sparse:
             return csc_matrix(ax_input[1:, :]), csc_matrix(ax_output[1:, :])
 
         return ax_input[1:, :], ax_output[1:, :]
 
-    def save_random_sequence(self, n, path, name_input, name_output, driver, sparse=False, offset=0):
-        sax_input, sax_output = self.generate_random_sequence(n, sparse=sparse, offset=offset)
+    def save(self, path, name_input, name_output, driver, offset=0):
+        sax_input, sax_output = self.generate_random_sequence(offset=offset)
 
         # Create I/O and save it into tmpdir files
         driver.write_file(sax_input, driver.join(path, name_input), is_sparse=True)

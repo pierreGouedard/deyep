@@ -71,10 +71,7 @@ def c_bnp(l_nodes, sax_snb, t, key_inputs, n_jobs=0):
 
     # Parallel operations
     l_ins = [(i, l_nodes[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
-    # Put back )parallelisation when debug is done
-    #l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
-    l_res = filter(lambda x: x is not None, map(lambda x: bnpp.f(x), l_ins))
-
+    l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
 
     # Fill
     sax_snb = lil_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=int)

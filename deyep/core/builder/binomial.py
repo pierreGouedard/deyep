@@ -1,5 +1,6 @@
 # Global import
 import numpy as np
+import networkx as nx
 
 # Local import
 from deyep.core.builder.comon import mat_from_tuples
@@ -127,3 +128,29 @@ class BinomialGraphBuilder(object):
 
         return DeepNetwork.from_matrices(project, mat_net, mat_in, mat_out, self.capacity, self.basis, w0=self.w0,
                                          l0=self.l0, tau=self.tau, network_id=network_id)
+
+    @staticmethod
+    def layout(sax_I, sax_D, sax_O):
+
+        # Get dimension of graph
+        ni, nd, no = sax_I.shape[0], sax_D.shape[0], sax_O.shape[-1]
+
+        # Compute network node's positions
+        end, ax_sn, ax_si, ax_pos, i = False, np.zeros(nd), np.ones(ni), np.zeros(nd), 0
+
+        while not end:
+            if i > 0:
+                ax_si = np.zeros(ni)
+            ax_sn = ax_sn.dot(sax_D.toarray()) + ax_si.dot(sax_I.toarray())
+            ax_pos += (i * ((ax_pos == 0) & np.array(ax_sn > 0))) + 1
+            if (ax_sn == 0).all() or (ax_pos > 0).all():
+                end = True
+
+            i += 1
+
+        pos = {'inputs': {'pos': {i: (0, (nd - ni) / 2 + i) for i in range(ni)}, 'color': 'r'}}
+        pos.update({'networks': {'pos': {ni + i: (ax_pos[i] + (np.random.randn() / 5), np.random.randint(0, nd))
+                                         for i in range(nd)}, 'color': 'k'}})
+        pos.update({'outputs': {'pos': {ni + nd + i: (max(ax_pos) + 1, (nd - no) / 2 + i) for i in range(no)}, 'color': 'b'}})
+
+        return pos

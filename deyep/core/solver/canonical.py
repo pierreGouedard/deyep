@@ -215,7 +215,8 @@ class CanonicalDeepNetSolver(DeepNetSolver):
         )
 
         # Put back levels of nodes
-        l_nodes = [n for n in self.deep_network.network_nodes if ax_active_nodes[i]]
+        l_nodes = [n for i, n in enumerate(self.deep_network.network_nodes) if ax_active_nodes[i]]
+
         for i, n in enumerate(deep_network.network_nodes):
             n.d_levels = l_nodes[i].d_levels
         self.deep_network = deep_network
