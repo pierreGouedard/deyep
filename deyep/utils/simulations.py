@@ -1,4 +1,5 @@
 # Global import
+import numpy as np
 
 # Local import
 from deyep.utils.driver.nmp import NumpyDriver
@@ -7,14 +8,13 @@ from deyep.core.solver.canonical import CanonicalDeepNetSolver
 from deyep.core.solver.fourrier import FourrierDeepNetSolver
 from deyep.utils import interactive_plots as ip
 from deyep.core.builder.comon import gather_matrices
-
 import settings
 
 
 class Simulation(object):
 
-    def __init__(self, name, imputer, params_network, builder, n_network=1, driver=NumpyDriver(), code_builder=None,
-                 resume=False):
+    def __init__(self, name, imputer, params_network, builder, n_network=1, driver=NumpyDriver(), raw_builder=None,
+                 sparse=True, resume=False):
 
         # Get admin information
         self.name = name
@@ -34,17 +34,17 @@ class Simulation(object):
             self.l_networks = [DeepNetwork.load(self.name, 'network_{}'.format(i)) for i in range(self.n_networks)]
         else:
 
-            # build raw if necessary
-            if code_builder is not None:
-                name_f, name_b = 'forward.{}'.format({True: 'npz'}.get(code_builder.sparse, 'npy')), \
-                                 'backward.{}'.format({True: 'npz'}.get(code_builder.sparse, 'npy'))
-                code_builder.save(self.dir_raw, name_f, name_b, self.driver)
-
             # Create dirs if needed
             Simulation.create_dirs(self.driver, self.dir_raw, self.dir_io, self.dir_dn, self.dir_imp)
 
+            # build raw if necessary
+            if raw_builder is not None:
+                name_f, name_b = 'forward.{}'.format({True: 'npz'}.get(raw_builder.sparse, 'npy')), \
+                                 'backward.{}'.format({True: 'npz'}.get(raw_builder.sparse, 'npy'))
+                raw_builder.save(self.dir_raw, name_f, name_b, self.driver)
+
             # Create imputer
-            self.imputer = Simulation.create_imputer(imputer)
+            self.imputer = Simulation.create_imputer(imputer(self.name, self.dir_raw, self.dir_io, is_sparse=sparse))
 
             # Create  networs
             self.l_networks = Simulation.create_networks(self.name, builder, self.n_networks, self.params_network)
@@ -53,7 +53,7 @@ class Simulation(object):
             for dn in self.l_networks:
                 dn.save()
 
-            imputer.save()
+            self.imputer.save()
 
     @staticmethod
     def create_dirs(driver, dir_raw, dir_io, dir_dn, dir_imp):
@@ -84,18 +84,22 @@ class Simulation(object):
     @staticmethod
     def create_networks(name, builder, n_network, params_network):
 
-        self.builder = builder(params_network['ni'], params_network['nd'], params_network['no'],
-                               params_network['depth'], params_network['p0'], params_network['w0'],
-                               params_network['l0'], params_network['tau'], params_network['capacity'])
+        builder = builder(params_network['ni'], params_network['nd'], params_network['no'],
+                          params_network['depth'], params_network['p0'], params_network['w0'],
+                          params_network['l0'], params_network['tau'], params_network['capacity'])
 
         l_networks = [builder.build_network(name, 'network_{}'.format(i)) for i in range(n_network)]
 
         return l_networks
 
-    def fit_network(self, network_id=0, network=None, penalty_rate=200,  start_penalty=1, end_penalty=10):
+    def fit_network(self, network_id=0, network=None, penalty_rate=200,  start_penalty=1, end_penalty=10,
+                    save_network=True):
 
         if network is None:
             network = self.l_networks[network_id]
+
+        # Start features streaming
+        self.imputer.stream_features()
 
         if self.params_network['basis'] == 'canonical':
             solver = CanonicalDeepNetSolver(network, self.params_network['delay'] + 2, self.imputer)
@@ -108,9 +112,12 @@ class Simulation(object):
             solver.fit_epoch(penalty_rate)
             solver.clean_network_nodes()
 
-        solver.deep_network.save()
+        if save_network:
+            solver.deep_network.save()
 
-    def fit_al_network(self, penalty_rate=200,  start_penalty=1, end_penalty=10):
+        return solver
+
+    def fit_all_networks(self, penalty_rate=200,  start_penalty=1, end_penalty=10):
         for dn in self.l_networks:
             self.fit_network(network=dn, penalty_rate=penalty_rate,  start_penalty=start_penalty,
                              end_penalty=end_penalty)

@@ -1,4 +1,6 @@
 # Global import
+import sys
+import numpy as np
 
 # Local import
 from deyep.core.builder.binomial import BinomialGraphBuilder
@@ -14,18 +16,30 @@ class CodeBreaker(Simulation):
                       'basis': "canonical", 'capacity': 10, 'delay': 0}
     imputer = identity.DoubleIdentityImputer
     builder = BinomialGraphBuilder
-    code_builder = CodeBuilder(20, [n_i, n_o], p=0.5, seed=1234).generate_code()
+    raw_builder = CodeBuilder(20, [10, 5], p=0.5, seed=1234).generate_code()
+    n_network = 100
 
     def __init__(self, resume=False):
         Simulation.__init__(self, CodeBreaker.name, CodeBreaker.imputer, CodeBreaker.params_network,
-                            CodeBreaker.builder, code_builder=CodeBreaker.code_builder, resume=resume)
+                            CodeBreaker.builder, raw_builder=CodeBreaker.raw_builder, resume=resume,
+                            n_network=CodeBreaker.n_network)
 
     def check_network_cleaning(self):
+        # Fit network 0
+        network_id = 0
+        solver = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=5, save_network=False)
+
+        # Make sure the network cleaning does not change forward output of deep network
+        ax_output = solver.transform_array(np.ones(self.params_network['ni']))
+        solver.fit_epoch(200)
+        solver.clean_network_nodes()
+        ax_output_ = solver.transform_array(np.ones(self.params_network['ni']))
+
+        assert (ax_output == ax_output_).all()
+
+    def merge_networks(self):
         raise NotImplementedError
 
-
-import IPython
-IPython.embed()
 # Interesting metrics:
 #   * Optimality score (is this a sub network of optimal ?, how many time a penalty is sent ?)
 #   * completness score (how far from complete optimal we are)
@@ -37,4 +51,17 @@ IPython.embed()
 
 
 if __name__ == '__main__':
-    print 'Put the code of simulation right here motherfucker'
+    l_args = []
+    if len(sys.argv) > 1:
+        l_args = sys.argv[1:]
+
+    if 'resume' in l_args:
+        sim = CodeBreaker(resume=True)
+    else:
+        sim = CodeBreaker()
+
+    # Rapid test of network cleaning: should be re-implemented in core unit tests
+    #sim.check_network_cleaning()
+
+    # Fit all network and visualize them (make sure the change in network is saved
+    sim.fit_all_networks(penalty_rate=400, start_penalty=1, end_penalty=10)

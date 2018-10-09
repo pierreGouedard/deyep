@@ -76,8 +76,9 @@ class DeepNetSolver(object):
     def backward_processing(self, sax_got, t):
         raise NotImplementedError
 
-    def backward_transmit_cleaning(self, sax_sob):
+    def backward_transmit_simple(self, sax_sob):
         sax_sab = csc_matrix(np.ones(self.sax_sab.shape))
+        self.sax_sib = bit(self.deep_network.I, self.sax_snb)
         self.sax_snb = bnt(self.deep_network.D, self.deep_network.O, self.sax_snb, sax_sob, sax_sab)
 
     @staticmethod

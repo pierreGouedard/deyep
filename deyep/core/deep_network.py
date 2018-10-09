@@ -85,6 +85,25 @@ class DeepNetwork(object):
                            n_freq=n_freq, graph=d_graph, capacity=capacity, basis=basis, network_id=network_id)
 
     @staticmethod
+    def reduce_network(dn, ax_active_nodes, basis):
+
+        # Now clean matrices  of the deep network
+        sax_I = dn.Iw.multiply(dn.I)[:, ax_active_nodes]
+        sax_D = dn.Dw.multiply(dn.D)[:, ax_active_nodes][ax_active_nodes, :]
+        sax_O = dn.Ow.multiply(dn.O)[ax_active_nodes, :]
+
+        # Build new deep network
+        deep_network = DeepNetwork.from_matrices(dn.project, sax_D, sax_I, sax_O, dn.node_capacity, basis=basis,
+                                                 network_id=dn.network_id, w0=dn.w0, l0=dn.l0, tau=dn.tau)
+
+        # Put back levels of nodes
+        l_nodes = [n for i, n in enumerate(dn.network_nodes) if ax_active_nodes[i]]
+        for i, n in enumerate(deep_network.network_nodes):
+            n.d_levels = l_nodes[i].d_levels
+
+        return deep_network
+
+    @staticmethod
     def from_nodes(w0, input_nodes, output_nodes, network_nodes, seed=None):
         raise NotImplementedError
 

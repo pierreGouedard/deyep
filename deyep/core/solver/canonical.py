@@ -118,9 +118,10 @@ class CanonicalDeepNetSolver(DeepNetSolver):
 
         return ax_so
 
-    def transform_array(self, ax_input, offset=10):
+    def transform_array(self, ax_input, max_iter=10, return_activation=False):
 
-        ax_input = np.vstack((ax_input, np.zeros([offset, ax_input.shape[-1]])))
+        ax_input = np.vstack((ax_input, np.zeros([max_iter, ax_input.shape[-1]])))
+        ax_activation = np.array([False] * len(self.deep_network.network_nodes), dtype=bool)
 
         # reset signal just in case
         self.reset_forward_signals()
@@ -135,61 +136,69 @@ class CanonicalDeepNetSolver(DeepNetSolver):
             self.sax_si = self.generate_input_signals(sax_si, self.deep_network.input_nodes, self.dtype)
             self.forward_transmiting()
 
+            ax_activation_ = np.array(self.sax_sn.sum(axis=0) > 0)[0]
+            if not ax_activation_.any():
+                break
+
+            ax_activation |= ax_activation_
+
             if ax_so is None:
                 ax_so = self.sax_so.toarray().sum(axis=0) > 0
             else:
                 ax_so = np.vstack((ax_so, self.sax_so.toarray().sum(axis=0) > 0))
 
         self.reset_forward_signals()
+
+        if return_activation:
+            return ax_activation, ax_so
+
         return ax_so
+
+    def reverse_array(self, ax_output, max_iter=10, return_activation=False):
+        ax_output = np.vstack((ax_output, np.zeros([max_iter, ax_output.shape[-1]])))
+        ax_activation = np.array([False] * len(self.deep_network.network_nodes), dtype=bool)
+
+        # reset signal just in case
+        self.reset_backward_signals()
+
+        ax_sib = None
+        for ax_output_ in ax_output:
+
+            # Init input signal
+            sax_sob = csc_matrix(ax_output_[np.newaxis, :].repeat(self.deep_network.n_freq, axis=0))
+
+            self.backward_transmit_simple(sax_sob)
+
+            ax_activation_ = np.array(self.sax_snb.sum(axis=0) > 0)[0]
+
+            if not ax_activation_.any():
+                break
+
+            ax_activation |= ax_activation_
+
+            if ax_sib is None:
+                ax_sib = self.sax_sib.toarray().sum(axis=0) > 0
+            else:
+                ax_sib = np.vstack((ax_sib, self.sax_sib.toarray().sum(axis=0) > 0))
+
+        self.reset_backward_signals()
+
+        if return_activation:
+            return ax_activation, ax_sib
+
+        return ax_sib
 
     def clean_network_nodes(self, max_iter=100, remove_non_firing_nodes=True):
 
-        # reset signals
-        self.reset_solver()
+        # Fetch inactive nodes: forward pass
+        ax_input = np.ones(len(self.deep_network.input_nodes))
+        ax_active_i, _ = self.transform_array(ax_input, max_iter=max_iter, return_activation=True)
 
-        # Init active nodes
-        ax_active_i = np.array([False] * len(self.deep_network.network_nodes), dtype=bool)
-        ax_active_o = np.array([False] * len(self.deep_network.network_nodes), dtype=bool)
+        # Fetch inactive nodes: backward pass
+        ax_output = np.ones(len(self.deep_network.output_nodes))
+        ax_active_o, _ = self.reverse_array(ax_output, max_iter=max_iter, return_activation=True)
 
-        # Forward pass
-        end, i = False, 0
-        while not end and i < max_iter:
-            # Init input signal
-            sax_si = csc_matrix(self.sax_si.shape)
-            if i == 0:
-                sax_si[0, :] = 1
-
-            self.sax_si = self.generate_input_signals(sax_si, self.deep_network.input_nodes, self.dtype)
-            self.forward_transmiting()
-
-            ax_activation = np.array(self.sax_sn.sum(axis=0) > 0)[0]
-            if not ax_activation.any():
-                end = True
-                pass
-
-            ax_active_i |= ax_activation
-            i += 1
-
-        # Backward pass
-        end, i = False, 0
-        while not end and i < max_iter:
-
-            # Init input signal
-            sax_sob = csc_matrix(self.sax_sob.shape)
-            if i == 0:
-                sax_sob[0, :] = 1
-
-            self.backward_transmit_cleaning(sax_sob)
-
-            ax_activation = np.array(self.sax_snb.sum(axis=0) > 0)[0]
-            if not ax_activation.any():
-                end = True
-                pass
-
-            ax_active_o |= ax_activation
-            i += 1
-
+        # Get active nodes
         ax_active_nodes = ax_active_i & ax_active_o
 
         # Remove non firing nodes if necessary
@@ -197,29 +206,8 @@ class CanonicalDeepNetSolver(DeepNetSolver):
             ax_firing = self.deep_network.graph['N_f'] > 0
             ax_active_nodes &= ax_firing
 
-        # Now clean matrices  of the deep network
-        sax_I = self.deep_network.Iw.multiply(self.deep_network.I)
-        sax_I = sax_I[:, ax_active_nodes]
-
-        sax_D = self.deep_network.Dw.multiply(self.deep_network.D)
-        sax_D = sax_D[:, ax_active_nodes][ax_active_nodes, :]
-
-        sax_O = self.deep_network.Ow.multiply(self.deep_network.O)
-        sax_O = sax_O[ax_active_nodes, :]
-
-        # Build new deep network
-        deep_network = DeepNetwork.from_matrices(
-            self.deep_network.project, sax_D, sax_I, sax_O, self.deep_network.node_capacity, basis=self.basis,
-            network_id=self.deep_network.network_id, w0=self.deep_network.w0, l0=self.deep_network.l0,
-            tau=self.deep_network.tau
-        )
-
-        # Put back levels of nodes
-        l_nodes = [n for i, n in enumerate(self.deep_network.network_nodes) if ax_active_nodes[i]]
-
-        for i, n in enumerate(deep_network.network_nodes):
-            n.d_levels = l_nodes[i].d_levels
-        self.deep_network = deep_network
+        # Get cleaned network
+        self.deep_network = DeepNetwork.reduce_network(self.deep_network, ax_active_nodes, self.basis)
 
         # Reset entirely the solver
         self.reset_solver(reset_imputer=True, reset_inputs=True, reset_time=True)
