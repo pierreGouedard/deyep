@@ -3,6 +3,7 @@ import random
 import string
 import pickle
 import numpy as np
+from sys import maxint
 
 # local import
 from deyep.core.builder import comon
@@ -19,8 +20,6 @@ class DeepNetwork(object):
     def __init__(self, project, w0, l0, tau, input_nodes, output_nodes, network_nodes, graph, n_freq, capacity,
                  basis='canonical', network_id=None):
 
-        # TODO the deep network should store the record of n_p, n_r, and n_f for each node in a big matrix
-        # It will then be used in the cleaning of the graph ( option remove non firing nodes)
         if network_id is None:
             network_id = ''.join([random.choice(string.ascii_letters) for _ in range(5)])
 
@@ -46,6 +45,8 @@ class DeepNetwork(object):
         self.graph.update({'N_f': np.array([0] * len(network_nodes), dtype=int),
                            'N_p': np.array([0] * len(network_nodes)),
                            'N_r': np.array([0] * len(network_nodes))})
+
+        self.d_metrics = None
 
     @property
     def D(self):
@@ -74,6 +75,29 @@ class DeepNetwork(object):
     @property
     def Cm(self):
         return self.graph['Cm']
+
+    def get_metrics(self, depth, ax_got, ax_out):
+        d_metrics = {}
+
+        # Compute precision
+        d_metrics['P'] = self.compute_precision()
+
+        # Compute recall
+        d_metrics['R'] = self.compute_recall(ax_got, ax_out)
+
+        # Compute efficiency
+        d_metrics['E'] = self.compute_efficiency(depth)
+
+        self.d_metrics = d_metrics
+
+    def compute_precision(self):
+        return self.graph['N_r'] / (self.graph['N_r'] + self.graph['N_p'])
+
+    def compute_recall(self, ax_got, ax_out):
+        return (ax_got & ax_out).sum() / ax_got.sum()
+
+    def compute_efficiency(self, depth):
+        return float(len(self.network_nodes)) / (len(self.input_nodes) * depth)
 
     @staticmethod
     def from_matrices(project, sax_net, sax_in, sax_out, capacity, basis='canonical', network_id=None, w0=5, l0=10,

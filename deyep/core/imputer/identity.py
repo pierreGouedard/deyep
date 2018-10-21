@@ -30,6 +30,8 @@ class DoubleIdentityImputer(ImputerDoubleSource):
         self.features_backward = self.driver.read_file(self.driver.join(self.dirout, self.name_backward),
                                                        is_sparse=self.is_sparse)
 
+        return self
+
     def write_features(self, name_forward, name_backward):
 
         # Set urls

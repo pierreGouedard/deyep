@@ -122,6 +122,21 @@ class Simulation(object):
             self.fit_network(network=dn, penalty_rate=penalty_rate,  start_penalty=start_penalty,
                              end_penalty=end_penalty)
 
+    def qualify_network(self, network=None, network_id=None, depth=1):
+
+        if network is None:
+            network = self.l_networks[network_id]
+
+        # Get transformation of input
+        ax_out = network.transform_array(self, self.imputer.read_features().features_forward.toarray())
+
+        # Set metrics of the deep network
+        network.deep_network.set_metrics(self, depth, self.imputer.features_backward.toarray(), ax_out)
+
+    def qualify_all_network(self, depth=1):
+        for dn in self.l_networks:
+            self.qualify_network(network=dn, depth=depth)
+
     def visualize_network(self, network_id=0, network=None):
         if network is None:
             network = self.l_networks[network_id]

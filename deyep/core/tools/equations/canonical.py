@@ -96,20 +96,24 @@ class ParallelUpdate(object):
 def c_bdu(sax_snb, dn, penalty=1., n_jobs=1):
 
     if penalty != 1.:
-        sax_snb = ((sax_snb < 0) * -1 * penalty) + (sax_snb > 0)
+        sax_snb_ = ((sax_snb < 0) * sax_snb * penalty) + ((sax_snb > 0) * sax_snb)
 
     if n_jobs != 1:
         p = Pool(cpu_count())
 
         # Instantiate class that implement inner product
-        bdup = ParallelUpdate(sax_snb)
+        bdup = ParallelUpdate(sax_snb_)
 
         # Parallel inner product (map from Pool preserve order of input list)
         sax_Du = vstack(p.map(bdup.f, [(n.basis.base, dn.D[i, :]) for i, n in enumerate(dn.network_nodes)]))
     else:
-        sax_Du = vstack([n.basis.base for n in dn.network_nodes]).dot(sax_snb).multiply(dn.D)
+        sax_Du = vstack([n.basis.base for n in dn.network_nodes]).dot(sax_snb_).multiply(dn.D)
 
     ax_count = np.array(sax_Du.sum(axis=1), dtype=int)
+
+    if penalty != 1.:
+        ax_count /= penalty
+
     dn.graph['Dw'] += sax_Du
 
     return ax_count[:, 0]
@@ -135,6 +139,10 @@ def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
             .multiply(dn.O.multiply(sax_A.transpose()))
 
     ax_count = np.array(sax_Ou.sum(axis=1), dtype=int)
+
+    if penalty != 1.:
+        ax_count /= penalty
+
     dn.graph['Ow'] += sax_Ou
 
     return ax_count[:, 0]

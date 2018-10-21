@@ -37,13 +37,17 @@ class CodeBreaker(Simulation):
 
         assert (ax_output == ax_output_).all()
 
-    def merge_networks(self):
-        raise NotImplementedError
+    def check_network_qualification(self):
 
-# Interesting metrics:
-#   * Optimality score (is this a sub network of optimal ?, how many time a penalty is sent ?)
-#   * completness score (how far from complete optimal we are)
-#   * efficiency score (does the compression is  correct) how far from optimal compression ? complexity
+        # Fit network 0
+        network_id = 0
+        solver = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=5, save_network=False)
+
+        # Qualify network 0
+        self.qualify_network(network_id=network_id)
+
+        import IPython
+        IPython.embed()
 
 
 # TODO:
