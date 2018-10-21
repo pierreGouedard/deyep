@@ -41,7 +41,7 @@ class CodeBreaker(Simulation):
 
         # Fit network 0
         network_id = 0
-        solver = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=5, save_network=False)
+        _ = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=5, save_network=False)
 
         # Qualify network 0
         self.qualify_network(network_id=network_id)
