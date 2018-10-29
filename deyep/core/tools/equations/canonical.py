@@ -95,8 +95,7 @@ class ParallelUpdate(object):
 
 def c_bdu(sax_snb, dn, penalty=1., n_jobs=1):
 
-    if penalty != 1.:
-        sax_snb_ = ((sax_snb < 0) * sax_snb * penalty) + ((sax_snb > 0) * sax_snb)
+    sax_snb_ = (penalty * sax_snb < 0).multiply(sax_snb) + (sax_snb > 0).multiply(sax_snb)
 
     if n_jobs != 1:
         p = Pool(cpu_count())

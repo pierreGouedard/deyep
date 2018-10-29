@@ -93,7 +93,7 @@ class Simulation(object):
         return l_networks
 
     def fit_network(self, network_id=0, network=None, penalty_rate=200,  start_penalty=1, end_penalty=10,
-                    save_network=True):
+                    clean=True, update=True, save_network=True):
 
         if network is None:
             network = self.l_networks[network_id]
@@ -110,10 +110,16 @@ class Simulation(object):
         for i in np.arange(start_penalty, end_penalty):
             solver.p = i
             solver.fit_epoch(penalty_rate)
-            solver.clean_network_nodes()
+            if clean:
+                solver.clean_network_nodes()
 
+        # Save fitted network
         if save_network:
             solver.deep_network.save()
+
+        # Update network of simulation
+        if update:
+            self.l_networks[network_id] = solver.deep_network
 
         return solver
 
@@ -122,16 +128,21 @@ class Simulation(object):
             self.fit_network(network=dn, penalty_rate=penalty_rate,  start_penalty=start_penalty,
                              end_penalty=end_penalty)
 
-    def qualify_network(self, network=None, network_id=None, depth=1):
+    def qualify_network(self, network=None, network_id=None, depth=1, size_test=200, penalty=10):
 
         if network is None:
             network = self.l_networks[network_id]
 
+        solver = self.fit_network(network=network, penalty_rate=size_test,  start_penalty=1,
+                                  end_penalty=2, clean=False, update=False, save_network=False)
+
         # Get transformation of input
-        ax_out = network.transform_array(self, self.imputer.read_features().features_forward.toarray())
+        ax_out = solver.transform_array(self.imputer.read_features().features_forward.toarray(),
+                                        max_iter=self.params_network['delay'] + 1)
+        ax_out = ax_out[self.params_network['delay'] + 1:]
 
         # Set metrics of the deep network
-        network.deep_network.set_metrics(self, depth, self.imputer.features_backward.toarray(), ax_out)
+        network.set_metrics(depth, self.imputer.features_backward.toarray().astype(bool), ax_out)
 
     def qualify_all_network(self, depth=1):
         for dn in self.l_networks:

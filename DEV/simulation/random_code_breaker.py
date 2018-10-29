@@ -41,10 +41,10 @@ class CodeBreaker(Simulation):
 
         # Fit network 0
         network_id = 0
-        _ = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=5, save_network=False)
+        _ = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=20, save_network=False)
 
         # Qualify network 0
-        self.qualify_network(network_id=network_id)
+        self.qualify_network(network_id=network_id, size_test=1000)
 
         import IPython
         IPython.embed()
@@ -64,8 +64,11 @@ if __name__ == '__main__':
     else:
         sim = CodeBreaker()
 
-    # Rapid test of network cleaning: should be re-implemented in core unit tests
+    # Quick test of network cleaning: should be re-implemented in core unit tests
     #sim.check_network_cleaning()
 
+    # Quick test of metrics of the fitted deep network
+    sim.check_network_qualification()
+
     # Fit all network and visualize them (make sure the change in network is saved
-    sim.fit_all_networks(penalty_rate=400, start_penalty=1, end_penalty=10)
+    #sim.fit_all_networks(penalty_rate=400, start_penalty=1, end_penalty=10)

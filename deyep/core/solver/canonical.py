@@ -118,7 +118,7 @@ class CanonicalDeepNetSolver(DeepNetSolver):
 
         return ax_so
 
-    def transform_array(self, ax_input, max_iter=10, return_activation=False):
+    def transform_array(self, ax_input, max_iter=10, return_activation=False, use_level=True):
 
         ax_input = np.vstack((ax_input, np.zeros([max_iter, ax_input.shape[-1]])))
         ax_activation = np.array([False] * len(self.deep_network.network_nodes), dtype=bool)
@@ -134,13 +134,14 @@ class CanonicalDeepNetSolver(DeepNetSolver):
 
             # Transform and transmit forward
             self.sax_si = self.generate_input_signals(sax_si, self.deep_network.input_nodes, self.dtype)
-            self.forward_transmiting()
+            self.forward_transmit_simple(use_level=use_level)
 
-            ax_activation_ = np.array(self.sax_sn.sum(axis=0) > 0)[0]
-            if not ax_activation_.any():
-                break
+            if return_activation:
+                ax_activation_ = np.array(self.sax_sn.sum(axis=0) > 0)[0]
+                if not ax_activation_.any():
+                    break
 
-            ax_activation |= ax_activation_
+                ax_activation |= ax_activation_
 
             if ax_so is None:
                 ax_so = self.sax_so.toarray().sum(axis=0) > 0
@@ -192,7 +193,7 @@ class CanonicalDeepNetSolver(DeepNetSolver):
 
         # Fetch inactive nodes: forward pass
         ax_input = np.ones(len(self.deep_network.input_nodes))
-        ax_active_i, _ = self.transform_array(ax_input, max_iter=max_iter, return_activation=True)
+        ax_active_i, _ = self.transform_array(ax_input, max_iter=max_iter, return_activation=True, use_level=False)
 
         # Fetch inactive nodes: backward pass
         ax_output = np.ones(len(self.deep_network.output_nodes))

@@ -1,5 +1,5 @@
 # Global import
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, lil_matrix
 import numpy as np
 
 # Local import
@@ -80,6 +80,23 @@ class DeepNetSolver(object):
         sax_sab = csc_matrix(np.ones(self.sax_sab.shape))
         self.sax_sib = bit(self.deep_network.I, self.sax_snb)
         self.sax_snb = bnt(self.deep_network.D, self.deep_network.O, self.sax_snb, sax_sob, sax_sab)
+
+    def forward_transmit_simple(self, use_level=True):
+
+        if use_level:
+            sax_sn, l_nodes = lil_matrix(self.sax_sn.shape, dtype=int), self.deep_network.network_nodes
+            for i in np.unique(self.sax_sn.nonzero()[1]):
+                level = len(l_nodes[i].basis.keys_from_forward_basis(self.sax_sn[:, i].transpose()))
+                if l_nodes[i].d_levels[level] >= self.deep_network.tau:
+                    sax_sn[:, i] = self.sax_sn[:, i]
+
+            self.sax_sn = sax_sn
+
+        # Output transmit
+        self.sax_so = fot(self.deep_network.O, self.sax_sn)
+
+        # network transmit
+        self.sax_sn = fnt(self.deep_network.D, self.deep_network.I, self.sax_sn, self.sax_si)
 
     @staticmethod
     def generate_input_signals(sax_i, input_nodes, dtype):

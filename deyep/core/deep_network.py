@@ -76,11 +76,11 @@ class DeepNetwork(object):
     def Cm(self):
         return self.graph['Cm']
 
-    def get_metrics(self, depth, ax_got, ax_out):
+    def set_metrics(self, depth, ax_got, ax_out):
         d_metrics = {}
 
         # Compute precision
-        d_metrics['P'] = self.compute_precision()
+        d_metrics['P'] = self.compute_precision(ax_got, ax_out)
 
         # Compute recall
         d_metrics['R'] = self.compute_recall(ax_got, ax_out)
@@ -90,20 +90,20 @@ class DeepNetwork(object):
 
         self.d_metrics = d_metrics
 
-    def compute_precision(self):
-        return self.graph['N_r'] / (self.graph['N_r'] + self.graph['N_p'])
+    def compute_precision(self, ax_got, ax_out):
+        return float((ax_got & ax_out).sum()) / ax_out.sum()
 
     def compute_recall(self, ax_got, ax_out):
-        return (ax_got & ax_out).sum() / ax_got.sum()
+        return float((ax_got & ax_out).sum()) / ax_got.sum()
 
     def compute_efficiency(self, depth):
         return float(len(self.network_nodes)) / (len(self.input_nodes) * depth)
 
     @staticmethod
     def from_matrices(project, sax_net, sax_in, sax_out, capacity, basis='canonical', network_id=None, w0=5, l0=10,
-                      tau=5):
+                      tau=5, Cm=None):
         l_inputs, l_outputs, l_networks, n_freq = comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=l0)
-        d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': sax_out}
+        d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': {None: sax_out}.get(Cm, Cm)}
 
         return DeepNetwork(project, w0, l0, tau, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
                            n_freq=n_freq, graph=d_graph, capacity=capacity, basis=basis, network_id=network_id)
@@ -115,10 +115,11 @@ class DeepNetwork(object):
         sax_I = dn.Iw.multiply(dn.I)[:, ax_active_nodes]
         sax_D = dn.Dw.multiply(dn.D)[:, ax_active_nodes][ax_active_nodes, :]
         sax_O = dn.Ow.multiply(dn.O)[ax_active_nodes, :]
+        sax_Cm = dn.Cm[ax_active_nodes, :]
 
         # Build new deep network
         deep_network = DeepNetwork.from_matrices(dn.project, sax_D, sax_I, sax_O, dn.node_capacity, basis=basis,
-                                                 network_id=dn.network_id, w0=dn.w0, l0=dn.l0, tau=dn.tau)
+                                                 network_id=dn.network_id, w0=dn.w0, l0=dn.l0, tau=dn.tau, Cm=sax_Cm)
 
         # Put back levels of nodes
         l_nodes = [n for i, n in enumerate(dn.network_nodes) if ax_active_nodes[i]]
