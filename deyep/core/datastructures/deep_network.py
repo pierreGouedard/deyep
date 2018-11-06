@@ -1,17 +1,17 @@
 # Global imports
+import pickle
 import random
 import string
-import pickle
-import numpy as np
-from sys import maxint
 
-# local import
-from deyep.core.builder import comon
+import numpy as np
+
 import settings
-from deyep.utils.driver.driver import FileDriver
+from deyep.core.builder import comon
+from deyep.core.datastructures.nodes import InputNode as ni, OutputNode as no, NetworkNode as nd
 from deyep.core.tools.basis.canonical import CanonicalBasis
 from deyep.core.tools.basis.fourrier import FourrierBasis
-from deyep.core.nodes import InputNode as ni, OutputNode as no, NetworkNode as nd
+from deyep.utils.driver.driver import FileDriver
+
 driver = FileDriver('network_file_driver', '')
 
 
@@ -102,6 +102,7 @@ class DeepNetwork(object):
     @staticmethod
     def from_matrices(project, sax_net, sax_in, sax_out, capacity, basis='canonical', network_id=None, w0=5, l0=10,
                       tau=5, Cm=None):
+
         l_inputs, l_outputs, l_networks, n_freq = comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=l0)
         d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': {None: sax_out}.get(Cm, Cm)}
 

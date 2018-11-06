@@ -41,7 +41,7 @@ class DoubleIdentityImputer(ImputerDoubleSource):
         self.driver.write_file(self.features_forward, self.driver.join(self.dirout, name_forward), is_sparse=True)
         self.driver.write_file(self.features_backward, self.driver.join(self.dirout, name_backward), is_sparse=True)
 
-    def stream_features(self, partition=None):
+    def stream_features(self, partition=None, is_cyclic=True):
 
         # Set urls
         urlf, urlb = self.driver.join(self.dirout, self.name_forward), self.driver.join(self.dirout, self.name_backward)
@@ -54,8 +54,9 @@ class DoubleIdentityImputer(ImputerDoubleSource):
             self.stream_backward = driverb.init_stream_partition(urlb, n_cache=1, orient='row',
                                                                  is_sparse=self.is_sparse, is_cyclic=True)
         else:
-            self.stream_forward = driverf.init_stream(urlf, is_sparse=self.is_sparse, is_cyclic=True, orient='row')
-            self.stream_backward = driverb.init_stream(urlb, is_sparse=self.is_sparse, is_cyclic=True, orient='row')
+            self.stream_forward = driverf.init_stream(urlf, is_sparse=self.is_sparse, is_cyclic=is_cyclic, orient='row')
+            self.stream_backward = driverb.init_stream(urlb, is_sparse=self.is_sparse, is_cyclic=is_cyclic,
+                                                       orient='row')
 
     def run_preprocessing(self):
         self.features_forward = self.raw_data_forward.copy()

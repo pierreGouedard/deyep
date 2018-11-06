@@ -1,15 +1,16 @@
 # Global imports
 import unittest
+
 import numpy as np
 from scipy.sparse import csc_matrix
 
-# Local import
-from tests.utils import testPattern as tp
-from deyep.core.solver.canonical import CanonicalDeepNetSolver
 from deyep.core.builder.comon import mat_from_tuples
-from deyep.core.deep_network import DeepNetwork
-from deyep.utils.driver.nmp import NumpyDriver
+from deyep.core.datastructures.deep_network import DeepNetwork
 from deyep.core.imputer.identity import DoubleIdentityImputer
+from deyep.core.solver.canonical import CanonicalDeepNetSolver
+from deyep.utils.driver.nmp import NumpyDriver
+from tests.utils import testPattern as tp
+
 __maintainer__ = 'Pierre Gouedard'
 
 

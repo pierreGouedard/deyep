@@ -1,11 +1,11 @@
 # Global imports
-import numpy as np
 import unittest
 
-# Local import
-from deyep.core.tools.linear_algebra.natural_domain import inner_product
+import numpy as np
+
 from deyep.core.builder.comon import mat_from_tuples
-from deyep.core.deep_network import DeepNetwork
+from deyep.core.datastructures.deep_network import DeepNetwork
+from deyep.core.tools.linear_algebra.natural_domain import inner_product
 
 __maintainer__ = 'Pierre Gouedard'
 

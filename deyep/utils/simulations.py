@@ -1,14 +1,14 @@
 # Global import
 import numpy as np
 
-# Local import
-from deyep.utils.driver.nmp import NumpyDriver
-from deyep.core.deep_network import DeepNetwork
-from deyep.core.solver.canonical import CanonicalDeepNetSolver
-from deyep.core.solver.fourrier import FourrierDeepNetSolver
-from deyep.utils import interactive_plots as ip
-from deyep.core.builder.comon import gather_matrices
 import settings
+from deyep.core.builder.comon import gather_matrices
+from deyep.core.datastructures.deep_network import DeepNetwork
+from deyep.core.merger.comon import DeepNetMerger
+from deyep.core.runner.comon import DeepNetRunner
+from deyep.core.solver.canonical import CanonicalDeepNetSolver
+from deyep.utils import interactive_plots as ip
+from deyep.utils.driver.nmp import NumpyDriver
 
 
 class Simulation(object):
@@ -110,8 +110,14 @@ class Simulation(object):
         for i in np.arange(start_penalty, end_penalty):
             solver.p = i
             solver.fit_epoch(penalty_rate)
+
             if clean:
-                solver.clean_network_nodes()
+                # Clean network
+                solver.deep_network = DeepNetMerger([solver.deep_network], self.params_network['basis'])\
+                    .merge_network()\
+                    .clean_network()\
+                    .deep_network
+                solver.reset_solver(reset_imputer=True, reset_inputs=True, reset_time=True)
 
         # Save fitted network
         if save_network:
@@ -128,25 +134,42 @@ class Simulation(object):
             self.fit_network(network=dn, penalty_rate=penalty_rate,  start_penalty=start_penalty,
                              end_penalty=end_penalty)
 
-    def qualify_network(self, network=None, network_id=None, depth=1, size_test=200, penalty=10):
+    def qualify_network(self, network=None, network_id=None, depth=1, update=True, save_network=True):
 
         if network is None:
             network = self.l_networks[network_id]
 
-        solver = self.fit_network(network=network, penalty_rate=size_test,  start_penalty=1,
-                                  end_penalty=2, clean=False, update=False, save_network=False)
+        self.imputer.stream_features(is_cyclic=False)
+
+        if self.params_network['basis'] == 'canonical':
+            runner = DeepNetRunner(network, self.params_network['delay'] + 2, self.imputer, 'canonical')
+        else:
+            raise NotImplementedError
 
         # Get transformation of input
-        ax_out = solver.transform_array(self.imputer.read_features().features_forward.toarray(),
-                                        max_iter=self.params_network['delay'] + 1)
-        ax_out = ax_out[self.params_network['delay'] + 1:]
+        ax_out = runner.transform_array()
 
         # Set metrics of the deep network
         network.set_metrics(depth, self.imputer.features_backward.toarray().astype(bool), ax_out)
 
+        # Save fitted network
+        if save_network:
+            network.save()
+
+        # Update network of simulation
+        if update:
+            self.l_networks[network_id] = network
+
     def qualify_all_network(self, depth=1):
         for dn in self.l_networks:
             self.qualify_network(network=dn, depth=depth)
+
+    # TODD: next couple of method very important
+    def export_dry_deep_network(self):
+        raise NotImplementedError
+
+    def merge_deep_network(self):
+        raise NotImplementedError
 
     def visualize_network(self, network_id=0, network=None):
         if network is None:

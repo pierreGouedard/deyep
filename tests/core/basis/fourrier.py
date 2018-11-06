@@ -1,11 +1,10 @@
 # Global imports
-import numpy as np
 import unittest
-from deyep.utils.names import KVName
 
-# Local import
+import numpy as np
+
 from deyep.core.builder.comon import mat_from_tuples
-from deyep.core.deep_network import DeepNetwork
+from deyep.core.datastructures.deep_network import DeepNetwork
 
 __maintainer__ = 'Pierre Gouedard'
 

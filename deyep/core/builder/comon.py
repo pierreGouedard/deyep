@@ -1,11 +1,10 @@
 # Global imports
-from scipy.sparse import lil_matrix, csc_matrix
 import numpy as np
+from scipy.sparse import lil_matrix
 
-# local import
-from deyep.core import nodes
-from deyep.core.tools.basis.fourrier import FourrierBasis
+from deyep.core.datastructures import nodes
 from deyep.core.tools.basis.canonical import CanonicalBasis
+from deyep.core.tools.basis.fourrier import FourrierBasis
 
 
 def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
@@ -45,10 +44,6 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
         i += 1
 
     return sax_in.tocsc(), sax_net.tocsc(), sax_out.tocsc()
-
-
-def mat_from_nodes(l_nodes):
-    raise NotImplementedError
 
 
 def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10, fixed_weight=None):
@@ -125,6 +120,10 @@ def set_nodes_from_mat(mat, key):
         raise ValueError('Choose key between \'input\', \'output\' or \'network\'')
 
     return d_nodes.copy()
+
+
+def nodes_from_mat_dry(sax_net, sax_in, sax_out, l0=10, fixed_weight=None):
+    raise NotImplementedError
 
 
 def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):

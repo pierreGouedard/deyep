@@ -1,10 +1,8 @@
 # Global import
 import numpy as np
-import networkx as nx
 
-# Local import
 from deyep.core.builder.comon import mat_from_tuples
-from deyep.core.deep_network import DeepNetwork
+from deyep.core.datastructures.deep_network import DeepNetwork
 
 
 class BinomialGraphBuilder(object):
