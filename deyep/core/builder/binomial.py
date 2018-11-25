@@ -7,18 +7,19 @@ from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.datastructures.deep_network import DeepNetwork
 from deyep.core.merger.comon import DeepNetMerger
 
+
 class BinomialGraphBuilder(object):
 
     """
     Class that will build a graph based on a binomial method in theoretical report
     """
-    def __init__(self, ni, nd, no, depth_max, p0, w0, l0, tau, capacity, basis='canonical', ax_p=None):
+    def __init__(self, ni, nd, no, depth_max, p0, w0, l0, tau, capacity, ax_p=None):
 
         # Core feature of graph
         self.ni, self.nd, self.nd_all, self.no, self.depth_max, self.p0, self.w0 = ni, nd, nd, no, depth_max, p0, w0
 
         # Core feature of nodes
-        self.l0, self.tau, self.basis, self.capacity = l0, tau, basis, capacity
+        self.l0, self.tau, self.capacity = l0, tau, capacity
 
         # Init binomial construction
         self.l_edges = []
@@ -134,7 +135,7 @@ class BinomialGraphBuilder(object):
             for l_nodes in self.gammas[1:delay + 1]:
                 sax_Cm[[int(n.split('_')[1]) for n in l_nodes], :] = True
 
-        return DeepNetwork.from_matrices(project, mat_net, mat_in, mat_out, self.capacity, self.basis, w0=self.w0,
+        return DeepNetwork.from_matrices(project, mat_net, mat_in, mat_out, self.capacity, w0=self.w0,
                                          l0=self.l0, tau=self.tau, network_id=network_id, Cm=sax_Cm)
 
     def reset_structure(self):

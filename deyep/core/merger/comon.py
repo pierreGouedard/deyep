@@ -163,7 +163,6 @@ class DeepNetMerger(object):
 
         try:
             assert dna.node_capacity == dnb.node_capacity
-            assert dna.node_basis == dnb.node_basis
         except AssertionError:
             raise ValueError('nodes of merged network should have same parameters n_freq, node_capacity and node_basis')
 

@@ -10,7 +10,7 @@ __maintainer__ = 'Pierre Gouedard'
 
 
 class TestDriverNumpy(unittest.TestCase):
-
+    # TODO: update (Obsolete test)
     def setUp(self):
         np.random.seed(1393)
 

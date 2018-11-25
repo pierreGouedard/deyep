@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import csc_matrix, csr_matrix
 
+
 def Upsilon(x):
     """
     :param x:

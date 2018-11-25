@@ -3,9 +3,7 @@ import numpy as np
 from scipy.sparse import lil_matrix
 
 from deyep.core.datastructures import nodes, nodes_dry
-from deyep.core.tools.basis.canonical import CanonicalBasis
-from deyep.core.tools.basis.fourrier import FourrierBasis
-
+from deyep.core.tools.basis.comon import Basis
 
 def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
 
@@ -46,7 +44,7 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
     return sax_in.tocsc(), sax_net.tocsc(), sax_out.tocsc()
 
 
-def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10, levels=None):
+def nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=10, levels=None):
 
     # Get dict of nodes
     d_inputs = set_nodes_from_mat(sax_in, 'input')
@@ -68,36 +66,20 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10,
     n_freq = ((max(set_freqs_) + 1) * capacity) + len(set_freqs)
 
     # Finally, build nodes
-    if basis == 'fourrier':
-        l_inputs = [
-            nodes.InputNode(
-                k_, 'input', FourrierBasis(min(v_['freqs']), n_freq, {}, 1),
-                zip(v_['children_name'], v_['children_weight'])
-            ) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
-            ]
-        l_networks = [
-            nodes.NetworkNode(
-                k_, 'network',
-                FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
-                zip(v_['children_name'], v_['children_weight']), l0, level=levels[k_]
-            ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
-            ]
-    elif basis == 'canonical':
-        l_inputs = [
-            nodes.InputNode(
-                k_, 'input', CanonicalBasis(min(v_['freqs']), n_freq, {}, 1),
-                zip(v_['children_name'], v_['children_weight'])
-            ) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
-            ]
-        l_networks = [
-            nodes.NetworkNode(
-                k_, 'network',
-                CanonicalBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
-                zip(v_['children_name'], v_['children_weight']), l0, level=levels[k_]
-            ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
-            ]
-    else:
-        raise ValueError('basis not understood: {}, choose between "fourrier" and "canonical"')
+    l_inputs = [
+        nodes.InputNode(
+            k_, 'input', Basis(min(v_['freqs']), n_freq, {}, 1),
+            zip(v_['children_name'], v_['children_weight'])
+        ) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
+        ]
+    l_networks = [
+        nodes.NetworkNode(
+            k_, 'network',
+            Basis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
+            zip(v_['children_name'], v_['children_weight']), l0, level=levels[k_]
+        ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
+        ]
+
     l_outputs = [nodes.OutputNode(k_, 'output', zip(v_['parents_name'], v_['parents_weight']))
                  for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 

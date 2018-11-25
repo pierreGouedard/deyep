@@ -44,12 +44,89 @@ class DeepNetworkDry(object):
     def I(self):
         return self.graph['I']
 
+    @staticmethod
+    def load(project, network_id):
+        pth = driver.join(settings.deyep_network_path.format(project), '{}.pckl'.format(network_id))
+
+        with open(pth, 'rb') as handle:
+            d_network = pickle.load(handle)
+
+        return DeepNetworkDry.from_dict(d_network, project, network_id=network_id)
+
+    @staticmethod
+    def from_dict(d_network, project, network_id=None):
+        dn = DeepNetworkDry(
+            project, graph=d_network['graph'],
+            input_nodes=[ni.from_dict(d_n) for d_n in d_network['input_nodes']],
+            output_nodes=[no.from_dict(d_n) for d_n in d_network['output_nodes']],
+            network_nodes=[nd.from_dict(d_n) for d_n in d_network['network_nodes']],
+            network_id=network_id
+        )
+
+        return dn
+
+    @staticmethod
+    def from_matrices(project, sax_net, sax_in, sax_out, network_id=None, levels=None):
+        l_inputs, l_outputs, l_networks = comon.nodes_from_mat_dry(sax_net, sax_in, sax_out, levels=levels)
+        d_graph = {'I': sax_in, 'D': sax_net, 'O': sax_out}
+
+        return DeepNetworkDry(project, input_nodes=l_inputs, output_nodes=l_outputs,
+                              network_nodes=l_networks, graph=d_graph, network_id=network_id)
+
+    @staticmethod
+    def from_deep_network(dn):
+
+        if dn.is_dried:
+            return dn
+        else:
+            levels = [{k: v > dn.tau for k, v in n.d_levels.items()} for n in dn.network_nodes]
+
+        l_inputs, l_outputs, l_networks = comon.nodes_from_mat_dry(dn.D, dn.I, dn.O, levels=levels)
+        d_graph = {'I': dn.I, 'D': dn.D, 'O': dn.O}
+
+        return DeepNetworkDry(dn.project, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
+                              graph=d_graph, network_id='dry_{}'.format(dn.network_id))
+
     def copy(self):
         dn_ = DeepNetworkDry.from_matrices(
             self.project, self.D, self.I, self.O, network_id='copy_{}'.format(self.network_id),
             levels=[n.d_levels for n in self.network_nodes]
         )
         return dn_
+
+    def save(self):
+        if not driver.exists(self.dir_network):
+            driver.makedirs(self.dir_network)
+
+        d_network = self.to_dict()
+
+        with open(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)), 'wb') as handle:
+            pickle.dump(d_network, handle)
+
+    def to_dict(self):
+        d_network = {'graph': self.graph, 'is_dried': True,
+                     'input_nodes': [n.to_dict() for n in self.input_nodes],
+                     'network_nodes': [n.to_dict() for n in self.network_nodes],
+                     'output_nodes': [n.to_dict() for n in self.output_nodes]}
+        return d_network
+
+    def delete(self):
+        if driver.exists(driver.join(self.dir_network, '{}.pckl'.format(self.network_id))):
+            driver.remove(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)))
+
+    @staticmethod
+    def reduce_network(dn, ax_active_nodes):
+
+        # Now clean matrices  of the deep network
+        sax_I = dn.I[:, ax_active_nodes]
+        sax_D = dn.D[:, ax_active_nodes][ax_active_nodes, :]
+        sax_O = dn.O[ax_active_nodes, :]
+        levels = [n.d_levels for i, n in enumerate(dn.network_nodes) if ax_active_nodes[i]]
+
+        # Build new deep network
+        dnd = DeepNetworkDry.from_matrices(dn.project, sax_D, sax_I, sax_O, network_id=dn.network_id, levels=levels)
+
+        return dnd
 
     def set_metrics(self, depth, ax_got, ax_out):
         d_metrics = {}
@@ -73,80 +150,3 @@ class DeepNetworkDry(object):
 
     def compute_efficiency(self, depth):
         return float(len(self.network_nodes)) / (len(self.input_nodes) * depth)
-
-    @staticmethod
-    def from_matrices(project, sax_net, sax_in, sax_out, network_id=None, levels=None):
-        l_inputs, l_outputs, l_networks = comon.nodes_from_mat_dry(sax_net, sax_in, sax_out, levels=levels)
-        d_graph = {'I': sax_in, 'D': sax_net, 'O': sax_out}
-
-        return DeepNetworkDry(project, input_nodes=l_inputs, output_nodes=l_outputs,
-                              network_nodes=l_networks, graph=d_graph, network_id=network_id)
-
-    @staticmethod
-    def reduce_network(dn, ax_active_nodes):
-
-        # Now clean matrices  of the deep network
-        sax_I = dn.I[:, ax_active_nodes]
-        sax_D = dn.D[:, ax_active_nodes][ax_active_nodes, :]
-        sax_O = dn.O[ax_active_nodes, :]
-        levels = [n.d_levels for i, n in enumerate(dn.network_nodes) if ax_active_nodes[i]]
-
-        # Build new deep network
-        dnd = DeepNetworkDry.from_matrices(dn.project, sax_D, sax_I, sax_O, network_id=dn.network_id, levels=levels)
-
-        return dnd
-
-    @staticmethod
-    def from_deep_network(dn):
-
-        if dn.is_dried:
-            return dn
-        else:
-            levels = [{k: v > dn.tau for k, v in n.d_levels.items()} for n in dn.network_nodes]
-
-        l_inputs, l_outputs, l_networks = comon.nodes_from_mat_dry(dn.D, dn.I, dn.O, levels=levels)
-        d_graph = {'I': dn.I, 'D': dn.D, 'O': dn.O}
-
-        return DeepNetworkDry(dn.project, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
-                              graph=d_graph, network_id='dry_{}'.format(dn.network_id))
-
-    @staticmethod
-    def from_dict(d_network, project, network_id=None):
-        dn = DeepNetworkDry(
-            project, graph=d_network['graph'],
-            input_nodes=[ni.from_dict(d_n) for d_n in d_network['input_nodes']],
-            output_nodes=[no.from_dict(d_n) for d_n in d_network['output_nodes']],
-            network_nodes=[nd.from_dict(d_n) for d_n in d_network['network_nodes']],
-            network_id=network_id
-        )
-
-        return dn
-
-    def to_dict(self):
-        d_network = {'graph': self.graph, 'is_dried': True,
-                     'input_nodes': [n.to_dict() for n in self.input_nodes],
-                     'network_nodes': [n.to_dict() for n in self.network_nodes],
-                     'output_nodes': [n.to_dict() for n in self.output_nodes]}
-        return d_network
-
-    def save(self):
-        if not driver.exists(self.dir_network):
-            driver.makedirs(self.dir_network)
-
-        d_network = self.to_dict()
-
-        with open(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)), 'wb') as handle:
-            pickle.dump(d_network, handle)
-
-    def delete(self):
-        if driver.exists(driver.join(self.dir_network, '{}.pckl'.format(self.network_id))):
-            driver.remove(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)))
-
-    @staticmethod
-    def load(project, network_id):
-        pth = driver.join(settings.deyep_network_path.format(project), '{}.pckl'.format(network_id))
-
-        with open(pth, 'rb') as handle:
-            d_network = pickle.load(handle)
-
-        return DeepNetworkDry.from_dict(d_network, project, network_id=network_id)

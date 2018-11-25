@@ -13,7 +13,7 @@ __maintainer__ = 'Pierre Gouedard'
 
 
 class TestSoundUtils(unittest.TestCase):
-
+    # TODO: Refactor
     def setUp(self):
 
         # Parameter of transformation

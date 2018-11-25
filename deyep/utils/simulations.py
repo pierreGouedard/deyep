@@ -9,7 +9,7 @@ from deyep.core.builder.comon import gather_matrices
 from deyep.core.datastructures.deep_network import DeepNetwork
 from deyep.core.merger.comon import DeepNetMerger
 from deyep.core.runner.comon import DeepNetRunner
-from deyep.core.solver.canonical import CanonicalDeepNetSolver
+from deyep.core.solver.comon import DeepNetSolver
 from deyep.utils import interactive_plots as ip
 from deyep.utils.driver.nmp import NumpyDriver
 
@@ -138,10 +138,8 @@ class Simulation(object):
         imputer = Simulation.create_imputer(self.imputer.copy())
         imputer.stream_features()
 
-        if self.params_network['basis'] == 'canonical':
-            solver = CanonicalDeepNetSolver(network, self.params_network['delay'] + 2, imputer, verbose=verbose)
-        else:
-            raise NotImplementedError
+        # Create solver
+        solver = DeepNetSolver(network, self.params_network['delay'] + 2, imputer, verbose=verbose)
 
         # Fit solver
         for i in np.arange(start_penalty, end_penalty, rate_penalty):

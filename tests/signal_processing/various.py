@@ -9,7 +9,7 @@ __maintainer__ = 'Pierre Gouedard'
 
 
 class TestVariousUtils(unittest.TestCase):
-
+    # TODO: refactor
     def setUp(self):
 
         # create random signal

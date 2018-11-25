@@ -11,6 +11,7 @@ __maintainer__ = 'Pierre Gouedard'
 
 
 class TestMerger(unittest.TestCase):
+    # TODO: Make new test when merge strategy clear (obsolete test)
     def setUp(self):
         self.p = {'ni': 5, 'nd': 7, 'no': 2}
 

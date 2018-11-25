@@ -1,7 +1,5 @@
 # Global import
 import numpy as np
-import random
-from scipy.sparse import csc_matrix
 
 # Local import
 from deyep.utils.driver.nmp import NumpyDriver

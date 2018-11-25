@@ -1,6 +1,5 @@
 # Global import
 import sys
-import numpy as np
 
 # Local import
 from deyep.core.builder.binomial import BinomialGraphBuilder
@@ -14,8 +13,8 @@ from deyep.core.runner.comon import DeepNetRunner
 class CodeBreaker(Simulation):
 
     name = 'code_breaker'
-    params_network = {'ni': 10, 'nd': 100, 'no': 5, 'depth': 2, 'p0': 0.1, 'l0': 10, 'tau': 5, 'w0': 10,
-                      'basis': "canonical", 'capacity': 5, 'delay': 0}
+    params_network = {'ni': 10, 'nd': 100, 'no': 5, 'depth': 2, 'p0': 0.1, 'l0': 10, 'tau': 5, 'w0': 10, 'capacity': 5,
+                      'delay': 0}
     imputer = identity.DoubleIdentityImputer
     builder = BinomialGraphBuilder
     raw_builder = SimpleMapping(20, [10, 5], p=0.5).generate_code()
