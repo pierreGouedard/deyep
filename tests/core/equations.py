@@ -26,10 +26,11 @@ class TestEquations(unittest.TestCase):
 
         # Get matrices from list of edges and build network
         self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
-        self.dn = DeepNetwork.from_matrices(self.mat_net, self.mat_in, self.mat_out, self.capacity)
+        self.dn = DeepNetwork.from_matrices('test_equation', self.mat_net, self.mat_in, self.mat_out, self.capacity)
 
     def forward(self):
         """
+        Very precise case on very simple grpah to validate basics of solver for forward equations
         python -m unittest tests.core.equations.TestEquations.forward
 
         """
@@ -74,6 +75,7 @@ class TestEquations(unittest.TestCase):
 
     def backward(self):
         """
+        Very precise case on very simple graph to validate basics of solver for ackward equations
         python -m unittest tests.core.equations.TestEquations.backward
 
         """
@@ -121,10 +123,11 @@ class TestEquations(unittest.TestCase):
 
         # make sure backward messages are correct
         node = solver.deep_network.input_nodes[-1]
+
         self.assertEqual(solver.sax_snb[:, -1].toarray()[:, 0].dot(node.basis.base.toarray()[0]), 1)
         self.assertEqual(node.basis.depth_from_basis(solver.sax_snb[:, -1].transpose()), ([0], [1.]))
 
-        # Backward transitting
+        # Backward transmiting
         Iw = solver.deep_network.Iw
         solver.fit_epoch(1)
 

@@ -24,17 +24,17 @@ class TestCanonicalBasis(unittest.TestCase):
         # Get matrices from list of edges and build network
         mat_in, mat_net, mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
 
-        self.deep_network_1 = DeepNetwork.from_matrices('test', mat_net, mat_in, mat_out, self.capacity, 'canonical')
+        self.deep_network_1 = DeepNetwork.from_matrices('test', mat_net, mat_in, mat_out, self.capacity)
 
-    def test_canonical_basics(self):
+    def basics(self):
         """
         Test basic frequency management
-        python -m unittest tests.core.canonical_basis.TestCanonicalBasis.test_canonical_basics
+        python -m unittest tests.core.basis.TestCanonicalBasis.basics
 
         """
 
         Basis = self.deep_network_1.network_nodes[2].basis
-        self.assertEqual(len(Basis.basis), self.capacity)
+        self.assertEqual(len(Basis.basis), int(self.capacity / 2))
 
         # Make sure that nodes with edges toward same nodes has orthogonal base
         s_net1, s_net2 = self.deep_network_1.network_nodes[3].basis.base, self.deep_network_1.network_nodes[1].basis.base
@@ -68,10 +68,9 @@ class TestCanonicalBasis(unittest.TestCase):
         s_in2_ = Basis.decode(s_out_, t=3)
         self.assertEqual(np.round(np.real(inner_product(s_in2_, s_in2))), 2.)
 
-    def test_canonical_limits(self):
+    def advanced(self):
         """
-        Test advanced frequency management (encoding and so)
-        python -m unittest tests.core.fourrier_basis.TestFourrierBasis.test_fourrier_limits
-
+        Test advanced frequency management (encoding and so) refer to
+        -m unittest tests.core.fourrier_basis.TestFourrierBasis.test_fourrier_limits
         """
-        # TODO when the queue is full, does it have the correct behaviour ?
+        # TODO

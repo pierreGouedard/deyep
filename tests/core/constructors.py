@@ -21,10 +21,10 @@ class TestConstructor(unittest.TestCase):
         # Get matrices from list of edges and build network
         self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, n_i, n_rn, n_o)
 
-    def test_deepnet_building(self):
+    def building(self):
         """
         Test basic frequency management
-        python -m unittest tests.core.constructors.TestConstructor.test_deepnet_building
+        python -m unittest tests.core.constructors.TestConstructor.building
 
         """
 
@@ -50,6 +50,6 @@ class TestConstructor(unittest.TestCase):
         self.assertTrue(all([d['freqs'] == [0] for _, d in d_inputs.items()]))
         self.assertEqual(d_networks[3]['freqs'], [self.capacity + 1])
         self.assertEqual(d_networks[0]['freqs'], [1])
-        self.assertEqual(d_forward_freqs, {'network_0': {0}, 'network_1': {1}, 'network_2': {0, 1, 21},
-                                           'network_3': {0}, 'network_4': {0}})
-        self.assertEqual(((max(set_freqs_) + 1) * self.capacity) + len(set_freqs), (self.capacity * 2) + 1 )
+        self.assertEqual(d_forward_freqs, {'network_0': [0], 'network_1': [1], 'network_2': [0, 1, 21],
+                                           'network_3': [0], 'network_4': [0]})
+        self.assertEqual(((max(set_freqs_) + 1) * self.capacity) + len(set_freqs), (self.capacity * 2) + 1)

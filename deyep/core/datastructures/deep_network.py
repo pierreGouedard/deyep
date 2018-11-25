@@ -90,7 +90,7 @@ class DeepNetwork(object):
                       tau=5, Cm=None, levels=None):
 
         l_inputs, l_outputs, l_networks, n_freq = \
-            comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=l0, levels=levels)
+            comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=l0, levels=levels)
 
         d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': {None: sax_out}.get(Cm, Cm)}
 

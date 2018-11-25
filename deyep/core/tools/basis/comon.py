@@ -43,12 +43,12 @@ class Basis(object):
         d_keys = {int(KVName.from_string(k)['k']): v for k, v in d_keys.items()}
         return get_canonical_signal(N, d_keys)
 
-    def keys_from_forward_basis(self, s, n_jobs=0):
+    def keys_from_forward_basis(self, s):
         l_keys = get_key_from_series(s)
         return map(lambda x: 'N={},k={}'.format(*x), l_keys)
 
-    def depth_from_basis(self, s, n_jobs=0, return_coef=True):
-        l_keys, l_coefs = get_key_from_series(s, set_keys={self.key + i for i in range(self.capacity / 2)},
+    def depth_from_basis(self, s, return_coef=True):
+        l_keys, l_coefs = get_key_from_series(s, set_keys={self.key + i for i in range(max(1, self.capacity / 2))},
                                               return_coef=return_coef)
         return map(lambda x: x[1] - self.key, l_keys), l_coefs
 

@@ -5,6 +5,8 @@ from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 
 # Local import
 
+# TODO: Fix Problem with parallelisation (very uneficient)
+
 
 class ParallelUpdate(object):
     def __init__(self, sax_bw):
@@ -20,7 +22,7 @@ def bcu(sax_Cb, dn, w0=1):
     dn.graph['Ow'] += sax_Cb * w0
 
 
-def bdu(sax_snb, dn, penalty=1., n_jobs=0):
+def bdu(sax_snb, dn, penalty=1., n_jobs=1):
 
     sax_snb_ = (penalty * sax_snb < 0).multiply(sax_snb) + (sax_snb > 0).multiply(sax_snb)
 
@@ -45,7 +47,7 @@ def bdu(sax_snb, dn, penalty=1., n_jobs=0):
     return ax_count[:, 0]
 
 
-def bou(sax_sob, sax_A, dn, penalty=1., n_jobs=0):
+def bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
 
     if penalty != 1. and (sax_sob < 0).nnz > 0:
         sax_sob[sax_sob < 0] = sax_sob[sax_sob < 0] * penalty
@@ -74,7 +76,7 @@ def bou(sax_sob, sax_A, dn, penalty=1., n_jobs=0):
     return ax_count[:, 0]
 
 
-def biu(sax_snb, dn, penalty=1., n_jobs=0):
+def biu(sax_snb, dn, penalty=1., n_jobs=1):
 
     if penalty != 1.:
         sax_snb = ((sax_snb < 0) * -1 * penalty) + (sax_snb > 0)
