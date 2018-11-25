@@ -18,7 +18,7 @@ driver = FileDriver('network_file_driver', '')
 class DeepNetwork(object):
 
     def __init__(self, project, w0, l0, tau, input_nodes, output_nodes, network_nodes, graph, n_freq, capacity,
-                 basis='canonical', network_id=None):
+                 basis='canonical', network_id=None, is_fitted=False):
 
         if network_id is None:
             network_id = ''.join([random.choice(string.ascii_letters) for _ in range(5)])
@@ -26,6 +26,8 @@ class DeepNetwork(object):
         self.project = project
         self.dir_network = settings.deyep_network_path.format(project)
         self.network_id = network_id
+        self.is_dried = False
+        self.is_fitted = is_fitted
 
         # Parameter
         self.w0 = w0
@@ -76,6 +78,14 @@ class DeepNetwork(object):
     def Cm(self):
         return self.graph['Cm']
 
+    def copy(self):
+        dn_ = DeepNetwork.from_matrices(
+            self.project, self.Dw.multiply(self.D), self.Iw.multiply(self.I), self.Ow.multiply(self.O),
+            self.node_capacity, basis=self.node_basis, network_id='copy_{}'.format(self.network_id), w0=self.w0,
+            l0=self.l0, tau=self.tau, Cm=self.Cm, levels=[n.d_levels for n in self.network_nodes]
+        )
+        return dn_
+
     def set_metrics(self, depth, ax_got, ax_out):
         d_metrics = {}
 
@@ -91,47 +101,42 @@ class DeepNetwork(object):
         self.d_metrics = d_metrics
 
     def compute_precision(self, ax_got, ax_out):
-        return float((ax_got & ax_out).sum()) / ax_out.sum()
+        return float((ax_got & ax_out).sum()) / (ax_out.sum() + 1e-6)
 
     def compute_recall(self, ax_got, ax_out):
-        return float((ax_got & ax_out).sum()) / ax_got.sum()
+        return float((ax_got & ax_out).sum()) / (ax_got.sum() + 1e-6)
 
     def compute_efficiency(self, depth):
         return float(len(self.network_nodes)) / (len(self.input_nodes) * depth)
 
     @staticmethod
     def from_matrices(project, sax_net, sax_in, sax_out, capacity, basis='canonical', network_id=None, w0=5, l0=10,
-                      tau=5, Cm=None):
+                      tau=5, Cm=None, levels=None):
 
-        l_inputs, l_outputs, l_networks, n_freq = comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=l0)
+        l_inputs, l_outputs, l_networks, n_freq = \
+            comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis, l0=l0, levels=levels)
+
         d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': {None: sax_out}.get(Cm, Cm)}
 
         return DeepNetwork(project, w0, l0, tau, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
                            n_freq=n_freq, graph=d_graph, capacity=capacity, basis=basis, network_id=network_id)
 
     @staticmethod
-    def reduce_network(dn, ax_active_nodes, basis):
+    def reduce_network(dn, ax_active_nodes):
 
         # Now clean matrices  of the deep network
         sax_I = dn.Iw.multiply(dn.I)[:, ax_active_nodes]
         sax_D = dn.Dw.multiply(dn.D)[:, ax_active_nodes][ax_active_nodes, :]
         sax_O = dn.Ow.multiply(dn.O)[ax_active_nodes, :]
         sax_Cm = dn.Cm[ax_active_nodes, :]
+        levels = [n.d_levels for i, n in enumerate(dn.network_nodes) if ax_active_nodes[i]]
 
         # Build new deep network
-        deep_network = DeepNetwork.from_matrices(dn.project, sax_D, sax_I, sax_O, dn.node_capacity, basis=basis,
-                                                 network_id=dn.network_id, w0=dn.w0, l0=dn.l0, tau=dn.tau, Cm=sax_Cm)
-
-        # Put back levels of nodes
-        l_nodes = [n for i, n in enumerate(dn.network_nodes) if ax_active_nodes[i]]
-        for i, n in enumerate(deep_network.network_nodes):
-            n.d_levels = l_nodes[i].d_levels
+        deep_network = DeepNetwork.from_matrices(dn.project, sax_D, sax_I, sax_O, dn.node_capacity, basis=dn.node_basis,
+                                                 network_id=dn.network_id, w0=dn.w0, l0=dn.l0, tau=dn.tau, Cm=sax_Cm,
+                                                 levels=levels)
 
         return deep_network
-
-    @staticmethod
-    def from_nodes(w0, input_nodes, output_nodes, network_nodes, seed=None):
-        raise NotImplementedError
 
     @staticmethod
     def from_dict(d_network, project, network_id=None, basis='canonical'):
@@ -142,7 +147,7 @@ class DeepNetwork(object):
             input_nodes=[ni.from_dict(d_n, d_basis[basis]) for d_n in d_network['input_nodes']],
             output_nodes=[no.from_dict(d_n) for d_n in d_network['output_nodes']],
             network_nodes=[nd.from_dict(d_n, d_basis[basis]) for d_n in d_network['network_nodes']],
-            network_id=network_id
+            network_id=network_id, is_fitted=d_network['is_fitted']
         )
 
         return dn
@@ -150,6 +155,8 @@ class DeepNetwork(object):
     def to_dict(self):
         d_network = {'node_capacity': self.node_capacity,
                      'node_basis': self.node_basis,
+                     'is_fitted': self.is_fitted,
+                     'is_dried': False,
                      'graph': self.graph, 'w0': self.w0, 'l0': self.l0, 'tau': self.tau, 'n_freq': self.n_freq,
                      'input_nodes': [n.to_dict() for n in self.input_nodes],
                      'network_nodes': [n.to_dict() for n in self.network_nodes],
@@ -164,6 +171,10 @@ class DeepNetwork(object):
 
         with open(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)), 'wb') as handle:
             pickle.dump(d_network, handle)
+
+    def delete(self):
+        if driver.exists(driver.join(self.dir_network, '{}.pckl'.format(self.network_id))):
+            driver.remove(driver.join(self.dir_network, '{}.pckl'.format(self.network_id)))
 
     @staticmethod
     def load(project, network_id, basis='canonical'):

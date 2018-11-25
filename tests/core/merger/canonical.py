@@ -1,156 +1,119 @@
 # Global imports
 import unittest
-
 import numpy as np
 from scipy.sparse import csc_matrix
 
-from deyep.core.builder.comon import mat_from_tuples, gather_matrices
-from deyep.core.datastructures.deep_network import DeepNetwork
-from deyep.core.imputer.identity import DoubleIdentityImputer
-from deyep.core.solver.canonical import CanonicalDeepNetSolver
-from deyep.utils.driver.nmp import NumpyDriver
-from deyep.utils.interactive_plots import plot_graph
-from tests.utils import testPattern as tp
-
+# Local import
+from deyep.core.merger.comon import DeepNetMerger
+from deyep.core.datastructures.deep_network_dry import DeepNetworkDry
+from deyep.core.builder.comon import nodes_from_mat_dry
 __maintainer__ = 'Pierre Gouedard'
 
 
-class TestSolver(unittest.TestCase):
+class TestMerger(unittest.TestCase):
     def setUp(self):
-        self.network = 'pute'
+        self.p = {'ni': 5, 'nd': 7, 'no': 2}
 
+        self.sax_I_o = csc_matrix(
+            [[True, True, False, False, False, False, False],
+             [False, False, True, False, False, False, False],
+             [True, True, False, True, False, False, False],
+             [True, True, False, False, False, False, False],
+             [False, False, True, True, False, False, False],
+             ])
 
-    def merge_network(self):
+        self.sax_D_o = csc_matrix(
+            [[False, False, False, False, True, False, True],
+             [False, False, False, False, False, True, False],
+             [False, False, False, False, True, True, True],
+             [False, False, False, False, False, False, True],
+             [False, False, False, False, False, False, False],
+             [False, False, False, False, False, False, False],
+             [False, False, False, False, False, False, False]
+             ])
+
+        self.sax_O_o = csc_matrix(
+            [[False, False], [False, False], [False, False], [False, False],
+             [True, False], [False, True], [False, True]])
+
+        self.levels_o = [{1: True, 2: True, 3: True}, {1: True, 2: True, 3: True}, {1: True, 2: True, 3: True},
+                         {1: False, 2: False, 3: False}, {1: True, 2: True, 3: True}, {1: True, 2: True, 3: True},
+                         {1: True, 2: True, 3: True}]
+
+        self.sax_I_c1 = csc_matrix(
+            [[True, True, False, False, False, False, False],
+             [False, False, True, False, False, False, False],
+             [True, True, False, True, False, False, False],
+             [True, True, False, False, False, False, False],
+             [False, False, True, True, False, False, False],
+             ])
+
+        self.sax_D_c1 = csc_matrix(
+            [[False, False, False, False, True, True, True],
+             [False, False, False, False, False, False, False],
+             [False, False, False, False, True, True, True],
+             [False, False, False, False, False, False, False],
+             [False, False, False, False, False, False, False],
+             [False, False, False, False, False, False, False],
+             [False, False, False, False, False, False, False]
+             ])
+
+        self.sax_O_c1 = csc_matrix(
+            [[False, False], [False, False], [False, False], [False, False],
+             [True, True], [False, False], [False, False]])
+
+        self.levels_c1 = [{1: True, 2: True, 3: True}, {1: True, 2: True, 3: True}, {1: True, 2: True, 3: True},
+                          {1: False, 2: False, 3: False}, {1: True, 2: True, 3: True}, {1: True, 2: True, 3: True},
+                          {1: True, 2: True, 3: True}]
+
+        self.sax_I_c2 = csc_matrix(
+            [[True, False, False], [False, True, False], [True, False, False],
+             [True, False, False], [False, True, False]])
+
+        self.sax_D_c2 = csc_matrix(
+            [[False, False, True], [False, False, True], [False, False, False]])
+
+        self.sax_O_c2 = csc_matrix(
+            [[False, False], [False, False], [True, True]])
+
+        self.levels_c2 = [{1: True, 2: True, 3: True}, {1: True, 2: True, 3: True}, {1: True, 2: True, 3: True}]
+
+        self.deep_network = DeepNetworkDry.from_matrices('test_merger',  self.sax_D_o, self.sax_I_o, self.sax_O_o,
+                                                         levels=self.levels_o)
+
+    def merge_network_step_1(self):
         """
-        python -m unittest tests.core.solver_canonical.TestSolver.test_and_pattern
-
-        """
-        # Create temporary directory for test
-        driver = NumpyDriver()
-        tmpdirin, tmpdirout = driver.TempDir('test_and_pattern', suffix='in', create=True),  \
-                              driver.TempDir('test_and_pattern', suffix='out', create=True)
-
-        # Create I/O and save it into tmpdir files
-        ax_input, ax_output = self.and_pat.generate_io_sequence(1000, seed=1234)
-        driver.write_file(csc_matrix(ax_input), driver.join(tmpdirin.path, 'forward.npz'), is_sparse=True)
-        driver.write_file(csc_matrix(ax_output), driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
-
-        # Create and init imputer
-        imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
-        imputer.read_raw_data('forward.npz', 'backward.npz')
-        imputer.run_preprocessing()
-        imputer.write_features('forward.npz', 'backward.npz')
-        imputer.stream_features()
-
-        # Create solver
-        solver = DeepNetSolver(self.and_dn, self.and_pat.delay, imputer, 'canonical', p0=1)
-        solver.run_epoch(n=500)
-
-        # Assert result is as expected
-        self.assertTrue(all([solver.deep_network.network_nodes[0].d_levels[i] < self.tau for i in range(self.n_and)]))
-        self.assertTrue(solver.deep_network.network_nodes[0].d_levels[10] > self.tau)
-
-        # VISUAL TEST:
-        # ax_graph_conv = gather_matrices(self.and_dn.Iw.toarray(), self.and_dn.Dw.toarray(), self.and_dn.Ow.toarray())
-        # plot_graph(ax_graph_conv, self.and_pat.layout())
-
-    def test_xor_pattern(self):
-        """
-        python -m unittest tests.core.solver.canonical.TestSolver.test_xor_pattern
-
-        """
-
-        # Create temporary directory for test
-        driver = NumpyDriver()
-        tmpdirin, tmpdirout = driver.TempDir('test_xor_pattern', suffix='in', create=True),  \
-                              driver.TempDir('test_xor_pattern', suffix='out', create=True)
-
-        # Create I/O and save it into tmpdir files
-        ax_input, ax_output = self.xor_pat.generate_io_sequence(1000)
-
-        driver.write_file(csc_matrix(ax_input), driver.join(tmpdirin.path, 'forward.npz'), is_sparse=True)
-        driver.write_file(csc_matrix(ax_output), driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
-
-        # Create and init imputer
-        imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
-        imputer.read_raw_data('forward.npz', 'backward.npz')
-        imputer.run_preprocessing()
-        imputer.write_features('forward.npz', 'backward.npz')
-        imputer.stream_features()
-
-        # Create solver
-        self.xor_dn.graph['Ow'] *= 10
-        solver = CanonicalDeepNetSolver(self.xor_dn, self.xor_pat.delay, imputer, p0=1)
-        solver.fit_epoch(n=800)
-
-        self.assertTrue(all([solver.deep_network.network_nodes[0].d_levels[i] < self.tau for i in range(self.n_xor)]))
-        self.assertTrue(all([solver.deep_network.network_nodes[1].d_levels[i] < self.tau for i in range(self.n_xor)]))
-        self.assertTrue((solver.deep_network.Iw.toarray()[:self.n_xor, 0] > 0).all())
-        self.assertTrue((solver.deep_network.Iw.toarray()[self.n_xor:, 0] == 0).all())
-        self.assertTrue((solver.deep_network.Iw.toarray()[:self.n_xor, 1] == 0).all())
-        self.assertTrue((solver.deep_network.Iw.toarray()[self.n_xor:, 1] > 0).all())
-
-        # TO TEST: interactive plot
-        import IPython
-        IPython.embed()
-        # INIT GRAPH
-        ax_graph = gather_matrices(self.xor_dn.Iw.toarray(), self.xor_dn.Dw.toarray(), self.xor_dn.Ow.toarray())
-        plot_graph(ax_graph, self.xor_pat.layout())
-
-        # EXPECTED FINAL GRAPH
-        # mat_in, mat_net, mat_out = mat_from_tuples(self.xor_pat.build_graph_pattern_final(), len(self.xor_pat.input_nodes),
-        #                                            len(self.xor_pat.network_nodes), len(self.xor_pat.output_nodes),
-        #                                            weights=[10] * len(self.xor_pat.build_graph_pattern_init()))
-        # xor_dn = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, 100, 'fourrier', w0=self.wo, l0=self.l0, tau=self.tau)
-        # ax_graph = gather_matrices(xor_dn.Iw.toarray(), xor_dn.Dw.toarray(), xor_dn.Ow.toarray())
-        # plot_graph(ax_graph, self.xor_pat.layout())
-
-    def test_tree_pattern(self):
-        """
-        python -m unittest tests.core.solver.canonical.TestSolver.test_tree_pattern
+        python -m unittest tests.core.merger.canonical.TestMerger.merge_network_step_1
 
         """
 
-        # Create temporary directory for test
-        driver = NumpyDriver()
-        tmpdirin, tmpdirout = driver.TempDir('test_tree_pattern', suffix='in', create=True),  \
-                              driver.TempDir('test_tree_pattern', suffix='out', create=True)
+        dnm = DeepNetMerger([self.deep_network])
 
-        # Create I/O and save it into tmpdir files
-        ax_input, ax_output = self.tree_pat.generate_io_sequence(1000)
-        driver.write_file(csc_matrix(ax_input), driver.join(tmpdirin.path, 'forward.npz'), is_sparse=True)
-        driver.write_file(csc_matrix(ax_output), driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
+        sax_I, sax_D, sax_O,  = dnm.deep_network.I, dnm.deep_network.D, dnm.deep_network.O
+        d_layers = dnm.classify_nodes_by_layer(sax_I, sax_D, dnm.deep_network.network_nodes)
 
-        # Create and init imputer
-        imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
-        imputer.read_raw_data('forward.npz', 'backward.npz')
-        imputer.run_preprocessing()
-        imputer.write_features('forward.npz', 'backward.npz')
-        imputer.stream_features()
+        for _, l_nodes in sorted(d_layers.items(), key=lambda x: x[0]):
+            sax_D, sax_O, _ = dnm.matrix_cleaning(l_nodes, sax_I, sax_D, sax_O)
 
-        # Create solver
-        solver = DeepNetSolver(self.tree_dn, self.tree_pat.delay, imputer, 'canonical', p0=1)
-        l_t_epoch, l_t_forwardp, l_t_forwardt, l_t_backwardp, l_t_backwardt = solver.run_canonical_epoch_analysis(100)
+        self.assertTrue((sax_D == self.sax_D_c1).toarray().all())
+        self.assertTrue((sax_O == self.sax_O_c1).toarray().all())
 
-        print 'Mean running time of epoch: {} seconds'.format(np.mean(l_t_epoch))
-        print 'Mean running time of forward transmit: {} seconds'.format(np.mean(l_t_forwardt))
-        print 'Mean running time of backward transmit: {} seconds'.format(np.mean(l_t_backwardt))
-        print 'Mean running time of forward process: {} seconds'.format(np.mean(l_t_forwardp))
-        print 'Mean running time of backward process: {} seconds'.format(np.mean(l_t_backwardp))
+        ax_active_nodes = (sax_O.sum(axis=1) > 0) | (sax_D.sum(axis=1) > 0)
+        ax_active_nodes &= (sax_I.sum(axis=0) > 0).transpose() | (sax_D.sum(axis=0) > 0).transpose()
 
-        mat_in, mat_net, mat_out = mat_from_tuples(self.tree_pat.build_graph_pattern_final(), len(self.tree_pat.input_nodes),
-                                                   len(self.tree_pat.network_nodes), len(self.tree_pat.output_nodes),
-                                                   weights=[10] * len(self.tree_pat.build_graph_pattern_final()))
+        self.assertTrue((ax_active_nodes == [[True], [False], [True], [False], [True], [False], [False]]).all())
 
-        for i, j in zip(*mat_out.nonzero()):
-            self.assertTrue(solver.deep_network.Ow[i, j] > 0)
+    def merge_network_step_2(self):
+        """
+        python -m unittest tests.core.merger.canonical.TestMerger.merge_network_step_2
 
-        # TO TEST: interactive plot
-        # INIT GRAPH
-        # ax_graph = gather_matrices(self.tree_dn.Iw.toarray(), self.tree_dn.Dw.toarray(), self.tree_dn.Ow.toarray())
-        # plot_graph(ax_graph, self.tree_pat.layout(ax_graph))
+        """
 
-        # EXPECTED FINAL GRAPH
-        # tree_dn = DeepNetwork.from_matrices(mat_net, mat_in, mat_out, 100, 'fourrier', w0=self.wo, l0=self.l0, tau=self.tau)
-        # ax_graph = gather_matrices(tree_dn.Iw.toarray(), tree_dn.Dw.toarray(), tree_dn.Ow.toarray())
-        # plot_graph(ax_graph, self.tree_pat.layout(ax_graph))
+        dnm = DeepNetMerger([self.deep_network]) \
+            .clean_network()\
+            .deep_network
+
+        self.assertTrue(not (dnm.I != self.sax_I_c2).toarray().any())
+        self.assertTrue(not (dnm.D != self.sax_D_c2).toarray().any())
+        self.assertTrue(not (dnm.O != self.sax_O_c2).toarray().any())
+        self.assertEqual([n.d_levels for n in dnm.network_nodes], self.levels_c2)

@@ -2,7 +2,7 @@
 import numpy as np
 from scipy.sparse import lil_matrix
 
-from deyep.core.datastructures import nodes
+from deyep.core.datastructures import nodes, nodes_dry
 from deyep.core.tools.basis.canonical import CanonicalBasis
 from deyep.core.tools.basis.fourrier import FourrierBasis
 
@@ -46,12 +46,17 @@ def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
     return sax_in.tocsc(), sax_net.tocsc(), sax_out.tocsc()
 
 
-def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10, fixed_weight=None):
+def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10, levels=None):
 
     # Get dict of nodes
     d_inputs = set_nodes_from_mat(sax_in, 'input')
     d_outputs = set_nodes_from_mat(sax_out, 'output')
     d_networks = set_nodes_from_mat(sax_net, 'network')
+
+    if levels is None:
+        levels = {k: None for k in d_networks.keys()}
+    else:
+        levels = {k: levels[int(k)] for k in d_networks.keys()}
 
     # distribute frequency among input nodes,
     d_inputs, set_freqs, d_forward_freqs = set_frequencies(d_inputs, {0}, 1, {})
@@ -74,19 +79,21 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10,
             nodes.NetworkNode(
                 k_, 'network',
                 FourrierBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
-                zip(v_['children_name'], v_['children_weight']), l0
+                zip(v_['children_name'], v_['children_weight']), l0, level=levels[k_]
             ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
             ]
     elif basis == 'canonical':
         l_inputs = [
-            nodes.InputNode(k_, 'input', CanonicalBasis(min(v_['freqs']), n_freq, {}, 1),
-                            zip(v_['children_name'], v_['children_weight'])) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
+            nodes.InputNode(
+                k_, 'input', CanonicalBasis(min(v_['freqs']), n_freq, {}, 1),
+                zip(v_['children_name'], v_['children_weight'])
+            ) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
             ]
         l_networks = [
             nodes.NetworkNode(
                 k_, 'network',
                 CanonicalBasis(min(v_['freqs']), n_freq, d_forward_freqs.get('network_{}'.format(k_), []), capacity),
-                zip(v_['children_name'], v_['children_weight']), l0
+                zip(v_['children_name'], v_['children_weight']), l0, level=levels[k_]
             ) for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
             ]
     else:
@@ -95,6 +102,36 @@ def nodes_from_mat(sax_net, sax_in, sax_out, capacity, basis='canonical', l0=10,
                  for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
 
     return l_inputs, l_outputs, l_networks, n_freq
+
+
+def nodes_from_mat_dry(sax_net, sax_in, sax_out, l0=10, levels=None):
+
+    # Get dict of nodes
+    d_inputs = set_nodes_from_mat(sax_in, 'input')
+    d_outputs = set_nodes_from_mat(sax_out, 'output')
+    d_networks = set_nodes_from_mat(sax_net, 'network')
+
+    if levels is None:
+        levels = {k: None for k in d_networks.keys()}
+    else:
+        levels = {k: levels[int(k)] for k in d_networks.keys()}
+
+    # Finally, build nodes
+    l_inputs = [
+        nodes_dry.InputNodeDry(k_, 'input', zip(v_['children_name'], v_['children_weight']))
+        for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
+        ]
+    l_networks = [
+        nodes_dry.NetworkNodeDry(k_, 'network', zip(v_['children_name'], v_['children_weight']), l0, levels[k_])
+        for k_, v_ in sorted(d_networks.items(), key=lambda (k, v): k)
+        ]
+
+    l_outputs = [
+        nodes_dry.OutputNodeDry(k_, 'output', zip(v_['parents_name'], v_['parents_weight']))
+        for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)
+    ]
+
+    return l_inputs, l_outputs, l_networks
 
 
 def set_nodes_from_mat(mat, key):
@@ -120,10 +157,6 @@ def set_nodes_from_mat(mat, key):
         raise ValueError('Choose key between \'input\', \'output\' or \'network\'')
 
     return d_nodes.copy()
-
-
-def nodes_from_mat_dry(sax_net, sax_in, sax_out, l0=10, fixed_weight=None):
-    raise NotImplementedError
 
 
 def set_frequencies(d_nodes, freqs, capacity, d_forward_freqs, offset=0):

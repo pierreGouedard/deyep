@@ -13,13 +13,13 @@ from deyep.core.runner.comon import DeepNetRunner
 
 class CodeBreaker(Simulation):
 
-    name = 'code_breaker'
-    params_network = {'ni': 10, 'nd': 100, 'no': 5, 'depth': 2, 'p0': 0.1, 'l0': 10, 'tau': 5, 'w0': 10,
-                      'basis': "canonical", 'capacity': 5, 'delay': 0}
+    name = 'code_breaker_2'
+    params_network = {'ni': 10, 'nd': 100, 'no': 5, 'depth': 3, 'p0': 0.1, 'l0': 10, 'tau': 5, 'w0': 10,
+                      'basis': "canonical", 'capacity': 5, 'delay': 1}
     imputer = identity.DoubleIdentityImputer
     builder = BinomialGraphBuilder
     raw_builder = SimpleMapping(20, [10, 5], p=0.5).generate_code()
-    n_network = 100
+    n_network = 1
 
     def __init__(self, resume=False):
         Simulation.__init__(self, CodeBreaker.name, CodeBreaker.imputer, CodeBreaker.params_network,
@@ -50,41 +50,43 @@ class CodeBreaker(Simulation):
         # Print result
         print 'cleaning ok: {}'.format((ax_out_cleaned == ax_out_nasty).all())
 
-    def check_network_qualification(self):
-
-        # Fit network 0
-        network_id = self.d_networks.values()[0].network_id
-        _ = self.fit_network(network_id=network_id, start_penalty=1, end_penalty=40, rate_penalty=2, save_network=False)
-
         # Qualify network 0
         self.qualify_network(network_id=network_id, save_network=False)
 
         # Print result
         print 'Qualification of network: {}'.format(self.d_networks[network_id].d_metrics)
 
-    def check_network_merge(self):
-        dn_merged = None
+    def check_network_merge(self, n):
+        #
+        for nid, dn in self.d_networks.items():
+            if not dn.is_fitted:
+                self.fit_network(network_id=nid, start_penalty=1, end_penalty=20, rate_penalty=1, n_epoch=500,
+                                 clean=False)
 
-        for dn in list(self.d_networks.values()):
-            solver = self.fit_network(network=dn,  start_penalty=1, end_penalty=40, rate_penalty=2, verbose=0)
+        dn_merged = self.merge_networks(self.d_networks.values())
 
+        for _ in range(n):
+
+            # Create new network
+            d_networks = Simulation.create_networks(self.name, self.builder, 1, self.params_network)
+
+            # Fit it
+            solver = self.fit_network(
+                network=d_networks.values()[0], start_penalty=1, end_penalty=20, rate_penalty=1, n_epoch=500,
+                update=False, save_network=False, verbose=0, clean=False
+            )
+
+            # Merged it  with exisiting network
             if len(solver.deep_network.network_nodes) > 0:
-                print 'merging network {}'.format(dn.network_id)
                 dn_merged = self.merge_networks([solver.deep_network, dn_merged], drop=True)
 
                 # Print result qualification
                 self.qualify_network(network=dn_merged)
                 print 'Qualification of network: {}'.format(dn_merged.d_metrics)
 
-            else:
-                dn_ = self.d_networks.pop(dn.network_id)
-                dn_.delete()
-
 
 if __name__ == '__main__':
-
     #TODO: Before launching run: export PYTHONPATH="/home/erepie/deyep/" => fix it
-
     l_args = []
 
     if len(sys.argv) > 1:
@@ -95,17 +97,5 @@ if __name__ == '__main__':
     else:
         sim = CodeBreaker()
 
-    # Quick test of network cleaning: should be re-implemented in core unit tests
-    #sim.check_network_cleaning()
-
-    # Quick test of metrics of the fitted deep network
-    #sim.check_network_qualification()
-
     # Merge network
-    #sim.check_network_merge()
-
-    import IPython
-    IPython.embed()
-
-    # Fit all network and visualize them (make sure the change in network is saved
-    #sim.fit_all_networks(penalty_rate=400, start_penalty=1, end_penalty=10)
+    sim.check_network_merge(100)

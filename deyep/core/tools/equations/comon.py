@@ -30,6 +30,4 @@ def bcv(sax_got, sax_sob, sax_Cb):
 
 def bcu(sax_Cb, dn, w0=1):
     dn.graph['Cm'] += sax_Cb
-    t_nz_c = set(zip(*sax_Cb.nonzero()))
-    t_nz_o = set(zip(*dn.O.nonzero()))
     dn.graph['Ow'] += sax_Cb * w0

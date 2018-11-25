@@ -100,4 +100,3 @@ class NetworkNode(Node):
     def from_dict(d_node, basis):
         return NetworkNode(d_node['id'], d_node['type'], basis.from_dict(d_node['basis']), d_node['children'], 0,
                            level=d_node['level'])
-

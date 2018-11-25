@@ -93,7 +93,7 @@ class CanonicalDeepNetSolver(DeepNetSolver):
         # Update candidate
         if update_candidate:
             self.deep_network.graph['N_f'] += self.ax_sa
-            self.sax_C = c_fcp(self.ax_sa, self.deep_network.Cm, self.sax_C)
+            self.sax_C = c_fcp(self.ax_sa, self.deep_network.Cm)
 
     def backward_transmiting(self, only_buffer=False):
 

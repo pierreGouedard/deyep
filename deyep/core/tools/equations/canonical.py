@@ -24,13 +24,11 @@ def c_fnp(sax_fnt, l_nodes, tau, t):
     return sax_sn.tocsc().transpose(), np.array([n.active for n in l_nodes])
 
 
-def c_fcp(l_actives, sax_Cm, sax_C):
-
+def c_fcp(l_actives, sax_Cm):
     # Build candidate matrix
-    sax_C_ = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
-    sax_C_ -= (sax_Cm + sax_C)
+    sax_C = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
 
-    return csc_matrix((sax_C_.data > 0, sax_C_.indices, sax_C_.indptr), shape=sax_C_.shape)
+    return (sax_C.astype(int) - sax_Cm.astype(int)) > 0
 
 
 def c_buffer(sax_C, ax_sa, no, sax_so):
@@ -39,7 +37,7 @@ def c_buffer(sax_C, ax_sa, no, sax_so):
 
 def c_bop(sax_so, sax_got):
 
-    sax_so = Chi_sax(vstack([csc_matrix((1, sax_so.shape[1])), sax_so[:-1, :]]) + sax_so).transpose()
+    sax_so = Chi_sax(vstack([csc_matrix((1, sax_so.shape[1])), sax_so[:-1, :]], format='csc') + sax_so).transpose()
 
     # Compute feedback TODO: may be optimized
     sax_sio = Chi_sax(csc_matrix(sax_so.sum(axis=1)).transpose())
@@ -104,9 +102,9 @@ def c_bdu(sax_snb, dn, penalty=1., n_jobs=1):
         bdup = ParallelUpdate(sax_snb_)
 
         # Parallel inner product (map from Pool preserve order of input list)
-        sax_Du = vstack(p.map(bdup.f, [(n.basis.base, dn.D[i, :]) for i, n in enumerate(dn.network_nodes)]))
+        sax_Du = vstack(p.map(bdup.f, [(n.basis.base, dn.D[i, :]) for i, n in enumerate(dn.network_nodes)]), format='csc')
     else:
-        sax_Du = vstack([n.basis.base for n in dn.network_nodes]).dot(sax_snb_).multiply(dn.D)
+        sax_Du = vstack([n.basis.base for n in dn.network_nodes], format='csc').dot(sax_snb_).multiply(dn.D)
 
     ax_count = np.array(sax_Du.sum(axis=1), dtype=int)
 
@@ -131,9 +129,9 @@ def c_bou(sax_sob, sax_A, dn, penalty=1., n_jobs=1):
 
         # Parallel inner product (map from Pool preserve order of input list)
         sax_Ou = vstack(p.map(boup.f, [(n.basis.base, dn.O[i, :].multiply(sax_A[:, i].transpose()))
-                                       for i, n in enumerate(dn.network_nodes)]))
+                                       for i, n in enumerate(dn.network_nodes)]), format='csc')
     else:
-        sax_Ou = vstack([n.basis.base for n in dn.network_nodes])\
+        sax_Ou = vstack([n.basis.base for n in dn.network_nodes], format='csc')\
             .dot(sax_sob)\
             .multiply(dn.O.multiply(sax_A.transpose()))
 
@@ -159,9 +157,9 @@ def c_biu(sax_snb, dn, penalty=1., n_jobs=1):
         biup = ParallelUpdate(sax_snb)
 
         # Parallel inner product (map from Pool preserve order of input list)
-        sax_Iu = vstack(p.map(biup.f, [(n.basis.base, dn.I[i, :]) for i, n in enumerate(dn.input_nodes)]))
+        sax_Iu = vstack(p.map(biup.f, [(n.basis.base, dn.I[i, :]) for i, n in enumerate(dn.input_nodes)]), format='csc')
     else:
-        sax_Iu = vstack([n.basis.base for n in dn.input_nodes]).dot(sax_snb).multiply(dn.I)
+        sax_Iu = vstack([n.basis.base for n in dn.input_nodes], format='csc').dot(sax_snb).multiply(dn.I)
 
     dn.graph['Iw'] += sax_Iu
 

@@ -14,6 +14,9 @@ class DoubleIdentityImputer(ImputerDoubleSource):
         self.is_sparse = is_sparse
         self.name_forward, self.name_backward = None, None
 
+    def copy(self):
+        return DoubleIdentityImputer(self.project, self.dirin, self.dirout, self.is_sparse)
+
     def read_raw_data(self, name_forward, name_backward):
 
         # Read raw data
