@@ -5,7 +5,7 @@ from scipy.sparse import lil_matrix
 # Local import
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.datastructures.deep_network import DeepNetwork
-from deyep.core.merger.comon import DeepNetMerger
+from deyep.core.solver.utils import DeepNetUtils
 
 
 class BinomialGraphBuilder(object):
@@ -119,7 +119,7 @@ class BinomialGraphBuilder(object):
 
         return mat_from_tuples(self.l_edges, self.ni, self.nd_all, self.no, weights=[self.w0] * len(self.l_edges))
 
-    def build_network(self, project, network_id=None, delay=0):
+    def build_network(self, project, network_id=None, link_delay=0):
         """
 
         :return:
@@ -130,9 +130,9 @@ class BinomialGraphBuilder(object):
 
         (mat_in, mat_net, mat_out), sax_Cm = self.build_matrices(), None
 
-        if delay > 0:
+        if link_delay > 0:
             sax_Cm = lil_matrix(mat_out.shape, dtype=bool)
-            for l_nodes in self.gammas[1:delay + 1]:
+            for l_nodes in self.gammas[1:link_delay + 1]:
                 sax_Cm[[int(n.split('_')[1]) for n in l_nodes], :] = True
 
         return DeepNetwork.from_matrices(project, mat_net, mat_in, mat_out, self.capacity, w0=self.w0,
@@ -148,7 +148,7 @@ class BinomialGraphBuilder(object):
 
         # Get dimension of graph
         ni, nd, no = sax_I.shape[0], sax_D.shape[0], sax_O.shape[-1]
-        d_nodes, _ = DeepNetMerger.classify_nodes_by_layer(sax_I, sax_D, range(sax_D.shape[0]))
+        d_nodes, _ = DeepNetUtils.cluster(sax_I, sax_D, range(sax_D.shape[0]))
 
         # Get Input position
         pos = {'inputs': {'pos': {i: (0, (nd - ni) / 2 + i) for i in range(ni)}, 'color': 'r'}}

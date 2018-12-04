@@ -82,8 +82,8 @@ class ImputerDoubleSource(Imputer):
     def __init__(self, project, dirin, dirout):
         Imputer.__init__(self, project, dirin, dirout)
 
+        self.raw_data_forward = None
         self.raw_data_backward = None
-        self.features_backward = None
         self.name_forward = None
         self.name_backward = None
 

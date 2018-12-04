@@ -1,5 +1,5 @@
 # Global import
-from scipy.sparse import csc_matrix, lil_matrix
+from scipy.sparse import csc_matrix, lil_matrix, vstack, hstack
 from deyep.core.datastructures.deep_network_dry import DeepNetworkDry
 import numpy as np
 
@@ -20,14 +20,14 @@ class DeepNetRunner(object):
         self.imputer.stream_features(is_cyclic=False)
         return self
 
-    def transform_array(self, max_iter=1e6):
+    def transform_array(self, l_nodes=None):
 
-        ax_so, sax_sn, stop, i, d_ = None, csc_matrix((1, self.deep_network.D.shape[0]), dtype=int), False, 0, 0
+        sax_out, sax_sn, stop, i, d_ = None, csc_matrix((1, self.deep_network.D.shape[0]), dtype=int), False, 0, 0
         while not stop:
             # Get input signal
             sax_si = self.imputer.stream_next_forward()
 
-            if sax_si is None or i > max_iter:
+            if sax_si is None:
                 d_ += 1
                 sax_si = csc_matrix((1, self.deep_network.I.shape[0]), dtype=int)
                 if d_ >= self.delay:
@@ -35,21 +35,61 @@ class DeepNetRunner(object):
                     continue
 
             # transmit forward
-            sax_sn_, sax_so = DeepNetRunner.forward_transmit(self.deep_network.D, self.deep_network.I,
-                                                             self.deep_network.O, sax_si, sax_sn)
+            sax_sn_, sax_so = DeepNetRunner.forward_transmit(
+                self.deep_network.D, self.deep_network.I, self.deep_network.O, sax_si, sax_sn
+            )
 
             # Save outputs
-            if ax_so is None:
-                ax_so = sax_so.toarray()[0, :] > 0
+            if sax_out is None:
+                sax_out = sax_so > 0
             else:
-                ax_so = np.vstack((ax_so, sax_so.toarray()[0, :] > 0))
+                sax_out = vstack([sax_out, sax_so > 0], format='csc')
 
             # Compute activations
             sax_sn = DeepNetRunner.forward_activation(sax_sn_, self.deep_network.network_nodes)
 
             i += 1
 
-        return ax_so[self.delay - 1:, :]
+        if l_nodes is not None:
+            return sax_out[self.delay - 1:, :][:, l_nodes], {k: i for i, k in enumerate(l_nodes)}
+
+        return sax_out[self.delay - 1:, :]
+
+    def track_activity(self, delay, l_nodes=None):
+
+        sax_activation, sax_sn, stop, d_ = None, csc_matrix((1, self.deep_network.D.shape[0]), dtype=int), False, 0
+
+        while not stop:
+            # Get input signal
+            sax_si = self.imputer.stream_next_forward()
+
+            if sax_si is None:
+                d_ += 1
+                sax_si = csc_matrix((1, self.deep_network.I.shape[0]), dtype=int)
+                if d_ >= delay:
+                    stop = True
+                    continue
+
+            # transmit forward
+            sax_sn_, _ = DeepNetRunner.forward_transmit(
+                self.deep_network.D, self.deep_network.I, self.deep_network.O, sax_si, sax_sn
+            )
+
+            # Compute activations
+            sax_sn = DeepNetRunner.forward_activation(sax_sn_, self.deep_network.network_nodes, get_level=True)
+
+            # Save activation
+            if sax_activation is None:
+                sax_activation = sax_sn
+            else:
+                sax_activation = vstack([sax_activation, sax_sn], format='csc')
+
+            sax_sn = (sax_sn > 0).astype(int)
+
+        if l_nodes is not None:
+            return sax_activation[delay - 1:, :][:, l_nodes], {k: i for i, k in enumerate(l_nodes)}
+
+        return sax_activation[delay - 1:, :]
 
     @staticmethod
     def forward_transmit(sax_D, sax_I, sax_O, sax_si, sax_sn):
@@ -59,13 +99,16 @@ class DeepNetRunner(object):
         return sax_sn_, sax_so
 
     @staticmethod
-    def forward_activation(sax_sn, l_nodes):
+    def forward_activation(sax_sn, l_nodes, get_level=False):
         sax_sn_ = lil_matrix(sax_sn.shape, dtype=int)
 
         # activate node signal iff level is allowed
         for i in np.unique(sax_sn.nonzero()[1]):
             if l_nodes[i].d_levels[sax_sn[0, i]]:
-                sax_sn_[0, i] = 1
+                if get_level:
+                    sax_sn_[0, i] = sax_sn[0, i]
+                else:
+                    sax_sn_[0, i] = 1
 
         return sax_sn_.tocsc()
 

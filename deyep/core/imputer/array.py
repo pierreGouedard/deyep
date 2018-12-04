@@ -5,7 +5,7 @@ from deyep.utils.driver.nmp import NumpyDriver
 from deyep.core.imputer.comon import ImputerDoubleSource
 
 
-class DoubleIdentityImputer(ImputerDoubleSource):
+class DoubleArrayImputer(ImputerDoubleSource):
 
     def __init__(self, project, dirin, dirout, is_sparse=True):
 
@@ -15,7 +15,7 @@ class DoubleIdentityImputer(ImputerDoubleSource):
         self.name_forward, self.name_backward = None, None
 
     def copy(self):
-        return DoubleIdentityImputer(self.project, self.dirin, self.dirout, self.is_sparse)
+        return DoubleArrayImputer(self.project, self.dirin, self.dirout, self.is_sparse)
 
     def read_raw_data(self, name_forward, name_backward):
 

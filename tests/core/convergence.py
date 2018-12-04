@@ -6,8 +6,8 @@ from scipy.sparse import csc_matrix
 
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.datastructures.deep_network import DeepNetwork
-from deyep.core.imputer.identity import DoubleIdentityImputer
-from deyep.core.solver.comon import DeepNetSolver
+from deyep.core.imputer.array import DoubleArrayImputer
+from deyep.core.solver.drainer import DeepNetDrainer
 from deyep.core.runner.comon import DeepNetRunner
 from deyep.utils.driver.nmp import NumpyDriver
 from tests.utils import testPattern as tp
@@ -46,8 +46,8 @@ class TestSolverConvergence(unittest.TestCase):
         ax_input, ax_output = self.rand_pat.generate_io_sequence(5000, seed=234)
         imputer, tmpdirin, tmpdirout = create_imputer(ax_input, ax_output, driver, name='rand_pat')
 
-        # Create solver and run epoch
-        solver = DeepNetSolver(self.rand_dn_c, self.rand_pat.delay, imputer, p0=1., verbose=1)
+        # Create drainer and run epoch
+        solver = DeepNetDrainer(self.rand_dn_c, self.rand_pat.delay, imputer, p0=1., verbose=1)
         solver.fit_epoch(500)
 
         # Remove tmpdirs
@@ -65,7 +65,7 @@ class TestSolverConvergence(unittest.TestCase):
 
         # Transform inputs by fitted network
         runner = DeepNetRunner(solver.deep_network.copy(), 2, imputer)
-        sax_output = csc_matrix(runner.transform_array())
+        sax_output = runner.transform_array()
 
         # Assert that no output has been triggered
         self.assertTrue(sax_output[10:, :].toarray().all().all())
@@ -86,8 +86,8 @@ class TestSolverConvergence(unittest.TestCase):
         ax_input, ax_output = self.rand_pat.generate_io_sequence(1000, seed=1234)
         imputer, tmpdirin, tmpdirout = create_imputer(ax_input, ax_output, driver, name='rand_pat')
 
-        # Create solver and run epoch
-        solver = DeepNetSolver(self.rand_dn_c, self.rand_pat.delay, imputer, p0=10, verbose=1)
+        # Create drainer and run epoch
+        solver = DeepNetDrainer(self.rand_dn_c, self.rand_pat.delay, imputer, p0=10, verbose=1)
         solver.fit_epoch(500)
 
         # Remove tmpdirs
@@ -100,7 +100,7 @@ class TestSolverConvergence(unittest.TestCase):
 
         # Transform inputs by fitted network
         runner = DeepNetRunner(solver.deep_network.copy(), 2, imputer)
-        ax_output = runner.transform_array()
+        ax_output = runner.transform_array().toarray()
 
         # Assert that no output has been triggered
         self.assertTrue(not ax_output.any().any())
@@ -119,7 +119,7 @@ def create_imputer(ax_input, ax_output, driver, name='test', is_cyclic=True):
     driver.write_file(csc_matrix(ax_output), driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
 
     # Create and init imputer
-    imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
+    imputer = DoubleArrayImputer('test', tmpdirin.path, tmpdirout.path)
     imputer.read_raw_data('forward.npz', 'backward.npz')
     imputer.run_preprocessing()
     imputer.write_features('forward.npz', 'backward.npz')

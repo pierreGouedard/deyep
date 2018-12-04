@@ -4,18 +4,17 @@ import sys
 # Local import
 from deyep.core.builder.binomial import BinomialGraphBuilder
 from deyep.utils.code_builder.simple_mapping import SimpleMapping
-from deyep.core.imputer import identity
+from deyep.core.imputer import array
 from deyep.utils.simulations import Simulation
-from deyep.core.merger.comon import DeepNetMerger
+from deyep.core.solver.filler import DeepNetMerger
 from deyep.core.runner.comon import DeepNetRunner
 
 
 class CodeBreaker(Simulation):
 
     name = 'code_breaker_2'
-    params_network = {'ni': 10, 'nd': 100, 'no': 5, 'depth': 3, 'p0': 0.1, 'l0': 10, 'tau': 5, 'w0': 10, 'capacity': 5,
-                      'delay': 1}
-    imputer = identity.DoubleIdentityImputer
+    params_network = {'ni': 10, 'nd': 100, 'no': 5, 'depth': 3, 'p0': 0.1, 'l0': 10, 'tau': 5, 'w0': 10, 'capacity': 5}
+    imputer = array.DoubleArrayImputer
     builder = BinomialGraphBuilder
     raw_builder = SimpleMapping(20, [10, 5], p=0.5).generate_code()
     n_network = 1
@@ -39,12 +38,14 @@ class CodeBreaker(Simulation):
             .deep_network
 
         # Make sure cleaning didn't alter network fundamental structure
-        ax_out_nasty = DeepNetRunner(deep_network_nasty, self.params_network['delay'] + 2, imputer=self.imputer)\
+        ax_out_nasty = DeepNetRunner(deep_network_nasty, self.params_network['depth'], imputer=self.imputer)\
             .reset_runner()\
-            .transform_array()
-        ax_out_cleaned = DeepNetRunner(deep_network_cleaned, self.params_network['delay'] + 2, imputer=self.imputer)\
+            .transform_array()\
+            .toarray()
+        ax_out_cleaned = DeepNetRunner(deep_network_cleaned, self.params_network['depth'], imputer=self.imputer)\
             .reset_runner()\
-            .transform_array()
+            .transform_array()\
+            .toarray()
 
         # Print result
         print 'cleaning ok: {}'.format((ax_out_cleaned == ax_out_nasty).all())
@@ -95,6 +96,9 @@ if __name__ == '__main__':
         sim = CodeBreaker(resume=True)
     else:
         sim = CodeBreaker()
+
+    import IPython
+    IPython.embed()
 
     # Merge network
     sim.check_network_merge(100)

@@ -76,6 +76,10 @@ class DeepNetwork(object):
     def Cm(self):
         return self.graph['Cm']
 
+    @property
+    def IOw(self):
+        return self.graph.get('IOw', None)
+
     @staticmethod
     def load(project, network_id):
         pth = driver.join(settings.deyep_network_path.format(project), '{}.pckl'.format(network_id))
@@ -86,13 +90,14 @@ class DeepNetwork(object):
         return DeepNetwork.from_dict(d_network, project, network_id=network_id)
 
     @staticmethod
-    def from_matrices(project, sax_net, sax_in, sax_out, capacity, network_id=None, w0=5, l0=10,
-                      tau=5, Cm=None, levels=None):
+    def from_matrices(project, sax_net, sax_in, sax_out, capacity, network_id=None, w0=5, l0=10, tau=5, Cm=None,
+                      sax_io=None, levels=None):
 
         l_inputs, l_outputs, l_networks, n_freq = \
             comon.nodes_from_mat(sax_net, sax_in, sax_out, capacity, l0=l0, levels=levels)
 
-        d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': {None: sax_out}.get(Cm, Cm)}
+        d_graph = {'Iw': sax_in, 'Dw': sax_net, 'Ow': sax_out, 'Cm': {None: sax_out}.get(Cm, Cm),
+                   'IOw': sax_io}
 
         return DeepNetwork(project, w0, l0, tau, input_nodes=l_inputs, output_nodes=l_outputs, network_nodes=l_networks,
                            n_freq=n_freq, graph=d_graph, capacity=capacity, network_id=network_id)
@@ -113,8 +118,8 @@ class DeepNetwork(object):
     def copy(self):
         dn_ = DeepNetwork.from_matrices(
             self.project, self.Dw.multiply(self.D), self.Iw.multiply(self.I), self.Ow.multiply(self.O),
-            self.node_capacity, network_id='copy_{}'.format(self.network_id), w0=self.w0,
-            l0=self.l0, tau=self.tau, Cm=self.Cm, levels=[n.d_levels for n in self.network_nodes]
+            self.node_capacity, network_id='copy_{}'.format(self.network_id), w0=self.w0, l0=self.l0, tau=self.tau,
+            Cm=self.Cm, sax_io=self.IOw, levels=[n.d_levels for n in self.network_nodes],
         )
         return dn_
 

@@ -6,8 +6,8 @@ from scipy.sparse import csc_matrix
 
 from deyep.core.builder.comon import mat_from_tuples
 from deyep.core.datastructures.deep_network import DeepNetwork
-from deyep.core.imputer.identity import DoubleIdentityImputer
-from deyep.core.solver.comon import DeepNetSolver
+from deyep.core.imputer.array import DoubleArrayImputer
+from deyep.core.solver.drainer import DeepNetDrainer
 from deyep.utils.driver.nmp import NumpyDriver
 
 __maintainer__ = 'Pierre Gouedard'
@@ -30,13 +30,15 @@ class TestEquations(unittest.TestCase):
 
     def forward(self):
         """
-        Very precise case on very simple grpah to validate basics of solver for forward equations
+        Very precise case on very simple grpah to validate basics of drainer for forward equations
         python -m unittest tests.core.equations.TestEquations.forward
 
         """
 
         imputer = init_imputer()
-        solver = DeepNetSolver(self.dn, 2, imputer, p0=1)
+        solver = DeepNetDrainer(self.dn, 2, imputer, p0=1)
+        import IPython
+        IPython.embed()
 
         # Run for one epoch (forward transmitting)
         solver.fit_epoch(1)
@@ -75,13 +77,13 @@ class TestEquations(unittest.TestCase):
 
     def backward(self):
         """
-        Very precise case on very simple graph to validate basics of solver for ackward equations
+        Very precise case on very simple graph to validate basics of drainer for ackward equations
         python -m unittest tests.core.equations.TestEquations.backward
 
         """
 
         imputer = init_imputer()
-        solver = DeepNetSolver(self.dn, 2, imputer, p0=1)
+        solver = DeepNetDrainer(self.dn, 2, imputer, p0=1)
 
         # Run for sufficient number of epoch to reach first backward processing
         ax_out = solver.deep_network.O.toarray()
@@ -157,7 +159,7 @@ def init_imputer():
     driver.write_file(ax_output, driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
 
     # Create and init imputer
-    imputer = DoubleIdentityImputer('test', tmpdirin.path, tmpdirout.path)
+    imputer = DoubleArrayImputer('test', tmpdirin.path, tmpdirout.path)
     imputer.read_raw_data('forward.npz', 'backward.npz')
     imputer.run_preprocessing()
     imputer.write_features('forward.npz', 'backward.npz')

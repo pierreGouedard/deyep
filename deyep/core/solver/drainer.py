@@ -1,5 +1,5 @@
 # Global import
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, lil_matrix, vstack
 import numpy as np
 
 # Local import
@@ -8,12 +8,12 @@ from deyep.core.tools.equations.forward import fnp, fcp, fot, fnt
 from deyep.core.tools.equations.structure import bdu, bou, biu, bcu
 
 
-class DeepNetSolver(object):
-    def __init__(self, deep_network, delay, imputer, p0, verbose=0):
+class DeepNetDrainer(object):
+    def __init__(self, deep_network, depth, imputer, p0=1, verbose=0):
 
         # Core params
         self.p = p0
-        self.delay = delay
+        self.depth = depth
         self.verbose = verbose
 
         # Data structure
@@ -23,15 +23,15 @@ class DeepNetSolver(object):
 
         # Init signals
         self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = \
-            DeepNetSolver.init_core_forward_signal(deep_network)
+            DeepNetDrainer.init_core_forward_signal(deep_network)
         self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = \
-            DeepNetSolver.init_core_backward_signal(deep_network)
+            DeepNetDrainer.init_core_backward_signal(deep_network)
 
         self.t = 0
         self.t_fp = 0
         self.transformed = False
 
-    def reset_solver(self, reset_imputer=False, reset_time=False, reset_inputs=False):
+    def reset_all(self, reset_imputer=False, reset_time=False, reset_inputs=False):
         if reset_imputer:
             self.imputer.stream_features()
 
@@ -47,11 +47,35 @@ class DeepNetSolver(object):
 
     def reset_forward_signals(self):
         self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = \
-            DeepNetSolver.init_core_forward_signal(self.deep_network)
+            DeepNetDrainer.init_core_forward_signal(self.deep_network)
 
     def reset_backward_signals(self):
         self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = \
-            DeepNetSolver.init_core_backward_signal(self.deep_network)
+            DeepNetDrainer.init_core_backward_signal(self.deep_network)
+
+    @staticmethod
+    def match(dn, imputer, p, size_epoch=None):
+
+        # Get input
+        if size_epoch is None:
+            sax_si, sax_so = imputer.features_forward, imputer.features_backward
+        else:
+            n, sax_si, sax_so = 0, csc_matrix((0, dn.IOw.shape[0])), csc_matrix((0, dn.IOw.shape[1]))
+
+            while n < size_epoch:
+                sax_si = vstack([sax_si, imputer.stream_forward()], format='csc')
+                sax_so = vstack([sax_so, imputer.stream_backward()], format='csc')
+                n += 1
+
+        # Solve matching
+        sax_IO, sax_reward, sax_all = lil_matrix(dn.IOw.shape), sax_si.transpose().dot(sax_so), sax_si.sum(axis=0)
+        for i, j in zip(*sax_reward.nonzero()):
+            sax_IO[i, j] = int((sax_reward[i, j] - p * (sax_all[0, i] - sax_reward[i, j])) > 0) * dn.w0
+
+        # Update deep network datastructure
+        dn.graph['IOw'] = sax_IO.tocsc()
+
+        return dn.copy()
 
     def fit_epoch(self, n):
 
@@ -64,7 +88,7 @@ class DeepNetSolver(object):
                 self.forward_transmiting()
 
                 # Run backward processing if delay is reached
-                if self.t / 2 >= self.delay:
+                if self.t / 2 >= self.depth:
                     sax_got = self.imputer.stream_next_backward()
                     self.backward_processing(sax_got, self.t_fp - 1)
 
@@ -72,8 +96,8 @@ class DeepNetSolver(object):
 
             else:
                 # Run backward transmit
-                if (self.t / 2) + 1 >= self.delay:
-                    self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.delay)
+                if (self.t / 2) + 1 >= self.depth:
+                    self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.depth)
 
                 # Run forward processing
                 self.forward_processing(self.t_fp)
@@ -95,13 +119,15 @@ class DeepNetSolver(object):
             if self.t % 2 == 0:
                 # Get new input and transmit forward
                 t0 = time.time()
-                self.sax_si = self.generate_input_signals(self.imputer.stream_next_forward(),
-                                                          self.deep_network.input_nodes,)
+                self.sax_si = self.generate_input_signals(
+                    self.imputer.stream_next_forward(), self.deep_network.input_nodes
+                )
+
                 self.forward_transmiting()
                 l_t_forwardt += [time.time() - t0]
 
                 # Run backward processing if delay is reached
-                if self.t / 2 >= self.delay:
+                if self.t / 2 >= self.depth:
                     t0 = time.time()
                     sax_got = self.imputer.stream_next_backward()
                     self.backward_processing(sax_got, self.t_fp - 1)
@@ -111,9 +137,9 @@ class DeepNetSolver(object):
 
             else:
                 # Run backward transmit
-                if (self.t / 2) + 1 >= self.delay:
+                if (self.t / 2) + 1 >= self.depth:
                     t0 = time.time()
-                    self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.delay)
+                    self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.depth)
                     l_t_backwardt += [time.time() - t0]
 
                 # Run forward processing

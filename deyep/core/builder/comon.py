@@ -5,6 +5,7 @@ from scipy.sparse import lil_matrix
 from deyep.core.datastructures import nodes, nodes_dry
 from deyep.core.tools.basis.comon import Basis
 
+
 def mat_from_tuples(l_edges, n_i, n_rn, n_o, weights='random'):
 
     # Init matrices
