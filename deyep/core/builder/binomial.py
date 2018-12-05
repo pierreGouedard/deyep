@@ -1,6 +1,6 @@
 # Global import
 import numpy as np
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix, csc_matrix
 
 # Local import
 from deyep.core.builder.comon import mat_from_tuples
@@ -124,19 +124,66 @@ class BinomialGraphBuilder(object):
 
         :return:
         """
-
+        # Build tuples
         if len(self.l_edges) == 0:
             self.build_tuples()
 
-        (mat_in, mat_net, mat_out), sax_Cm = self.build_matrices(), None
+        #  Get matrices
+        sax_I, sax_D, sax_O = self.build_matrices()
+        sax_Cm, sax_I, sax_D = self.refine_edge(sax_I, sax_D, sax_O, link_delay=link_delay)
 
-        if link_delay > 0:
-            sax_Cm = lil_matrix(mat_out.shape, dtype=bool)
-            for l_nodes in self.gammas[1:link_delay + 1]:
-                sax_Cm[[int(n.split('_')[1]) for n in l_nodes], :] = True
+        # Builde network
+        deepnetwork = DeepNetwork.from_matrices(
+            project, sax_D, sax_I, sax_O, self.capacity, w0=self.w0, l0=self.l0, tau=self.tau, network_id=network_id,
+            Cm=sax_Cm.tocsc()
+        )
 
-        return DeepNetwork.from_matrices(project, mat_net, mat_in, mat_out, self.capacity, w0=self.w0,
-                                         l0=self.l0, tau=self.tau, network_id=network_id, Cm=sax_Cm)
+        return deepnetwork
+
+    def refine_edge(self, sax_I, sax_D, sax_O, link_delay):
+
+        # Init
+        sax_Cm = lil_matrix(sax_O.shape, dtype=bool)
+
+        # Build Candidate memory matrix
+        for l_nodes in self.gammas[1:link_delay + 1]:
+            sax_Cm[[int(n.split('_')[1]) for n in l_nodes], :] = True
+
+        # Get depth
+        d_depth = self.compute_depth(sax_D.copy().transpose(), (sax_Cm.copy() < 1).transpose())
+
+        sax_I, sax_D = self.update_structure(sax_I, sax_D, d_depth)
+
+        return sax_Cm, sax_I, sax_D
+
+    @staticmethod
+    def compute_depth(sax_D, sax_O):
+        # Classify nodes by layer
+        n, delta, d_depth = 1, 1, {}
+
+        # Init signal and depth record
+        sax_s = (csc_matrix(np.ones((1, sax_O.shape[0]))).dot(sax_O) > 0).astype(int)
+        d_depth.update({i: d_depth.get(i, []) + [0] for i in sax_s.nonzero()[-1]})
+
+        while delta > 0:
+            sax_s = sax_s.dot(sax_D) > 0
+            d_depth.update({i: d_depth.get(i, []) + [n] for i in sax_s.nonzero()[-1]})
+            delta = sax_s.sum()
+            n += 1
+
+        return d_depth
+
+    @staticmethod
+    def update_structure(sax_I, sax_D, d_depth):
+
+        # Update matrices
+        for i, j in zip(*sax_I.nonzero()):
+            sax_I[i, j] *= len(d_depth[j])
+
+        for i, j in zip(*sax_D.nonzero()):
+            sax_D[i, j] *= len(d_depth[j])
+
+        return sax_I, sax_D
 
     def reset_structure(self):
         self.l_edges = []

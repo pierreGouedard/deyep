@@ -7,9 +7,8 @@ import random
 import settings
 from deyep.core.builder.comon import gather_matrices
 from deyep.core.datastructures.deep_network import DeepNetwork
-from deyep.core.solver.filler import DeepNetFiller
+from deyep.core.solver.utils import DeepNetUtils
 from deyep.core.runner.comon import DeepNetRunner
-from deyep.core.solver.drainer import DeepNetDrainer
 from deyep.core.solver.main import DeepNetSolver
 from deyep.utils import interactive_plots as ip
 from deyep.utils.driver.nmp import NumpyDriver
@@ -37,6 +36,9 @@ class Simulation(object):
         if resume:
             self.imputer = imputer.load(self.name)
             self.main_network = DeepNetwork.load(self.name, 'main')
+            self.d_networks = {
+                x.split('.')[0]: DeepNetwork.load(self.name, x.split('.')) for x in driver.listdir(self.name)
+            }
         else:
 
             # Create dirs if needed
@@ -54,9 +56,10 @@ class Simulation(object):
             # Create network
             self.main_network = \
                 Simulation.create_networks(self.name, builder, 1, self.params_network, s_rid='main')['main']
+            self.d_networks = {}
 
             # Save networks and imputer
-            self.save_networks()
+            self.main_network.save()
             self.imputer.save()
 
     @staticmethod
@@ -104,14 +107,23 @@ class Simulation(object):
         d_networks = {}
         for _ in range(n_network):
             k = s_rid if s_rid is not None else rid(7)
-            d_networks[k] = builder.build_network(name, k, delay=params_network['delay'])
+            d_networks[k] = builder.build_network(name, k, link_delay=params_network['delay'])
             builder.reset_structure()
 
         return d_networks
 
+    def add_networks(self, n):
+
+        # Create  networs
+        self.d_networks.update(Simulation.create_networks(self.name, self.builder, n, self.params_network))
+
+        # Save networks and imputer
+        for _, dn in self.d_networks.items():
+            dn.save()
+
     def display_stats(self, dn, penalty):
         # Qualify network
-        self.qualify_network(network=dn, update=False, save_network=False)
+        self.qualify_network(network=dn, save_network=False)
 
         # Clean it
         dnc = DeepNetMerger([dn]) \
@@ -125,115 +137,84 @@ class Simulation(object):
 
         return dn.d_metrics
 
-    def save_networks(self, dn=None):
-
-        if dn is None:
-            self.main_network.save()
-        else:
-            dn.save()
-
-    def fit_network(self, network=None, size_epoch=200,  start_penalty=1, end_penalty=10, rate_penalty=1,
+    def fit_network(self, network=None, size_epoch=100,  start_penalty=1, end_penalty=10, rate_penalty=1,
                     save_network=True, verbose=1):
 
-        if network is None:
-            network_ = self.main_network.copy()
+        # Get network
+        network_ = network if network is not None else self.main_network.copy()
 
         # Start features streaming
         imputer = Simulation.create_imputer(self.imputer.copy())
         imputer.stream_features()
 
-        # Create drainer
+        # Create and shape solver
         solver = DeepNetSolver(
             imputer, self.params_network['depth'], self.params_network, deep_network=network_,
             start_penalty=start_penalty, end_penalty=end_penalty, rate_penalty=rate_penalty, size_epoch=size_epoch,
             verbose=verbose
         )
 
+        solver.shape_network_multi_penalties()
+
         # update state of network and replace
         solver.deep_network.is_fitted = True
         if network is None:
-            self.main_network = solver.deep_network
+            self.main_network = solver.deep_network.copy()
 
             # Save fitted network
             if save_network:
-                solver.deep_network.save()
+                self.main_network.save()
         else:
             return solver.deep_network
 
-    def qualify_network(self, network=None, network_id=None, depth=1, update=True, save_network=True):
+    def qualify_network(self, network=None, save_network=True):
 
-        if network is None:
-            network = self.d_networks[network_id]
-        else:
-            network_id = network.network_id
+        # Get network
+        network_ = network if network is not None else self.main_network.copy()
 
         # Init imputer
         imputer = Simulation.create_imputer(self.imputer.copy())
         imputer.stream_features(is_cyclic=False)
 
         # Get transformation of input
-        runner = DeepNetRunner(network, self.params_network['depth'], imputer)
+        runner = DeepNetRunner(network_, self.params_network['depth'], imputer)
         ax_out = runner.transform_array().toarray()
 
         # Set metrics of the deep network
         network.set_metrics(depth, imputer.features_backward.toarray().astype(bool), ax_out)
 
         # Save fitted network
-        if save_network:
-            network.save()
-
-        # Update network of simulation
-        if update:
-            self.d_networks[network_id] = network
-
-
-    def add_deep_networks(self, n):
-        # Create  networs
-        d_networks = Simulation.create_networks(self.name, self.builder, n, self.params_network)
-
-        # Save networks and imputer
-        for _, dn in d_networks.items():
-            dn.save()
-
-        self.d_networks.update(d_networks)
-
-    def merge_networks(self, l_dn, drop=True, save=True):
-        l_dn = filter(lambda dn: dn is not None, l_dn)
-        l_dn = filter(lambda dn: len(dn.network_nodes) > 0, l_dn)
-
-        if len(l_dn) == 0:
-            return None
-
-        elif len(l_dn) == 1:
-            return l_dn[0]
-
-        else:
-            deep_network_merged = DeepNetMerger(l_dn)\
-                .merge_network()\
-                .deep_network
-
-            self.d_networks[deep_network_merged.network_id] = deep_network_merged
-
-            if save:
-                deep_network_merged.save()
-
-            if drop:
-                for dn in l_dn:
-                    dn_ = self.d_networks.pop(dn.network_id, None)
-                    if dn_ is not None:
-                        dn_.delete()
-
-            return deep_network_merged
-
-    def export_dry_deep_network(self):
-        raise NotImplementedError
-
-    def visualize_network(self, network_id=None, network=None):
         if network is None:
-            network = self.d_networks[network_id]
+            self.main_network = network.copy()
 
-        ax_graph = gather_matrices(network.I.toarray(), network.D.toarray(), network.O.toarray())
-        ip.plot_graph(ax_graph, self.builder.layout(network.I, network.D, network.O))
+            # Save fitted network
+            if save_network:
+                self.main_network.save()
+        else:
+            return network_
+
+    def merge_network(self, dn=None, save=True, drop=True):
+
+        dn_util = DeepNetUtils(self.main_network.copy())\
+            .merge(dn)
+
+        self.main_network = dn_util.deep_network
+
+        if save:
+            self.main_network.save()
+
+        if drop:
+            dn_ = self.d_networks.pop(dn.network_id, None)
+            if dn_ is not None:
+                dn_.delete()
+
+    def visualize_network(self, network=None):
+
+        # Get network
+        network_ = network if network is not None else self.main_network.copy()
+
+        ax_graph = gather_matrices(network_.I.toarray(), network_.D.toarray(), network_.O.toarray())
+        ip.plot_graph(ax_graph, self.builder.layout(network_.I, network_.D, network_.O))
 
 
 
