@@ -1,6 +1,6 @@
 # Global import
 from scipy.sparse import csc_matrix, lil_matrix, vstack, hstack
-from deyep.core.datastructures.deep_network_dry import DeepNetworkDry
+from deyep.core.firing_graph.network_dry import DeepNetworkDry
 import numpy as np
 
 # Local import

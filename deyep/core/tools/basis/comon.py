@@ -9,8 +9,12 @@ from deyep.utils.names import KVName
 
 
 class Basis(object):
-
-    def __init__(self, key, N, l_forward_keys, capacity=100):
+    """
+    Each vertex of a firing graph has a certain number of frequencies it can use to transmit activation. Those
+    frequencies enables to track forward messages. Basis is the class that implement frequency manager
+    in vertices of firing graph.
+    """
+    def __init__(self, key, N, l_forward_keys, capacity=5):
         # set base attribute
         self.N = N
         self.key = key
@@ -48,8 +52,9 @@ class Basis(object):
         return map(lambda x: 'N={},k={}'.format(*x), l_keys)
 
     def depth_from_basis(self, s, return_coef=True):
-        l_keys, l_coefs = get_key_from_series(s, set_keys={self.key + i for i in range(max(1, self.capacity / 2))},
-                                              return_coef=return_coef)
+        l_keys, l_coefs = get_key_from_series(
+            s, set_keys={self.key + i for i in range(max(1, self.capacity / 2))}, return_coef=return_coef
+        )
         return map(lambda x: x[1] - self.key, l_keys), l_coefs
 
     def contain_base(self, s):
@@ -63,25 +68,25 @@ class Basis(object):
         return {'N': self.N, 'key': self.key, 'forward_keys': self.forward_keys, 'capacity': len(self.queue_forward)}
 
     def retrieve_key_from_queue(self, d, t):
-        l_keys = [v for k, v in filter(lambda x: x is not None, self.queue_forward) if k == t - (2 * d)]
+        l_keys = [v for t_, v in filter(lambda x: x is not None, self.queue_forward) if t_ == t - (2 * d)]
+
         if len(l_keys) > 0:
             return set(l_keys[0])
 
         return set()
 
-    def encode(self, s_forward, timestamp, return_level=False):
+    def encode(self, s_forward, timestamp, l0):
 
         # add incoming key to queue
         l_keys_forward = self.keys_from_forward_basis(s_forward)
-        self.queue_forward = [(timestamp, l_keys_forward)] + self.queue_forward[:-1]
+        if len(l_keys_forward) >= l0:
+            self.queue_forward = [(timestamp, l_keys_forward)] + self.queue_forward[:-1]
+            return self.base
 
-        # return base and level if necessay
-        if return_level:
-            return self.base, len(l_keys_forward)
+        return
 
-        return self.base
+    def decode(self, s_in, t, keys_input={}):
 
-    def decode(self, s_in, t, keys_input={}, d_levels=None):
         # Make sure s_in contains class instance base
         if not self.contain_base(s_in):
             return None
@@ -100,10 +105,7 @@ class Basis(object):
             # retrieve forward identifier in queue from keys and build signal.
             set_key_out = self.retrieve_key_from_queue(d, t)
             if len(set_key_out) == 0:
-                raise ValueError('Node received signal with depth matching None of the encoding informations')
-
-            if d_levels is not None:
-                d_levels[len(set_key_out)] = d_levels.get(len(set_key_out), 0) + Upsilon(c)
+                raise ValueError('Node received signal with depth matching None of the encoded informations')
 
             if 2 * (d + 1) < self.capacity:
                 for k in set_key_out:
@@ -115,7 +117,7 @@ class Basis(object):
         if len(d_out) > 0:
             s_out = self.signal_from_keys(d_out)
 
-        if d_levels is not None and s_out is not None:
-            return s_out, d_levels
+        if s_out is not None:
+            return s_out
 
         return s_out

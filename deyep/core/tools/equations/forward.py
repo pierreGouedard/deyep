@@ -6,35 +6,51 @@ from scipy.sparse import csc_matrix, lil_matrix
 
 
 def fnt(sax_D, sax_I, sax_sn, sax_si):
+    """
+    Transmit signal through core vertices of firing graph
+
+    :param sax_D: scipy.sparse matrices of direct connection of core vertices
+    :param sax_I: scipy.sparse matrices of direct connection of input vertices toward core vertices
+    :param sax_sn: scipy.sparse signals of core vertices
+    :param sax_si: scipy.sparse input signals of input vertices
+    :return: scipy.sparse output signals of core vertices
+    """
     res = sax_sn.dot(sax_D) + sax_si.dot(sax_I)
     return res
 
 
 def fot(sax_O, sax_sn):
+    """
+    Transmit signal of core vertices to output vertices of firing graph
+
+    :param sax_O: scipy.sparse matrices of direct connection of core vertices toward output vertices
+    :param sax_sn: scipy.sparse signals of core vertices
+    :return: scipy.sparse output signals of output vertices
+    """
     res = sax_sn.dot(sax_O)
     return res
 
 
-def fnp(sax_fnt, l_nodes, tau, t):
+def fnp(sax_fnt, l_core_vertices, t):
+    """
+    core vertex processing of received signals
+
+    :param sax_fnt: scipy.sparse received signals
+    :param l_core_vertices: list of core vertex of firing graph
+    :param t: int timestamp
+    :return: scipy.sparse processed signals
+    """
+
     sax_sn = lil_matrix((sax_fnt.shape[1], sax_fnt.shape[0]), dtype=int)
 
     # Init activation param of the nodes
-    for n in l_nodes:
+    for n in l_core_vertices:
         n.active = False
 
-    # Encode forward messages, update list of activation and level if necessary
+    # Encode forward messages, update list of activation
     for i in np.unique(sax_fnt.nonzero()[1]):
-        s_out, level = l_nodes[i].basis.encode(sax_fnt[:, i].transpose(), timestamp=t, return_level=True)
-        if l_nodes[i].d_levels[level] >= tau:
-            l_nodes[i].active = True
+        s_out = l_core_vertices[i].basis.encode(sax_fnt[:, i].transpose(), t, l_core_vertices[i].l0)
+        if s_out is not None:
             sax_sn[i, :] = s_out
 
-    return sax_sn.tocsc().transpose(), np.array([n.active for n in l_nodes])
-
-
-def fcp(l_actives, sax_Cm):
-    # Build candidate matrix
-    sax_C = csc_matrix(np.array([l_actives]).repeat(sax_Cm.shape[1], axis=0).transpose())
-
-    return (sax_C.astype(int) - sax_Cm.astype(int)) > 0
-
+    return sax_sn.tocsc().transpose(), np.array([n.active for n in l_core_vertices])

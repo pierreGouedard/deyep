@@ -3,33 +3,32 @@ from scipy.sparse import csc_matrix, lil_matrix, vstack
 import numpy as np
 
 # Local import
-from deyep.core.tools.equations.backward import bop, bnp, bnt, bit, bcv, buffer
-from deyep.core.tools.equations.forward import fnp, fcp, fot, fnt
-from deyep.core.tools.equations.structure import bdu, bou, biu, bcu
+from deyep.core.tools.equations.backward import bop, bnp, bnt, bit, buffer
+from deyep.core.tools.equations.forward import fnp, fot, fnt
+from deyep.core.tools.equations.structure import bdu, bou, biu
 
 
-class DeepNetDrainer(object):
-    def __init__(self, deep_network, depth, imputer, p0=1, verbose=0):
+class FiringGraphDrainer(object):
+    def __init__(self, N, T, p, firing_graph, imputer, depth=2, verbose=0):
 
         # Core params
-        self.p = p0
+        self.N, self.T, self.p = N, T, p
+        self.firing_graph = firing_graph
         self.depth = depth
         self.verbose = verbose
 
-        # Data structure
-        self.deep_network = deep_network
+        # D
         self.imputer = imputer
-        self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.deep_network.input_nodes])
+        self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.firing_graph.input_vertices])
 
         # Init signals
-        self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = \
-            DeepNetDrainer.init_core_forward_signal(deep_network)
-        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = \
-            DeepNetDrainer.init_core_backward_signal(deep_network)
+        self.sax_si, self.sax_sn, self.sax_so, self.ax_sa = \
+            FiringGraphDrainer.init_core_forward_signal(self.firing_graph)
+        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab = \
+            FiringGraphDrainer.init_core_backward_signal(self.firing_graph)
 
         self.t = 0
         self.t_fp = 0
-        self.transformed = False
 
     def reset_all(self, reset_imputer=False, reset_time=False, reset_inputs=False):
         if reset_imputer:
@@ -39,52 +38,29 @@ class DeepNetDrainer(object):
             self.t, self.t_fp = 0, 0
 
         if reset_inputs:
-            self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.deep_network.input_nodes])
+            self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.firing_graph.input_vertices])
 
         # reset signals
         self.reset_forward_signals()
         self.reset_backward_signals()
 
     def reset_forward_signals(self):
-        self.sax_si, self.sax_sn, self.sax_so, self.ax_sa, self.sax_C = \
-            DeepNetDrainer.init_core_forward_signal(self.deep_network)
+        self.sax_si, self.sax_sn, self.sax_so, self.ax_sa = \
+            FiringGraphDrainer.init_core_forward_signal(self.firing_graph)
 
     def reset_backward_signals(self):
-        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab, self.sax_Cb = \
-            DeepNetDrainer.init_core_backward_signal(self.deep_network)
+        self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab = \
+            FiringGraphDrainer.init_core_backward_signal(self.firing_graph)
 
-    @staticmethod
-    def match(dn, imputer, p, size_epoch=None):
-
-        # Get input
-        if size_epoch is None:
-            sax_si, sax_so = imputer.features_forward, imputer.features_backward
-        else:
-            n, sax_si, sax_so = 0, csc_matrix((0, dn.IOw.shape[0])), csc_matrix((0, dn.IOw.shape[1]))
-
-            while n < size_epoch:
-                sax_si = vstack([sax_si, imputer.stream_forward()], format='csc')
-                sax_so = vstack([sax_so, imputer.stream_backward()], format='csc')
-                n += 1
-
-        # Solve matching
-        sax_IO, sax_reward, sax_all = lil_matrix(dn.IOw.shape), sax_si.transpose().dot(sax_so), sax_si.sum(axis=0)
-        for i, j in zip(*sax_reward.nonzero()):
-            sax_IO[i, j] = int((sax_reward[i, j] - p * (sax_all[0, i] - sax_reward[i, j])) > 0) * dn.w0
-
-        # Update deep network datastructure
-        dn.graph['IOw'] = sax_IO.tocsc()
-
-        return dn.copy()
-
-    def fit_epoch(self, n):
+    def drain(self, n):
 
         i = 0
         while i < n:
             if self.t % 2 == 0:
                 # Get new input and transmit forward
-                self.sax_si = self.generate_input_signals(self.imputer.stream_next_forward(),
-                                                          self.deep_network.input_nodes)
+                self.sax_si = self.generate_input_signals(
+                    self.imputer.stream_next_forward(), self.firing_graph.input_vertices
+                )
                 self.forward_transmiting()
 
                 # Run backward processing if delay is reached
@@ -107,10 +83,9 @@ class DeepNetDrainer(object):
             self.t += 1
 
             if self.verbose == 1 and self.t % 100 == 0:
-                print '[Info]: iteration {} completed'.format(self.t, n)
+                print '[Drainer Info]: iteration {} completed'.format(self.t, n)
 
-    def epoch_analysis(self, n):
-
+    def drain_analyse(self, n):
         import time
         l_t_epoch, l_t_forwardp, l_t_forwardt, l_t_backwardp, l_t_backwardt, i = [], [], [], [], [], 0
 
@@ -120,9 +95,8 @@ class DeepNetDrainer(object):
                 # Get new input and transmit forward
                 t0 = time.time()
                 self.sax_si = self.generate_input_signals(
-                    self.imputer.stream_next_forward(), self.deep_network.input_nodes
+                    self.imputer.stream_next_forward(), self.firing_graph.input_vertices
                 )
-
                 self.forward_transmiting()
                 l_t_forwardt += [time.time() - t0]
 
@@ -156,85 +130,71 @@ class DeepNetDrainer(object):
 
     def forward_transmiting(self):
         # Output transmit
-        self.sax_so = fot(self.deep_network.O, self.sax_sn)
+        self.sax_so = fot(self.firing_graph.O, self.sax_sn)
 
         # network transmit
-        self.sax_sn = fnt(self.deep_network.D, self.deep_network.I, self.sax_sn, self.sax_si)
+        self.sax_sn = fnt(self.firing_graph.D, self.firing_graph.I, self.sax_sn, self.sax_si)
 
-    def forward_processing(self, t, update_candidate=True):
+    def forward_processing(self, t):
         # transform signals
-        self.sax_sn, self.ax_sa = fnp(self.sax_sn, self.deep_network.network_nodes, self.deep_network.tau, t)
-
-        # Update candidate
-        if update_candidate:
-            self.deep_network.graph['N_f'] += self.ax_sa
-            self.sax_C = fcp(self.ax_sa, self.deep_network.Cm)
+        self.sax_sn, self.ax_sa = fnp(self.sax_sn, self.firing_graph.core_vertices, t)
 
     def backward_transmiting(self, only_buffer=False):
 
         if not only_buffer:
             # Cache result of backward transmit
-            sax_snb_ = bnt(self.deep_network.D, self.deep_network.O, self.sax_snb, self.sax_sob, self.sax_sab)
-            sax_sib_ = bit(self.deep_network.I, self.sax_snb)
+            sax_snb_ = bnt(self.firing_graph.D, self.firing_graph.O, self.sax_snb, self.sax_sob, self.sax_sab)
+            sax_sib_ = bit(self.firing_graph.I, self.sax_snb)
 
-            # Update deep network structure
-            ax_count = bdu(self.sax_snb, self.deep_network, penalty=self.p)
-            ax_count += bou(self.sax_sob, self.sax_sab, self.deep_network, penalty=self.p)
-            biu(self.sax_snb, self.deep_network, penalty=self.p)
-            bcu(self.sax_Cb, self.deep_network, w0=self.deep_network.w0)
-
-            self.deep_network.graph['N_r'] += ax_count * (ax_count > 0)
-            self.deep_network.graph['N_p'] += - ax_count * (ax_count < 0)
+            # Update firing graph structure
+            # TODO Update different process of vertices with return variables
+            sax_Du = bdu(self.sax_snb, self.firing_graph, penalty=self.p)
+            sax_Ou = bou(self.sax_sob, self.sax_sab, self.firing_graph, penalty=self.p)
+            sax_Iu = biu(self.sax_snb, self.firing_graph, penalty=self.p)
 
             # Save result of backward transmit
             self.sax_snb = sax_snb_
             self.sax_sib = sax_sib_
 
         # Buffer forward signals
-        self.sax_Cb, self.sax_sab, self.sax_sob = buffer(self.sax_C, self.ax_sa, len(self.deep_network.output_nodes),
-                                                         self.sax_so)
+        self.sax_sab, self.sax_sob = buffer(self.ax_sa, len(self.firing_graph.output_vertices), self.sax_so)
 
     def backward_processing(self, sax_got, t):
-
-        # Validate candidate
-        self.sax_Cb = bcv(sax_got, self.sax_sob, self.sax_Cb)
 
         # Generate feedback
         self.sax_sob = bop(self.sax_sob, sax_got)
 
         # Backward network process
-        self.sax_snb = bnp(self.deep_network.network_nodes, self.sax_snb, t, self.key_inputs)
+        self.sax_snb = bnp(self.firing_graph.core_vertices, self.sax_snb, t, self.key_inputs)
 
     @staticmethod
-    def generate_input_signals(sax_i, input_nodes):
-        sax_si = csc_matrix((len(input_nodes), input_nodes[0].basis.N), dtype=int)
+    def generate_input_signals(sax_i, input_vertices):
+        sax_si = csc_matrix((len(input_vertices), input_vertices[0].basis.N), dtype=int)
 
-        for i,  n in enumerate(input_nodes):
+        for i,  n in enumerate(input_vertices):
             if sax_i[0, i] >= 1:
                 sax_si[i, :] = n.basis.base
 
         return sax_si.transpose()
 
     @staticmethod
-    def init_core_forward_signal(dn):
+    def init_core_forward_signal(fg):
 
-        N = dn.n_freq
-        sax_si = csc_matrix((N, len(dn.input_nodes)), dtype=int)
-        sax_sn = csc_matrix((N, len(dn.network_nodes)), dtype=int)
-        sax_so = csc_matrix((N, len(dn.output_nodes)), dtype=int)
-        ax_sa = np.array([False] * len(dn.network_nodes))
-        sax_C = csc_matrix((len(dn.network_nodes), len(dn.output_nodes)))
+        N = fg.n_freq
+        sax_si = csc_matrix((N, len(fg.input_vertices)), dtype=int)
+        sax_sn = csc_matrix((N, len(fg.core_vertices)), dtype=int)
+        sax_so = csc_matrix((N, len(fg.output_vertices)), dtype=int)
+        ax_sa = np.array([False] * len(fg.core_vertices))
 
-        return sax_si, sax_sn, sax_so, ax_sa, sax_C
+        return sax_si, sax_sn, sax_so, ax_sa
 
     @staticmethod
-    def init_core_backward_signal(dn):
-        N = dn.n_freq
+    def init_core_backward_signal(fg):
+        N = fg.n_freq
 
-        sax_sib = csc_matrix((N, len(dn.input_nodes)), dtype=int)
-        sax_snb = csc_matrix((N, len(dn.network_nodes)), dtype=int)
-        sax_sob = csc_matrix((N, len(dn.output_nodes)), dtype=int)
-        sax_sab = csc_matrix(np.array([[False] * len(dn.network_nodes)]).repeat(len(dn.output_nodes), axis=0))
-        sax_Cb = csc_matrix((len(dn.network_nodes), len(dn.output_nodes)))
+        sax_sib = csc_matrix((N, len(fg.input_vertices)), dtype=int)
+        sax_snb = csc_matrix((N, len(fg.core_vertices)), dtype=int)
+        sax_sob = csc_matrix((N, len(fg.output_vertices)), dtype=int)
+        sax_sab = csc_matrix(np.array([[False] * len(fg.core_vertices)]).repeat(len(fg.output_vertices), axis=0))
 
-        return sax_sib, sax_snb, sax_sob, sax_sab, sax_Cb
+        return sax_sib, sax_snb, sax_sob, sax_sab

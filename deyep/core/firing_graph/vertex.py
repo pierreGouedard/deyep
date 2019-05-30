@@ -1,7 +1,9 @@
 
 
-class Node(object):
-
+class Vertex(object):
+    """
+    Class that implement vertex of the firing graph
+    """
     def __init__(self, id, type):
         self.id = id
         self.type = type
@@ -10,12 +12,14 @@ class Node(object):
         return {'id': self.id, 'type': self.type}
 
 
-class InputNode(Node):
-
+class InputVertex(Vertex):
+    """
+    Class that implement input vspecific vertex
+    """
     def __init__(self, id, type, basis, children):
 
         # Set inherited attributes
-        Node.__init__(self, id, type)
+        Vertex.__init__(self, id, type)
 
         # Set specific attributes
         self.basis = basis
@@ -28,21 +32,23 @@ class InputNode(Node):
         raise NotImplementedError
 
     def to_dict(self):
-        d_out = Node.to_dict(self)
+        d_out = Vertex.to_dict(self)
         d_out.update({'basis': self.basis.to_dict(), 'children': self.children})
         return d_out
 
     @staticmethod
     def from_dict(d_node, basis):
-        return InputNode(d_node['id'], d_node['type'], basis.from_dict(d_node['basis']), d_node['children'])
+        return InputVertex(d_node['id'], d_node['type'], basis.from_dict(d_node['basis']), d_node['children'])
 
 
-class OutputNode(Node):
-
+class OutputVertex(Vertex):
+    """
+    Class that implement output vspecific vertex
+    """
     def __init__(self, id, type, parents):
 
         # Set inherited attributes
-        Node.__init__(self, id, type)
+        Vertex.__init__(self, id, type)
 
         # Set specific attributes
         self.parents = parents
@@ -54,30 +60,26 @@ class OutputNode(Node):
         raise NotImplementedError
 
     def to_dict(self):
-        d_out = Node.to_dict(self)
+        d_out = Vertex.to_dict(self)
         d_out.update({'parents': self.parents})
         return d_out
 
     @staticmethod
     def from_dict(d_node):
-        return OutputNode(d_node['id'], d_node['type'], d_node['parents'])
+        return OutputVertex(d_node['id'], d_node['type'], d_node['parents'])
 
 
-class NetworkNode(Node):
-
-    def __init__(self, id, type, basis, children, l0, level=None):
+class CoreVertex(Vertex):
+    """
+    Class that implement core specific vertex
+    """
+    def __init__(self, id, type, basis, children, l0):
         # Set inherited attributes
-        Node.__init__(self, id, type)
+        Vertex.__init__(self, id, type)
 
         # Set specific attributes
         self.active = False
-
-        if level is None:
-            self.d_levels = {i: l0 for i in range(1, 100)}
-            self.d_levels.update({0: 0})
-        else:
-            self.d_levels = level
-
+        self.l0 = l0
         self.basis = basis
         self.children = children
 
@@ -91,12 +93,12 @@ class NetworkNode(Node):
         raise NotImplementedError
 
     def to_dict(self):
-        d_out = Node.to_dict(self)
-        d_out.update({'basis': self.basis.to_dict(), 'children': self.children,
-                      'level': self.d_levels})
+        d_out = Vertex.to_dict(self)
+        d_out.update({'basis': self.basis.to_dict(), 'children': self.children})
         return d_out
 
     @staticmethod
     def from_dict(d_node, basis):
-        return NetworkNode(d_node['id'], d_node['type'], basis.from_dict(d_node['basis']), d_node['children'], 0,
-                           level=d_node['level'])
+        return CoreVertex(
+            d_node['id'], d_node['type'], basis.from_dict(d_node['basis']), d_node['children'], 0
+        )

@@ -6,7 +6,7 @@ import random
 # Local import
 import settings
 from deyep.core.builder.comon import gather_matrices
-from deyep.core.datastructures.deep_network import DeepNetwork
+from deyep.core.firing_graph.graph import DeepNetwork
 from deyep.core.solver.utils import DeepNetUtils
 from deyep.core.runner.comon import DeepNetRunner
 from deyep.core.solver.main import DeepNetSolver
@@ -37,7 +37,8 @@ class Simulation(object):
             self.imputer = imputer.load(self.name)
             self.main_network = DeepNetwork.load(self.name, 'main')
             self.d_networks = {
-                x.split('.')[0]: DeepNetwork.load(self.name, x.split('.')) for x in driver.listdir(self.name)
+                x.split('.')[0]: DeepNetwork.load(self.name, x.split('.')) for x in driver.listdir(self.dir_dn)
+                if 'main' not in x
             }
         else:
 
@@ -181,7 +182,7 @@ class Simulation(object):
         ax_out = runner.transform_array().toarray()
 
         # Set metrics of the deep network
-        network.set_metrics(depth, imputer.features_backward.toarray().astype(bool), ax_out)
+        network_.set_metrics(self.params_network['delay'], imputer.features_backward.toarray().astype(bool), ax_out)
 
         # Save fitted network
         if network is None:

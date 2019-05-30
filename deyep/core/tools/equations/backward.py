@@ -8,28 +8,55 @@ from deyep.core.tools.linear_algebra.comon import Chi_sax
 
 
 def bnt(sax_D, sax_O, sax_snb, sax_sob, sax_activation):
+    """
+    Propagate backward signal through firing graph
+
+    :param sax_D: scipy.sparse matrices of direct connection of core vertices
+    :param sax_O: scipy.sparse matrices of direct connection of core vertices toward output vertices
+    :param sax_snb: scipy.sparse of backward signals of core vertices
+    :param sax_sob: scipy.sparse of backward signals of output vertices
+    :param sax_activation: scipy.sparse array of activation of core vertices
+    :return: scipy.sparse of backward signals received by core vertices
+
+    """
     sax_snb_ = sax_sob.dot(sax_O.transpose().multiply(sax_activation))
     sax_snb_ += sax_snb.dot(sax_D.transpose())
     return sax_snb_
 
 
 def bit(sax_I, sax_snb):
+    """
+    Propagate backward signal to input vertices if the firing graph
+
+    :param sax_I: scipy.sparse matrices of direct connection of input vertices toward core vertices
+    :param sax_snb: scipy.sparse of backward signals of core vertices
+    :return: scipy.sparse of backward signals received by input vertices
+    """
     sax_sib = sax_snb.dot(sax_I.transpose())
     return sax_sib
 
 
-def bcv(sax_got, sax_sob, sax_Cb):
-    for i in range(sax_got.shape[1]):
-        sax_Cb[:, i] = sax_Cb[:, i] * (sax_got[0, i] - sax_sob[0, i]) > 0
+def buffer(ax_sa, no, sax_so):
+    """
+    Buffer forward signals before backward processing and transmitting
 
-    return sax_Cb
+    :param ax_sa: numpy.array of active vertex
+    :param no: number of output vertex
+    :param sax_so: scipy.sparse forward signal received by output vertices
+    :return: Copy of the input
 
-
-def buffer(sax_C, ax_sa, no, sax_so):
-    return sax_C.copy(), csc_matrix(np.array([ax_sa.copy()]).repeat(no, axis=0)), sax_so.copy()
+    """
+    return csc_matrix(np.array([ax_sa.copy()]).repeat(no, axis=0)), sax_so.copy()
 
 
 def bop(sax_so, sax_got):
+    """
+    Backward processing of signals of output vertices
+
+    :param sax_so: scipy.sparse forward  signals received by output vertices
+    :param sax_got: scipy.sparse Ground of truth of signals for output vertices
+    :return:
+    """
 
     sax_so = Chi_sax(vstack([csc_matrix((1, sax_so.shape[1])), sax_so[:-1, :]], format='csc') + sax_so).transpose()
 
@@ -47,30 +74,34 @@ class BnpParallel(object):
         self.key_inputs = key_inputs
 
     def f(self, t):
-        res = t[1].basis.decode(t[2], self.t, self.key_inputs, d_levels={})
-
-        if res is None:
-            return res
-
-        return t[0], res[0], res[1]
+        res = t[1].basis.decode(t[2], self.t, self.key_inputs)
+        return t[0], res
 
 
-def bnp(l_nodes, sax_snb, t, key_inputs, n_jobs=0):
+def bnp(l_vertices, sax_snb, t, key_inputs, n_jobs=0):
+    """
+    Backward processing of signals of core vertices
+
+    :param l_vertices: list of core vertices
+    :param sax_snb: scipy.sparse of backward signals of core vertices
+    :param t: int timestamp
+    :param key_inputs: input's vertices frequency keys
+    :param n_jobs: int core used, if 0: use all available core
+    :return:
+    """
     p = Pool({0: cpu_count()}.get(n_jobs, n_jobs))
 
     # Instantiate class that implement parallel operations
     bnpp = BnpParallel(t, key_inputs)
 
     # Parallel operations
-    l_ins = [(i, l_nodes[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
+    l_ins = [(i, l_vertices[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
     l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
 
     # Fill
+    # TODO: change that fuck
     sax_snb = lil_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=int)
-    for i, s, d_levels in l_res:
-        # Update Levels and backward signal
-        for k, v in d_levels.items():
-            l_nodes[i].d_levels[k] += v
+    for i, s in l_res:
         sax_snb[i, :] = s
 
     return sax_snb.tocsc().transpose()
