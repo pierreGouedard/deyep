@@ -37,7 +37,7 @@ def bdu(sax_snb, fg, penalty=1., n_jobs=1):
         # Parallel inner product (map from Pool preserve order of input list)
         sax_Du = vstack(p.map(bdup.f, [(n.basis.base, fg.D[i, :]) for i, n in enumerate(fg.core_vertices)]), format='csc')
     else:
-        sax_Du = vstack([n.basis.base for n in fg.network_nodes], format='csc').dot(sax_snb_).multiply(fg.D)
+        sax_Du = vstack([n.basis.base for n in fg.core_vertices], format='csc').dot(sax_snb_).multiply(fg.D)
 
     fg.graph['Dw'] += sax_Du
 
@@ -68,9 +68,9 @@ def bou(sax_sob, sax_A, fg, penalty=1., n_jobs=1):
 
         # Parallel inner product (map from Pool preserve order of input list)
         sax_Ou = vstack(p.map(boup.f, [(n.basis.base, fg.O[i, :].multiply(sax_A[:, i].transpose()))
-                                       for i, n in enumerate(fg.network_nodes)]), format='csc')
+                                       for i, n in enumerate(fg.core_vertices)]), format='csc')
     else:
-        sax_Ou = vstack([n.basis.base for n in fg.network_nodes], format='csc')\
+        sax_Ou = vstack([n.basis.base for n in fg.core_vertices], format='csc')\
             .dot(sax_sob)\
             .multiply(fg.O.multiply(sax_A.transpose()))
 
@@ -101,9 +101,9 @@ def biu(sax_snb, fg, penalty=1., n_jobs=1):
         biup = ParallelUpdate(sax_snb)
 
         # Parallel inner product (map from Pool preserve order of input list)
-        sax_Iu = vstack(p.map(biup.f, [(n.basis.base, fg.I[i, :]) for i, n in enumerate(fg.input_nodes)]), format='csc')
+        sax_Iu = vstack(p.map(biup.f, [(n.basis.base, fg.I[i, :]) for i, n in enumerate(fg.input_vertices)]), format='csc')
     else:
-        sax_Iu = vstack([n.basis.base for n in fg.input_nodes], format='csc').dot(sax_snb).multiply(fg.I)
+        sax_Iu = vstack([n.basis.base for n in fg.input_vertices], format='csc').dot(sax_snb).multiply(fg.I)
 
     fg.graph['Iw'] += sax_Iu
 

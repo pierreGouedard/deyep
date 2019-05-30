@@ -1,6 +1,6 @@
 # Global import
 import numpy as np
-from scipy.sparse import csc_matrix, lil_matrix
+from scipy.sparse import lil_matrix
 
 # Local import
 
@@ -51,6 +51,7 @@ def fnp(sax_fnt, l_core_vertices, t):
     for i in np.unique(sax_fnt.nonzero()[1]):
         s_out = l_core_vertices[i].basis.encode(sax_fnt[:, i].transpose(), t, l_core_vertices[i].l0)
         if s_out is not None:
+            l_core_vertices[i].active = True
             sax_sn[i, :] = s_out
 
     return sax_sn.tocsc().transpose(), np.array([n.active for n in l_core_vertices])

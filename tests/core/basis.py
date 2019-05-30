@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from deyep.core.builder.comon import mat_from_tuples
+from deyep.core.firing_graph.utils import mat_from_tuples
 from deyep.core.firing_graph.graph import FiringGraph
 from deyep.core.tools.linear_algebra.natural_domain import inner_product
 

@@ -1,5 +1,5 @@
 # Global import
-from scipy.sparse import csc_matrix, lil_matrix, vstack
+from scipy.sparse import csc_matrix
 import numpy as np
 
 # Local import

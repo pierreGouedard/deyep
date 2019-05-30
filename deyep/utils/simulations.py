@@ -1,11 +1,10 @@
 # Global import
-import numpy as np
 import string
 import random
 
 # Local import
 import settings
-from deyep.core.builder.comon import gather_matrices
+from deyep.core.firing_graph.utils import gather_matrices
 from deyep.core.firing_graph.graph import DeepNetwork
 from deyep.core.solver.utils import DeepNetUtils
 from deyep.core.runner.comon import DeepNetRunner

@@ -3,7 +3,7 @@ import unittest
 from scipy.sparse import csc_matrix as csc
 
 # Local import
-from deyep.core.builder.comon import set_vertices_from_mat, set_frequencies, mat_from_tuples
+from deyep.core.firing_graph.utils import set_vertices_from_mat, set_frequencies, mat_from_tuples
 
 
 __maintainer__ = 'Pierre Gouedard'

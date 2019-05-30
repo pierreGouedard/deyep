@@ -5,7 +5,7 @@ import string
 
 # Local import
 import settings
-from deyep.core.builder import comon
+from deyep.core.firing_graph import utils
 from deyep.core.firing_graph.vertex import InputVertex as iv, OutputVertex as ov, CoreVertex as cv
 from deyep.core.tools.basis.comon import Basis
 from deyep.utils.driver.driver import FileDriver
@@ -82,7 +82,7 @@ class FiringGraph(object):
     @staticmethod
     def from_matrices(project, sax_D, sax_I, sax_O, capacity, w0, ax_levels, graph_id=None):
 
-        l_inputs, l_outputs, l_cores, n_freq = comon.vertices_from_mat(
+        l_inputs, l_outputs, l_cores, n_freq = utils.vertices_from_mat(
             sax_D, sax_I, sax_O, capacity, ax_levels
         )
 
