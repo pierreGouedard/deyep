@@ -62,8 +62,8 @@ class TestDrainer(unittest.TestCase):
 
     def andpattern3(self):
         """
-        Test And Pattern of depth 2
-        python -m unittest tests.core.drainer.TestDrainer.andpattern2
+        Test And Pattern of depth 3
+        python -m unittest tests.core.drainer.TestDrainer.andpattern3
 
         """
         raise NotImplementedError
