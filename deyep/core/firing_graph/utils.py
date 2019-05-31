@@ -202,3 +202,27 @@ def get_occupied_freqs(k, l_children, d_vertices):
                 occupied_freqs += v_['freqs']
 
     return set(occupied_freqs)
+
+
+def gather_matrices(ax_in, ax_core, ax_out):
+    """
+    from numpy array of direct link between different king of vertices of firing graph return the global matrices of
+    direct link (no distinction of vertex type)
+
+    :param ax_in: numpy.array of direct link from input vertices toward core vertices
+    :param ax_core: numpy.array of direct link of vertices
+    :param ax_out: numpy.array of direct link from core vertices toward output vertices
+    :return: numpy.array of direct link of vertices of firing graph
+    """
+
+    ax_fg = np.vstack((ax_in, ax_core))
+
+    ax_fg = np.hstack((np.zeros((ax_fg.shape[0], ax_in.shape[0])), ax_fg))
+
+    ax_out_ = np.vstack((np.zeros((ax_in.shape[0], ax_out.shape[1])), ax_out))
+
+    ax_fg = np.hstack((ax_fg,  ax_out_))
+
+    ax_fg = np.vstack((ax_fg, np.zeros((ax_out.shape[1], ax_fg.shape[1]))))
+
+    return ax_fg
