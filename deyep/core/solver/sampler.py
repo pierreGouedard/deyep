@@ -1,5 +1,4 @@
 # Global import
-from scipy.sparse import csc_matrix
 import numpy as np
 import random
 

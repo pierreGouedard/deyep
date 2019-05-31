@@ -3,8 +3,6 @@ import unittest
 import numpy as np
 from scipy.sparse import csc_matrix
 
-from deyep.core.firing_graph.utils import mat_from_tuples
-from deyep.core.firing_graph.graph import FiringGraph
 from deyep.core.imputer.array import DoubleArrayImputer
 from deyep.core.solver.sampler import Sampler
 

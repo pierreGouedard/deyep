@@ -1,39 +1,61 @@
-
-
 # Global imports
 import numpy as np
 import networkx as nx
 
 # local import
+from deyep.core.firing_graph.utils import mat_from_tuples
+from deyep.core.firing_graph.graph import FiringGraph
 
 
 class TestPattern(object):
     l_seq_types = ['det', 'rand']
 
-    def __init__(self, name, input_nodes, network_nodes, output_nodes, delay):
+    def __init__(self, name, input_vertices, core_vertices, output_vertices, depth):
 
         self.name = name
-        self.input_nodes = input_nodes
-        self.network_nodes = network_nodes
-        self.output_nodes = output_nodes
-        self.delay = delay
+        self.input_vertices = input_vertices
+        self.core_vertices = core_vertices
+        self.output_vertices = output_vertices
+        self.depth = depth
 
     def build_graph_pattern_final(self):
+        """
+        Return a firing graph as it should be at the end of the test
+
+        :return:
+        """
         raise NotImplementedError
 
     def build_graph_pattern_init(self):
+        """
+        Return a firing graph as it should be at the beginning of the test
+        :return:
+        """
         raise NotImplementedError
 
     def build_deterministic_io(self):
+        """
+        Build deterministic activation of input output pair as couple of numpy.array
+        :return:
+        """
         raise NotImplementedError
 
     def build_random_io(self):
+        """
+        Build random activation of input with all zeros output pair as couple of numpy.array
+        :return:
+        """
         raise NotImplementedError
 
     def init_io_sequence(self,):
+
         raise NotImplementedError
 
     def generate_io_sequence(self, length, p=0.5, seed=1830):
+        """
+        Return a mix between deterministic io and noisy io
+        :return:
+        """
         np.random.seed(seed)
         ax_isequence, ax_osequence = self.init_io_sequence()
 
@@ -53,261 +75,149 @@ class TestPattern(object):
         return ax_isequence, ax_osequence
 
 
-class TreePattern(TestPattern):
+class AndPattern2(TestPattern):
     """
-    The primary test purpose of this pattern is to test for connection of network nodes with outputs nodes. It is also
-    convenient to test the forward backward synchronisation. after a significant number of iteration, 1 to 1 edges from
-    network and output nodes should appears
+    The primary test purpose of this pattern is to test for edge removal in a firing graph of depth 2. After a
+    significant number of iteration, only correct edges should remain
     """
-    def __init__(self, d, k):
 
-        self.d = d
-        self.k = k
-        self.d_nodes = {1: range(self.k)}
-        self.d_nodes.update({d + 2: range(sum(pow(self.k, x) for x in range(1, d + 2)),
-                                          sum(pow(self.k, x) for x in range(1, d + 3)))
-                             for d in range(self.d - 1)})
+    def __init__(self, ni, no, w=100, p=0.5, random_target=False):
 
-        # Build list of nodess
-        input_nodes = ['input_0']
-        network_nodes = ['network_{}'.format(i) for i in range(self.get_size(d, k))]
-        output_nodes = ['output_{}'.format(i) for i in range(self.get_size(d, k))]
+        # Core params of test
+        self.ni, self.no, self.w, self.p, self.random_target = ni, no, w, random_target, p
 
-        TestPattern.__init__(self, 'tree', input_nodes, network_nodes, output_nodes, 2)
+        # Init
+        self.firing_graph = None
 
-    @staticmethod
-    def get_size(d, k):
-        return sum([pow(k, i + 1) for i in range(d)])
+        # Set targets
+        self.target = [
+            np.random.choice(range(self.ni * j, self.ni * (j + 1)), np.random.randint(0, int(0.5 * self.ni)))
+            for j in range(self.no)
+        ]
+
+        # Build list of vertices
+        input_vertices = [['input_{}'.format((self.ni * i) + j) for j in range(self.ni)] for i in range(self.no)]
+        core_vertices = ['core_{}', ]
+        output_vertices = ['output_{}'.format(i) for i in range(self.no)]
+        TestPattern.__init__(self, 'and', input_vertices, core_vertices, output_vertices, 2)
 
     def build_graph_pattern_final(self):
-
-        # Build input edges
+        # Build edges
         l_edges = []
-        for i in range(self.k):
-            l_edges += [(self.input_nodes[0], self.network_nodes[i])]
+        for i in range(self.no):
+            l_edges = [(self.input_vertices[j], self.core_vertices[i]) for j in range(self.ni) if j in self.target[i]]
+        l_edges += zip(self.core_vertices, self.output_vertices)
 
-        for k, v in sorted(self.d_nodes.items(), key=lambda (k_, v_): k_)[:-1]:
-            for n, i in enumerate(sorted(v)):
-                for j in range(self.k):
-                    n_child = sorted(self.d_nodes[k + 1])[j + (n * self.k)]
-                    l_edges += [(self.network_nodes[i], self.network_nodes[n_child])]
+        # Build Firing graph
+        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni, self.no, self.no, weights=self.w)
+        self.firing_graph = FiringGraph.from_matrices(
+            'AndPatFinal', sax_D, sax_I, sax_O, 3, self.w, np.array([len(self.target[i]) for i in range(self.no)])
+        )
 
-        # Build output edges
-        l_edges += zip(self.network_nodes, self.output_nodes)
-
-        return l_edges
+        return self.firing_graph
 
     def build_graph_pattern_init(self):
-
-        # Build input edges
+        # Build edges
         l_edges = []
-        for i in range(self.k):
-            l_edges += [(self.input_nodes[0], self.network_nodes[i])]
+        for i in range(self.no):
+            l_edges = [(self.input_vertices[j], self.core_vertices[i]) for j in range(self.ni)]
+        l_edges += zip(self.core_vertices, self.output_vertices)
 
-        for k, v in sorted(self.d_nodes.items(), key=lambda (k_, v_): k_)[:-1]:
-            for n, i in enumerate(sorted(v)):
-                for j in range(self.k):
-                    n_child = sorted(self.d_nodes[k + 1])[j + (n * self.k)]
-                    l_edges += [(self.network_nodes[i], self.network_nodes[n_child])]
+        # Build Firing graph
+        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni, self.no, self.no, weights=self.w)
+        self.firing_graph = FiringGraph.from_matrices(
+            'AndPatInit', sax_D, sax_I, sax_O, 3, self.w, np.array([len(self.target[i]) for i in range(self.no)])
+        )
 
-        return l_edges
-
-    def build_deterministic_io(self):
-        ax_inputs = np.zeros((self.d, 1))
-        ax_inputs[0, 0] = 1
-
-        ax_outputs = None
-        for k, v in sorted(self.d_nodes.items(), key=lambda (k_, v_): k_):
-            ax = np.zeros((1, self.get_size(self.d, self.k)))
-            ax[0, v] = 1
-            if ax_outputs is not None:
-                ax_outputs = np.vstack((ax_outputs, ax))
-            else:
-                ax_outputs = ax.copy()
-
-        return ax_inputs, ax_outputs
-
-    def build_random_io(self):
-
-        # Generate random length
-        n = np.random.randint(self.delay + 1, high=self.delay + 10)
-
-        # Generate inpute and output arrays
-        ax_inputs = np.zeros((n, 1))
-        ax_outputs = np.zeros((n, self.get_size(self.d, self.k)))
-
-        return ax_inputs, ax_outputs
-
-    def init_io_sequence(self):
-        return np.zeros((1, 1)), np.zeros((1, self.get_size(self.d, self.k)))
-
-    def layout(self, ax_graph):
-
-        ni, n, no = len(self.input_nodes), len(self.network_nodes), len(self.output_nodes)
-        pos, pos_ = {}, nx.spring_layout(nx.from_numpy_array(ax_graph))
-
-        pos.update({'inputs': {'pos': {i: pos_[i] for i in range(ni)}, 'color': 'r'}})
-        pos.update({'networks': {'pos': {ni + i: pos_[ni + i] for i in range(n)}, 'color': 'k'}})
-        pos.update({'outputs': {'pos': {ni + n + i: pos_[ni + n + i] for i in range(no)}, 'color': 'b'}})
-
-        return pos
-
-
-class AndPattern(TestPattern):
-    """
-    The primary test purpose of this pattern is to test for level convergence of network nodes. After a significant
-    number of iteration, all edges should remain and only the level self.n (or higher) of network nodes should be activable
-    """
-
-    def __init__(self, n):
-
-        self.n = n
-
-        # Build list of nodess
-        input_nodes = ['input_{}'.format(i) for i in range(n)]
-        network_nodes = ['network_0']
-        output_nodes = ['output_0']
-
-        TestPattern.__init__(self, 'and', input_nodes, network_nodes, output_nodes, 2)
-
-    def build_graph_pattern_final(self):
-
-        # Build input edges
-        l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.n)]
-
-        # Build output edges
-        l_edges += zip(self.network_nodes, self.output_nodes)
-
-        return l_edges
-
-    def build_graph_pattern_init(self):
-        return self.build_graph_pattern_final()
+        return self.firing_graph
 
     def build_deterministic_io(self):
-        ax_inputs = np.ones((1, self.n))
-        ax_outputs = np.ones((1, 1))
+        ax_inputs = np.zeros((1, self.ni * self.no))
+
+        for i in range(self.no):
+            ax_inputs_ = np.zeros((1, self.ni * self.no))
+            ax_inputs_[self.target[i]] = 1
+
+            ax_inputs = np.vstack((ax_inputs, ax_inputs_))
+
+        ax_outputs = np.eye(self.no)
 
         return ax_inputs, ax_outputs
 
-    def build_random_io(self):
+    def build_random_io(self, random_target=False):
 
-        # Generate random 1 in inputs
-        ax_one = np.random.choice(np.arange(self.n), size=np.random.randint(1, self.n), replace=False)
+        # Generate random inputs
+        ax_inputs = np.random.binomial(1, self.p, self.ni * self.no)
 
-        ax_inputs = np.zeros((1, self.n))
-        ax_inputs[0, ax_one] = 1
+        if not self.random_target:
+            for i in range(self.no):
+                ax_inputs[self.target[i]] = 0
 
         # Generate outputs
-        ax_outputs = np.zeros((1, 1))
+        ax_outputs = np.zeros((1, self.no))
 
         return ax_inputs, ax_outputs
 
     def init_io_sequence(self):
-        return np.zeros((1, self.n)), np.zeros((1, 1))
+        return np.zeros((1, self.ni * self.no)), np.zeros((1, self.no))
 
     def layout(self):
         pos = dict()
 
-        pos.update({'inputs': {'pos': {i: (0, i) for i in range(self.n)}, 'color': 'r'}})
-        pos.update({'networks': {'pos': {self.n: (1, self.n / 2)}, 'color': 'k'}})
-        pos.update({'outputs': {'pos': {self.n + 1: (2, self.n / 2)}, 'color': 'b'}})
+        pos.update({'inputs': {'pos': {i: (0, i) for i in range(self.ni * self.no)}, 'color': 'r'}})
+        n = self.ni * self.no
+        pos.update({'cores': {
+            'pos': {(n + i): (1, ((self.ni * i) + (self.ni * (i + 1))) / 2) for i in range(self.no)},
+            'color': 'k'}
+        })
+        n = self.ni * self.no + self.no
+        pos.update({'outputs': {
+            'pos': {(n + i): (1, ((self.ni * i) + (self.ni * (i + 1))) / 2) for i in range(self.no)},
+            'color': 'b'}
+        })
 
         return pos
 
 
-class XorPattern(TestPattern):
+class AndPattern3(TestPattern):
     """
-    The primary test purpose of this pattern is to test for the removal of wrong edges from input to network nodes.
-    After a significant number of iteration, self.na first input nodes should be linked to network node 0 and the
-    self.nb following input nodes should be linked to network node 1, no other edges from inouts to network nodes should
-    persist.
+    The primary test purpose of this pattern is to test for edge removal in a firing graph of depth 3. After a
+    significant number of iteration, only correct edges should remain
     """
-    def __init__(self, na, nb):
-
-        self.na, self.nb = na, nb
-
-        # Build list of nodess
-        input_nodes = ['input_{}'.format(i) for i in range(na + nb)]
-        network_nodes = ['network_0', 'network_1']
-        output_nodes = ['output_0', 'output_1']
-
-        TestPattern.__init__(self, 'xor', input_nodes, network_nodes, output_nodes, 2)
 
     def build_graph_pattern_final(self):
-
-        # Build input edges
-        l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.na)]
-        l_edges += [(self.input_nodes[i], self.network_nodes[1]) for i in range(self.na, self.na + self.nb)]
-
-        # Build output edges
-        l_edges += zip(self.network_nodes, self.output_nodes)
-
-        return l_edges
+        raise NotImplementedError
 
     def build_graph_pattern_init(self):
-
-        # Build input edges
-        l_edges = [(self.input_nodes[i], self.network_nodes[0]) for i in range(self.na + self.nb)]
-        l_edges += [(self.input_nodes[i], self.network_nodes[1]) for i in range(self.na + self.nb)]
-
-        # Build output edges
-        l_edges += zip(self.network_nodes, self.output_nodes)
-
-        return l_edges
+        raise NotImplementedError
 
     def build_deterministic_io(self):
-        ax_inputs_left = np.ones((1, self.na + self.nb))
-        ax_inputs_left[0, self.na:] = 0
+        raise NotImplementedError
 
-        ax_inputs_right = np.ones((1, self.na + self.nb))
-        ax_inputs_right[0, :self.na] = 0
-
-        ax_inputs = np.vstack((ax_inputs_left, ax_inputs_right))
-        ax_outputs = np.array([[1, 0], [0, 1]])
-
-        return ax_inputs, ax_outputs
-
-    def build_random_io(self):
-
-        # Generate random 1 in inputs
-        ax_onea = np.random.choice(np.arange(self.na), size=np.random.randint(1, self.na), replace=False)
-        ax_oneb = np.random.choice(np.arange(self.nb), size=np.random.randint(1, self.nb), replace=False)
-
-        ax_inputs = np.zeros((1, self.na + self.nb))
-        ax_inputs[0, np.hstack((ax_onea, self.na + ax_oneb))] = 1
-
-        # Generate outputs
-        ax_outputs = np.zeros((1, 2))
-
-        return ax_inputs, ax_outputs
+    def build_random_io(self, random_target=False):
+        raise NotImplementedError
 
     def init_io_sequence(self):
-        return np.zeros((1, self.na + self.nb)), np.zeros((1, 2))
+        raise NotImplementedError
 
     def layout(self):
-        pos = dict()
-        n = self.na + self.nb
-        pos.update({'inputs': {'pos': {i: (0, i) for i in range(n)}, 'color': 'r'}})
-        pos.update({'networks': {'pos': {n: (1, (n / 2) - (n / 4)), n + 1: (1, (n / 2) + (n / 4))}, 'color': 'k'}})
-        pos.update({'outputs': {'pos': {n + 2: (2, (n / 2) - (n / 4)), n + 3: (2, (n / 2) + (n / 4))}, 'color': 'b'}})
-
-        return pos
+        raise NotImplementedError
 
 
 class RandomPattern(TestPattern):
     """
-        random generation with the correcct convergence sentence
+    random generation with the correct convergence sentence
     """
-    def __init__(self, ni, nd, no, delay, p, seed=666):
+    def __init__(self, ni, nd, no, depth, p, seed=666):
 
-        self.ni, self.nd, self.no, self.delay, self.p, self.seed = ni, nd, no, delay, p, seed
+        self.ni, self.nd, self.no, self.depth, self.p, self.seed = ni, nd, no, depth, p, seed
 
-        # Build list of nodess
-        input_nodes = ['input_{}'.format(i) for i in range(self.ni)]
-        network_nodes = ['network_{}'.format(i) for i in range(self.nd)]
-        output_nodes = ['output_{}'.format(i) for i in range(self.no)]
+        # Build list of vertices
+        input_vertices = ['input_{}'.format(i) for i in range(self.ni)]
+        core_vertices = ['core_{}'.format(i) for i in range(self.nd)]
+        output_vertices = ['output_{}'.format(i) for i in range(self.no)]
 
-        TestPattern.__init__(self, 'random', input_nodes, network_nodes, output_nodes, self.delay)
+        TestPattern.__init__(self, 'random', input_vertices, core_vertices, output_vertices, self.depth)
 
     def build_graph_pattern_final(self):
         raise NotImplementedError
@@ -315,9 +225,9 @@ class RandomPattern(TestPattern):
     def build_graph_pattern_init(self, decrease='linear'):
         np.random.seed(self.seed)
 
-        l_selected = [c for c in self.network_nodes if np.random.choice([0, 1], p=[1 - self.p, self.p]) == 1]
-        l_candidates = [n for n in self.network_nodes if n not in l_selected]
-        l_edges = [(np.random.choice(self.input_nodes), c) for c in l_selected]
+        l_selected = [c for c in self.core_vertices if np.random.choice([0, 1], p=[1 - self.p, self.p]) == 1]
+        l_candidates = [n for n in self.core_vertices if n not in l_selected]
+        l_edges = [(np.random.choice(self.input_vertices), c) for c in l_selected]
 
         for i in range(100):
 
@@ -334,7 +244,7 @@ class RandomPattern(TestPattern):
 
             l_edges += [(np.random.choice(l_selected), c) for c in l_selected_]
             l_selected = list(l_selected_)
-            l_candidates = [n for n in self.network_nodes if n not in l_selected]
+            l_candidates = [n for n in self.core_vertices if n not in l_selected]
 
         return l_edges
 
@@ -351,9 +261,7 @@ class RandomPattern(TestPattern):
         return np.zeros((1, self.ni)), np.zeros((1, self.no))
 
     def layout(self, ax_graph):
-        ni, n, no = len(self.input_nodes), len(self.network_nodes), len(self.output_nodes)
         pos, pos_ = {}, nx.spring_layout(nx.from_numpy_array(ax_graph))
-
         pos.update({'inputs': {'pos': {i: pos_[i] for i in range(self.ni)}, 'color': 'r'}})
         pos.update({'networks': {'pos': {self.ni + i: pos_[self.ni + i] for i in range(self.nd)}, 'color': 'k'}})
         pos.update({'outputs': {'pos': {self.ni + self.nd + i: pos_[self.ni + self.nd + i] for i in range(self.no)},
