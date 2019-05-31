@@ -2,8 +2,7 @@
 import numpy as np
 
 # Local import
-from deyep.core.tools.linear_algebra.comon import Upsilon
-from deyep.core.tools.linear_algebra.natural_domain import get_canonical_basis, get_key_from_series, inner_product, \
+from deyep.core.tools.linear_algebra.comon import Upsilon, get_canonical_basis, get_key_from_series, inner_product, \
     get_canonical_signal
 from deyep.utils.names import KVName
 

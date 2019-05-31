@@ -9,10 +9,10 @@ from deyep.core.tools.equations.structure import bdu, bou, biu
 
 
 class FiringGraphDrainer(object):
-    def __init__(self, N, T, p, firing_graph, imputer, depth=2, verbose=0):
+    def __init__(self, p, firing_graph, imputer, depth=2, verbose=0):
 
         # Core params
-        self.N, self.T, self.p = N, T, p
+        self.p = p
         self.firing_graph = firing_graph
         self.depth = depth
         self.verbose = verbose

@@ -12,4 +12,4 @@ from deyep.core.runner.comon import DeepNetRunner
 
 
 class FiringGraphSolver(object):
-    #TODO
+    raise NotImplementedError
