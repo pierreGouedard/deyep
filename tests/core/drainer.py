@@ -4,9 +4,12 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 # Local import
+from deyep.core.builder.comon import gather_matrices
+from deyep.core.firing_graph.graph import FiringGraph
 from deyep.core.imputer.array import DoubleArrayImputer
-from deyep.core.solver.sampler import Sampler
-from deyep.utils.driver.nmp import NumpyDriver
+from deyep.core.solver.drainer import FiringGraphDrainer
+from deyep.utils.interactive_plots import plot_graph
+from tests.utils.testModel import AndPattern2 as ap2, AndPattern3 as ap3
 
 __maintainer__ = 'Pierre Gouedard'
 
