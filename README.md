@@ -1,4 +1,4 @@
-# deyep (OBSOLETE)
+# deyep augmented with signal processing tools
 
 
 
