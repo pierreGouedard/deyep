@@ -39,7 +39,7 @@ class TestEquations(unittest.TestCase):
         """
 
         imputer = init_imputer(self.input, self.output)
-        drainer = FiringGraphDrainer(100, 100, 1, self.fg, imputer, 2)
+        drainer = FiringGraphDrainer(1, self.fg, imputer, 2)
 
         # Run for one epoch (forward transmitting)
         drainer.drain(1)
@@ -81,7 +81,7 @@ class TestEquations(unittest.TestCase):
         """
 
         imputer = init_imputer(self.input, self.output)
-        drainer = FiringGraphDrainer(100, 100, 1, self.fg, imputer, 2)
+        drainer = FiringGraphDrainer(1, self.fg, imputer, 2)
 
         # Run for sufficient number of epoch to reach first backward processing
         ax_out = drainer.firing_graph.O.toarray()

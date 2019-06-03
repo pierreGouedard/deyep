@@ -27,8 +27,8 @@ class Basis(object):
 
     @property
     def basis(self):
-        return [self.base_from_key('k={},N={}'.format(int(self.key + k), self.N))
-                for k in np.arange(0., self.capacity / 2)]
+        return [self.base_from_key('k={},N={}'.format(int(np.ceil(self.key + k)), self.N))
+                for k in np.arange(0., float(self.capacity) / 2)]
 
     @property
     def forward_basis(self):
@@ -52,7 +52,8 @@ class Basis(object):
 
     def depth_from_basis(self, s, return_coef=True):
         l_keys, l_coefs = get_key_from_series(
-            s, set_keys={self.key + i for i in range(max(1, self.capacity / 2))}, return_coef=return_coef
+            s, set_keys={self.key + i for i in range(max(1, int(np.ceil(float(self.capacity) / 2))))},
+            return_coef=return_coef
         )
         return map(lambda x: x[1] - self.key, l_keys), l_coefs
 
@@ -91,18 +92,19 @@ class Basis(object):
             return None
 
         l_depths, l_coefs = self.depth_from_basis(s_in)
+        d_out, s_out = {'k={},N={}'.format(self.key, self.N): 0.}, None
 
         # Sum of coef has annihilated
         if len(l_depths) < 2:
-            return None
+            return self.signal_from_keys(d_out)
 
-        d_out, s_out = {}, None
         for d, c in zip(l_depths, l_coefs):
             if d == 0:
                 continue
 
             # retrieve forward identifier in queue from keys and build signal.
             set_key_out = self.retrieve_key_from_queue(d, t)
+
             if len(set_key_out) == 0:
                 raise ValueError('Node received signal with depth matching None of the encoded informations')
 
@@ -112,11 +114,10 @@ class Basis(object):
                     if k not in keys_input:
                         k_ = KVName.from_dict({'k': int(KVName.from_string(k)['k']) + d + 1, 'N': self.N}).to_string()
                         d_out[k_] = d_out.get(k_, 0) + Upsilon(c)
+            else:
+                for k in set_key_out.intersection(keys_input):
+                    d_out[k] = d_out.get(k, 0) + Upsilon(c)
 
-        if len(d_out) > 0:
-            s_out = self.signal_from_keys(d_out)
-
-        if s_out is not None:
-            return s_out
+        s_out = self.signal_from_keys(d_out)
 
         return s_out

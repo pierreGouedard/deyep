@@ -81,23 +81,26 @@ class AndPattern2(TestPattern):
     significant number of iteration, only correct edges should remain
     """
 
-    def __init__(self, ni, no, w=100, p=0.5, random_target=False):
+    def __init__(self, ni, no, w=100, p=0.5, random_target=False, seed=None):
+
+        if seed is not None:
+            np.random.seed(seed)
 
         # Core params of test
-        self.ni, self.no, self.w, self.p, self.random_target = ni, no, w, random_target, p
+        self.ni, self.no, self.w, self.p, self.random_target = ni, no, w, p, random_target,
 
         # Init
         self.firing_graph = None
 
         # Set targets
         self.target = [
-            np.random.choice(range(self.ni * j, self.ni * (j + 1)), np.random.randint(0, int(0.5 * self.ni)))
+            np.random.choice(range(self.ni * j, self.ni * (j + 1)), np.random.randint(1, int(0.5 * self.ni)), replace=False)
             for j in range(self.no)
         ]
 
         # Build list of vertices
         input_vertices = [['input_{}'.format((self.ni * i) + j) for j in range(self.ni)] for i in range(self.no)]
-        core_vertices = ['core_{}', ]
+        core_vertices = ['core_{}'.format(i) for i in range(self.no)]
         output_vertices = ['output_{}'.format(i) for i in range(self.no)]
         TestPattern.__init__(self, 'and', input_vertices, core_vertices, output_vertices, 2)
 
@@ -105,11 +108,12 @@ class AndPattern2(TestPattern):
         # Build edges
         l_edges = []
         for i in range(self.no):
-            l_edges = [(self.input_vertices[j], self.core_vertices[i]) for j in range(self.ni) if j in self.target[i]]
+            l_edges += [(self.input_vertices[i][j], self.core_vertices[i]) for j in range(self.ni)
+                        if j + self.ni * i in self.target[i]]
         l_edges += zip(self.core_vertices, self.output_vertices)
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni, self.no, self.no, weights=self.w)
+        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no, self.no, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
             'AndPatFinal', sax_D, sax_I, sax_O, 3, self.w, np.array([len(self.target[i]) for i in range(self.no)])
         )
@@ -117,17 +121,16 @@ class AndPattern2(TestPattern):
         return self.firing_graph
 
     def build_graph_pattern_init(self):
+
         # Build edges
         l_edges = []
         for i in range(self.no):
-            l_edges = [(self.input_vertices[j], self.core_vertices[i]) for j in range(self.ni)]
+            l_edges += [(self.input_vertices[i][j], self.core_vertices[i]) for j in range(self.ni)]
         l_edges += zip(self.core_vertices, self.output_vertices)
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni, self.no, self.no, weights=self.w)
-        self.firing_graph = FiringGraph.from_matrices(
-            'AndPatInit', sax_D, sax_I, sax_O, 3, self.w, np.array([len(self.target[i]) for i in range(self.no)])
-        )
+        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no, self.no, weights=self.w)
+        self.firing_graph = FiringGraph.from_matrices('AndPatInit', sax_D, sax_I, sax_O, 3, self.w, [1, 1])
 
         return self.firing_graph
 
@@ -136,22 +139,22 @@ class AndPattern2(TestPattern):
 
         for i in range(self.no):
             ax_inputs_ = np.zeros((1, self.ni * self.no))
-            ax_inputs_[self.target[i]] = 1
+            ax_inputs_[0, self.target[i]] = 1
 
             ax_inputs = np.vstack((ax_inputs, ax_inputs_))
 
         ax_outputs = np.eye(self.no)
 
-        return ax_inputs, ax_outputs
+        return ax_inputs[1:, :], ax_outputs
 
-    def build_random_io(self, random_target=False):
+    def build_random_io(self):
 
         # Generate random inputs
-        ax_inputs = np.random.binomial(1, self.p, self.ni * self.no)
+        ax_inputs = np.random.binomial(1, self.p, (1, self.ni * self.no))
 
         if not self.random_target:
             for i in range(self.no):
-                ax_inputs[self.target[i]] = 0
+                ax_inputs[0, self.target[i]] = 0
 
         # Generate outputs
         ax_outputs = np.zeros((1, self.no))
@@ -194,7 +197,7 @@ class AndPattern3(TestPattern):
     def build_deterministic_io(self):
         raise NotImplementedError
 
-    def build_random_io(self, random_target=False):
+    def build_random_io(self):
         raise NotImplementedError
 
     def init_io_sequence(self):

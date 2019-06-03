@@ -96,10 +96,12 @@ def bnp(l_vertices, sax_snb, t, key_inputs, n_jobs=0):
 
     # Parallel operations
     l_ins = [(i, l_vertices[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
-    l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
+    #l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
 
+    l_res = [(tu[0], tu[1].basis.decode(tu[2], t, key_inputs)) for tu in l_ins]
     # Fill
     # TODO: change that fuck
+
     sax_snb = lil_matrix((sax_snb.shape[1], sax_snb.shape[0]), dtype=int)
     for i, s in l_res:
         sax_snb[i, :] = s
