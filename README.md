@@ -1,4 +1,4 @@
-# deyep correct and minimal
+# deyep V2 (INPROCESS) minimal
 
 
 
