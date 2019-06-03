@@ -1,4 +1,4 @@
-# deyep (OBSOLETE)
+# deyep correct and minimal
 
 
 
