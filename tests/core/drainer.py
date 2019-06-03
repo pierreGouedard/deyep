@@ -8,7 +8,7 @@ from deyep.core.imputer.array import DoubleArrayImputer
 from deyep.utils.driver.nmp import NumpyDriver
 from deyep.core.solver.drainer import FiringGraphDrainer
 from deyep.utils.interactive_plots import plot_graph
-from deyep.utils.testModel import AndPattern2 as ap2#, AndPattern3 as ap3
+from deyep.utils.test_pattern import AndPattern2 as ap2#, AndPattern3 as ap3
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -61,17 +61,16 @@ class TestDrainer(unittest.TestCase):
             # VISUAL TEST:
             if self.visual:
                 # GOT
-
                 fg_got = self.ap2.build_graph_pattern_final()
                 ax_graph_got = gather_matrices(fg_got.Iw.toarray(), fg_got.Dw.toarray(), fg_got.Ow.toarray())
-                plot_graph(ax_graph_got, self.ap2.layout())
+                plot_graph(ax_graph_got, self.ap2.layout(), title='GOT')
 
                 # Fring Graph at convergence
                 ax_graph_conv = gather_matrices(
                     self.ap2_fg.Iw.toarray(), self.ap2_fg.Dw.toarray(), self.ap2_fg.Ow.toarray()
                 )
 
-                plot_graph(ax_graph_conv, self.ap2.layout())
+                plot_graph(ax_graph_conv, self.ap2.layout(), title='Result Test')
 
     def andpattern3(self):
         """
