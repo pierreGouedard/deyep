@@ -1,4 +1,4 @@
-# deyep augmented with signal processing tools
+# deyep V2 augmented with signal processing tools
 
 
 
