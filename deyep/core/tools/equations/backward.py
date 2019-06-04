@@ -98,7 +98,10 @@ def bnp(l_vertices, sax_snb, t, key_inputs, n_jobs=0):
     l_ins = [(i, l_vertices[i], sax_snb[:, i].transpose()) for i in np.unique(sax_snb.nonzero()[1])]
     #l_res = filter(lambda x: x is not None, p.map(bnpp.f, l_ins))
 
-    l_res = [(tu[0], tu[1].basis.decode(tu[2], t, key_inputs)) for tu in l_ins]
+    l_res = []
+    for tu in l_ins:
+        l_res += [(tu[0], tu[1].basis.decode(tu[2], t, key_inputs))]
+
     # Fill
     # TODO: change that fuck
 

@@ -18,7 +18,7 @@ class Basis(object):
         self.N = N
         self.key = key
         self.forward_keys = l_forward_keys
-        self.queue_forward = [None] * capacity
+        self.queue_forward = [None] * (capacity + 1)
         self.capacity = capacity
 
     @property
@@ -27,8 +27,8 @@ class Basis(object):
 
     @property
     def basis(self):
-        return [self.base_from_key('k={},N={}'.format(int(np.ceil(self.key + k)), self.N))
-                for k in np.arange(0., float(self.capacity) / 2)]
+        return [self.base_from_key('k={},N={}'.format(int(self.key + k), self.N))
+                for k in np.arange(0., self.capacity / 2 + 1)]
 
     @property
     def forward_basis(self):
@@ -48,14 +48,14 @@ class Basis(object):
 
     def keys_from_forward_basis(self, s):
         l_keys = get_key_from_series(s)
-        return map(lambda x: 'N={},k={}'.format(*x), l_keys)
+        return map(lambda x: 'k={},N={}'.format(*x), l_keys)
 
     def depth_from_basis(self, s, return_coef=True):
         l_keys, l_coefs = get_key_from_series(
-            s, set_keys={self.key + i for i in range(max(1, int(np.ceil(float(self.capacity) / 2))))},
+            s, set_keys={self.key + i for i in range(max(1, int(self.capacity / 2 + 1)))},
             return_coef=return_coef
         )
-        return map(lambda x: x[1] - self.key, l_keys), l_coefs
+        return map(lambda x: x[0] - self.key, l_keys), l_coefs
 
     def contain_base(self, s):
         return inner_product(self.base_from_key('k={},N={}'.format(self.key, self.N)), s) != 0
@@ -87,12 +87,13 @@ class Basis(object):
 
     def decode(self, s_in, t, keys_input={}):
 
+        d_out = {'k={},N={}'.format(self.key, self.N): 0.}
+
         # Make sure s_in contains class instance base
         if not self.contain_base(s_in):
-            return None
+            return self.signal_from_keys(d_out)
 
         l_depths, l_coefs = self.depth_from_basis(s_in)
-        d_out, s_out = {'k={},N={}'.format(self.key, self.N): 0.}, None
 
         # Sum of coef has annihilated
         if len(l_depths) < 2:
@@ -108,7 +109,7 @@ class Basis(object):
             if len(set_key_out) == 0:
                 raise ValueError('Node received signal with depth matching None of the encoded informations')
 
-            if 2 * (d + 1) < self.capacity:
+            if 2 * (d + 1) <= self.capacity:
                 for k in set_key_out:
                     d_out[k] = d_out.get(k, 0) + Upsilon(c)
                     if k not in keys_input:
@@ -118,6 +119,4 @@ class Basis(object):
                 for k in set_key_out.intersection(keys_input):
                     d_out[k] = d_out.get(k, 0) + Upsilon(c)
 
-        s_out = self.signal_from_keys(d_out)
-
-        return s_out
+        return self.signal_from_keys(d_out)

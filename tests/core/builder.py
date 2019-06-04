@@ -58,7 +58,6 @@ class TestBuilder(unittest.TestCase):
         self.assertEqual(d_networks[3]['freqs'], [self.capacity + 1])
         self.assertEqual(d_networks[0]['freqs'], [1])
 
-        d_got = {'network_0': [0], 'network_1': [1], 'network_2': [0, 1, 21], 'network_3': [0], 'network_4': [0]}
+        d_got = {'core_0': [0], 'core_1': [1], 'core_2': [0, 1, 21], 'core_3': [0], 'core_4': [0]}
         self.assertEqual(d_forward_freqs, d_got)
-
         self.assertEqual(((max(set_freqs_) + 1) * self.capacity) + len(set_freqs), (self.capacity * 2) + 1)

@@ -35,7 +35,7 @@ class TestCanonicalBasis(unittest.TestCase):
         """
 
         Basis = self.firing_graph.core_vertices[2].basis
-        self.assertEqual(len(Basis.basis), int(self.capacity / 2))
+        self.assertEqual(len(Basis.basis), int(self.capacity / 2) + 1)
 
         # Make sure that nodes with edges toward same nodes has orthogonal base
         s_net1, s_net2 = self.firing_graph.core_vertices[3].basis.base, self.firing_graph.core_vertices[1].basis.base
@@ -46,7 +46,7 @@ class TestCanonicalBasis(unittest.TestCase):
         keys_in = Basis.keys_from_forward_basis(s_in1)
         s_out = Basis.encode(s_in1, 0, 1)
 
-        self.assertEqual(keys_in, ['N=21,k=1'])
+        self.assertEqual(keys_in, ['k=1,N=21'])
         self.assertEqual(np.round(np.real(inner_product(s_out,  Basis.base))), 1.)
         self.assertEqual(len(filter(lambda x: x is not None, Basis.queue_forward)), 1)
 
@@ -55,7 +55,7 @@ class TestCanonicalBasis(unittest.TestCase):
         keys_in = Basis.keys_from_forward_basis(s_in2)
         s_out = Basis.encode(s_in2, 1, 1)
 
-        self.assertEqual(set(keys_in), {'N=21,k=1', 'N=21,k=11'})
+        self.assertEqual(set(keys_in), {'k=1,N=21', 'k=11,N=21'})
         self.assertEqual(np.round(np.real(inner_product(s_out,  Basis.base))), 1.)
         self.assertEqual(len(filter(lambda x: x is not None, Basis.queue_forward)), 2)
 

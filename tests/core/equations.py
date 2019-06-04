@@ -51,7 +51,7 @@ class TestEquations(unittest.TestCase):
         drainer.drain(1)
         vertex = drainer.firing_graph.core_vertices[3]
         self.assertEqual(len([t for t in vertex.basis.queue_forward if t is not None]), 1)
-        self.assertEqual(vertex.basis.queue_forward[0], (0, ['N=21,k=0']))
+        self.assertEqual(vertex.basis.queue_forward[0], (0, ['k=0,N=21']))
 
         for vertex in drainer.firing_graph.core_vertices[:-1]:
             self.assertEqual(len([t for t in vertex.basis.queue_forward if t is not None]), 0)
@@ -94,7 +94,7 @@ class TestEquations(unittest.TestCase):
         ax_test = vertex.basis.base.toarray()[0]
         self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
 
-        ax_test = vertex.basis.base_from_key('N={},k={}'.format(vertex.basis.N, vertex.basis.key), offset=1).toarray()[0]
+        ax_test = vertex.basis.base_from_key('k={},N={}'.format(vertex.basis.key, vertex.basis.N), offset=1).toarray()[0]
         self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
         self.assertTrue((drainer.sax_snb.toarray() == 0).all())
 

@@ -19,7 +19,7 @@ class FiringGraphDrainer(object):
 
         # D
         self.imputer = imputer
-        self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.firing_graph.input_vertices])
+        self.key_inputs = set(['k={},N={}'.format(n.basis.key, n.basis.N) for n in self.firing_graph.input_vertices])
 
         # Init signals
         self.sax_si, self.sax_sn, self.sax_so, self.ax_sa = \
@@ -49,7 +49,7 @@ class FiringGraphDrainer(object):
             self.t, self.t_fp = 0, 0
 
         if reset_inputs:
-            self.key_inputs = set(['N={},k={}'.format(n.basis.N, n.basis.key) for n in self.firing_graph.input_vertices])
+            self.key_inputs = set(['k={},N={}'.format(n.basis.key, n.basis.N) for n in self.firing_graph.input_vertices])
 
         # reset signals
         self.reset_forward_signals()
@@ -87,10 +87,11 @@ class FiringGraphDrainer(object):
                     self.backward_transmiting(only_buffer=(self.t / 2) + 1 == self.depth)
 
                 # Run forward processing
+                self.forward_processing(self.t_fp)
+
                 if self.track_forward:
                     self.updates_forward_tracking_processus()
 
-                self.forward_processing(self.t_fp)
                 self.t_fp += 1
                 i += 1
 
@@ -167,6 +168,7 @@ class FiringGraphDrainer(object):
             sax_Du = bdu(self.sax_snb, self.firing_graph, penalty=self.p)
             sax_Ou = bou(self.sax_sob, self.sax_sab, self.firing_graph, penalty=self.p)
             sax_Iu = biu(self.sax_snb, self.firing_graph, penalty=self.p)
+
             self.updates_backward_tracking_processus(sax_Iu, sax_Du, sax_Ou)
 
             # Save result of backward transmit
@@ -189,17 +191,17 @@ class FiringGraphDrainer(object):
         if self.track_backward:
             self.track_ibp += (sax_Iu > 0).multiply(sax_Iu)
             self.track_ibn += (sax_Iu < 0).multiply(sax_Iu)
-            self.track_dbp += (sax_Du < 0).multiply(sax_Du)
+            self.track_dbp += (sax_Du > 0).multiply(sax_Du)
             self.track_dbn += (sax_Du < 0).multiply(sax_Du)
-            self.track_obp += (sax_Ou < 0).multiply(sax_Ou)
+            self.track_obp += (sax_Ou > 0).multiply(sax_Ou)
             self.track_obn += (sax_Ou < 0).multiply(sax_Ou)
 
     def updates_forward_tracking_processus(self):
 
         if self.track_backward:
             self.track_if += csc_matrix(self.sax_si.sum(axis=0))
-            self.track_df += csc_matrix(self.sax_sn.sum(axis=0)[0, :])
-            self.track_of += csc_matrix(self.sax_so.sum(axis=0)[0, :])
+            self.track_df += csc_matrix(self.sax_sn.sum(axis=0))
+            self.track_of += csc_matrix(self.sax_so.sum(axis=0))
 
     @staticmethod
     def generate_input_signals(sax_i, input_vertices):

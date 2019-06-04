@@ -62,7 +62,7 @@ def get_key_from_series(sax_s, set_keys=None, return_coef=False):
         set_indices = set_keys.intersection(set_indices)
 
     for i in set_indices:
-        l_res += [(N, i)]
+        l_res += [(i, N)]
         l_coefs += [sax_s[0, i]]
 
     if return_coef:
