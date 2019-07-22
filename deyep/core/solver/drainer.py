@@ -9,7 +9,7 @@ from deyep.core.tools.equations.structure import bdu, bou, biu
 
 
 class FiringGraphDrainer(object):
-    def __init__(self, p, firing_graph, imputer, depth=2, verbose=0, track_backward=False, track_forward=False):
+    def __init__(self, p, firing_graph, imputer, depth=2, verbose=0):
 
         # Core params
         self.p = p
@@ -26,15 +26,6 @@ class FiringGraphDrainer(object):
             FiringGraphDrainer.init_core_forward_signal(self.firing_graph)
         self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab = \
             FiringGraphDrainer.init_core_backward_signal(self.firing_graph)
-
-        # init tracker activity of vertices
-        self.track_backward, self.track_forward = track_backward, track_forward
-        if track_backward:
-            self.track_ibp, self.track_ibn, self.track_dbp, self.track_dbn, self.track_obp, self.track_obn = \
-                FiringGraphDrainer.init_backward_activity(self.firing_graph)
-
-        if track_forward:
-            self.track_if, self.track_df, self.track_of = FiringGraphDrainer.init_forward_activity(self.firing_graph)
 
         self.tmp_analysis = 0
         self.tmp_tracked_input_vertex = 1
@@ -89,9 +80,6 @@ class FiringGraphDrainer(object):
                 # Run forward processing
                 self.forward_processing(self.t_fp)
 
-                if self.track_forward:
-                    self.updates_forward_tracking_processus()
-
                 self.t_fp += 1
                 i += 1
 
@@ -99,6 +87,8 @@ class FiringGraphDrainer(object):
 
             if self.verbose == 1 and self.t % 100 == 0:
                 print '[Drainer Info]: iteration {} completed'.format(self.t, n)
+
+        return self
 
     def drain_analyse(self, n):
         import time
@@ -133,9 +123,6 @@ class FiringGraphDrainer(object):
 
                 # Run forward processing
                 t0 = time.time()
-                if self.track_forward:
-                    self.updates_forward_tracking_processus()
-
                 self.forward_processing(self.t_fp)
                 l_t_forwardp += [time.time() - t0]
                 self.t_fp += 1
@@ -153,6 +140,9 @@ class FiringGraphDrainer(object):
         # network transmit
         self.sax_sn = fnt(self.firing_graph.D, self.firing_graph.I, self.sax_sn, self.sax_si)
 
+        # Udpate forward tracking
+        self.firing_graph.update_forward_firing(self.sax_si, self.sax_sn, self.sax_so)
+
     def forward_processing(self, t):
         # transform signals
         self.sax_sn, self.ax_sa = fnp(self.sax_sn, self.firing_graph.core_vertices, t)
@@ -165,11 +155,15 @@ class FiringGraphDrainer(object):
             sax_sib_ = bit(self.firing_graph.I, self.sax_snb)
 
             # Update firing graph structure
-            sax_Du = bdu(self.sax_snb, self.firing_graph, penalty=self.p)
-            sax_Ou = bou(self.sax_sob, self.sax_sab, self.firing_graph, penalty=self.p)
-            sax_Iu = biu(self.sax_snb, self.firing_graph, penalty=self.p)
+            sax_Du, sax_Ou, sax_Iu = None, None, None
+            if self.firing_graph.update_policy('D'):
+                sax_Du = bdu(self.sax_snb, self.firing_graph, penalty=self.p)
+                sax_Ou = bou(self.sax_sob, self.sax_sab, self.firing_graph, penalty=self.p)
 
-            self.updates_backward_tracking_processus(sax_Iu, sax_Du, sax_Ou)
+            if self.firing_graph.update_policy('I'):
+                sax_Iu = biu(self.sax_snb, self.firing_graph, penalty=self.p)
+
+            self.firing_graph.update_bakward_firing(sax_Iu, sax_Du, sax_Ou)
 
             # Save result of backward transmit
             self.sax_snb = sax_snb_
@@ -186,22 +180,6 @@ class FiringGraphDrainer(object):
         # Backward network process
         self.sax_snb = bnp(self.firing_graph.core_vertices, self.sax_snb, t, self.key_inputs)
 
-    def updates_backward_tracking_processus(self, sax_Iu, sax_Du, sax_Ou):
-
-        if self.track_backward:
-            self.track_ibp += (sax_Iu > 0).multiply(sax_Iu)
-            self.track_ibn += (sax_Iu < 0).multiply(sax_Iu)
-            self.track_dbp += (sax_Du > 0).multiply(sax_Du)
-            self.track_dbn += (sax_Du < 0).multiply(sax_Du)
-            self.track_obp += (sax_Ou > 0).multiply(sax_Ou)
-            self.track_obn += (sax_Ou < 0).multiply(sax_Ou)
-
-    def updates_forward_tracking_processus(self):
-
-        if self.track_backward:
-            self.track_if += csc_matrix(self.sax_si.sum(axis=0))
-            self.track_df += csc_matrix(self.sax_sn.sum(axis=0))
-            self.track_of += csc_matrix(self.sax_so.sum(axis=0))
 
     @staticmethod
     def generate_input_signals(sax_i, input_vertices):
@@ -234,19 +212,3 @@ class FiringGraphDrainer(object):
         sax_sab = csc_matrix(np.array([[False] * len(fg.core_vertices)]).repeat(len(fg.output_vertices), axis=0))
 
         return sax_sib, sax_snb, sax_sob, sax_sab
-
-    @staticmethod
-    def init_backward_activity(fg):
-        I_back_pos, I_back_neg = csc_matrix(fg.I.shape), csc_matrix(fg.I.shape)
-        D_back_pos, D_back_neg = csc_matrix(fg.D.shape), csc_matrix(fg.D.shape)
-        O_back_pos, O_back_neg = csc_matrix(fg.O.shape), csc_matrix(fg.O.shape)
-
-        return I_back_pos, I_back_neg, D_back_pos, D_back_neg, O_back_pos, O_back_neg
-
-    @staticmethod
-    def init_forward_activity(fg):
-        I_forward = csc_matrix(np.zeros(len(fg.input_vertices)))
-        D_forward = csc_matrix(np.zeros(len(fg.core_vertices)))
-        O_forward = csc_matrix(np.zeros(len(fg.output_vertices)))
-
-        return I_forward, D_forward, O_forward

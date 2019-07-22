@@ -22,10 +22,11 @@ class TestCanonicalBasis(unittest.TestCase):
                   [('input_1', 'core_2')]
 
         # Get matrices from list of edges and build network
-        mat_in, mat_net, mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
-
+        sax_in, sax_core, sax_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
+        mask_drain = {'I': np.ones(sax_in.shape[0]), 'D': np.zeros(sax_core.shape[0])}
         self.firing_graph = FiringGraph.from_matrices(
-            'test_basis', mat_net, mat_in, mat_out, self.capacity,  100, [1, 1, 1, 1, 1])
+            'test_basis', sax_core, sax_in, sax_out, self.capacity,  100, [1, 1, 1, 1, 1], mask_drain
+        )
 
     def basics(self):
         """
@@ -68,10 +69,3 @@ class TestCanonicalBasis(unittest.TestCase):
         # Test decoding double encoding
         s_in2_ = Basis.decode(s_out_, t=3)
         self.assertEqual(np.round(np.real(inner_product(s_in2_, s_in2))), 2.)
-
-    def advanced(self):
-        """
-        Test advanced frequency management (encoding and so) refer to
-        -m unittest tests.core.fourrier_basis.TestFourrierBasis.test_fourrier_limits
-        """
-        # TODO

@@ -36,10 +36,11 @@ def bdu(sax_snb, fg, penalty=1., n_jobs=1):
 
         # Parallel inner product (map from Pool preserve order of input list)
         sax_Du = vstack(p.map(bdup.f, [(n.basis.base, fg.D[i, :]) for i, n in enumerate(fg.core_vertices)]), format='csc')
+
     else:
         sax_Du = vstack([n.basis.base for n in fg.core_vertices], format='csc').dot(sax_snb_).multiply(fg.D)
 
-    fg.graph['Dw'] += sax_Du
+    fg.graph['Dw'] += sax_Du.multiply(fg.D_mask)
 
     return sax_Du
 
@@ -74,7 +75,7 @@ def bou(sax_sob, sax_A, fg, penalty=1., n_jobs=1):
             .dot(sax_sob)\
             .multiply(fg.O.multiply(sax_A.transpose()))
 
-    fg.graph['Ow'] += sax_Ou
+    fg.graph['Ow'] += sax_Ou.multiply(fg.O_mask)
 
     return sax_Ou
 
@@ -105,6 +106,6 @@ def biu(sax_snb, fg, penalty=1., n_jobs=1):
     else:
         sax_Iu = vstack([n.basis.base for n in fg.input_vertices], format='csc').dot(sax_snb).multiply(fg.I)
 
-    fg.graph['Iw'] += sax_Iu
+    fg.graph['Iw'] += sax_Iu.multiply(fg.I_mask)
 
     return sax_Iu

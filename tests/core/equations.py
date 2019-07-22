@@ -25,8 +25,14 @@ class TestEquations(unittest.TestCase):
 
         # Get matrices from list of edges and build network
         self.sax_I, self.sax_D, self.sax_O = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
+        self.mask_drain = {'I': np.ones(self.sax_I.shape[0]), 'D': np.zeros(self.sax_D.shape[0])}
+        self.mask_drain_ = {'I': np.zeros(self.sax_I.shape[0]), 'D': np.ones(self.sax_D.shape[0])}
+
         self.fg = FiringGraph.from_matrices(
-            'test_equation', self.sax_D, self.sax_I, self.sax_O, self.capacity, 100, [1, 1, 1, 1]
+            'test_equation', self.sax_D, self.sax_I, self.sax_O, self.capacity, 100, [1, 1, 1, 1], self.mask_drain
+        )
+        self.fg_masked = FiringGraph.from_matrices(
+            'test_equation', self.sax_D, self.sax_I, self.sax_O, self.capacity, 100, [1, 1, 1, 1], self.mask_drain_
         )
         self.input = csc_matrix(([1., 1.], ([0, 1], [1, 0])), shape=(10, 2), dtype=int)
         self.output = csc_matrix(([1., 1.], ([0, 2], [1, 0])), shape=(10, 2), dtype=int)
@@ -79,7 +85,6 @@ class TestEquations(unittest.TestCase):
         python -m unittest tests.core.equations.TestEquations.backward
 
         """
-
         imputer = init_imputer(self.input, self.output)
         drainer = FiringGraphDrainer(1, self.fg, imputer, 2)
 
@@ -103,8 +108,6 @@ class TestEquations(unittest.TestCase):
         drainer.drain(1)
 
         # Make sure update of network is ok
-        self.assertEqual(ax_Ow[-1, 1], drainer.firing_graph.Ow[-1, 1] - 1)
-        self.assertEqual(len(drainer.firing_graph.Ow.nonzero()[0]), 1)
         self.assertTrue(not (ax_Dw != drainer.firing_graph.Dw).toarray().any())
         self.assertTrue(not (ax_Iw != drainer.firing_graph.Iw).toarray().any())
 
@@ -132,9 +135,30 @@ class TestEquations(unittest.TestCase):
 
         # Assert Iw has been updated
         self.assertEqual(drainer.firing_graph.Iw[1, -1], Iw[1, -1] + 1)
+        self.assertTrue((drainer.firing_graph.Ow == self.sax_O).toarray().all())
 
         # just to make sure that the rest is ok
         drainer.drain(10)
+
+    def backward_masked(self):
+        """
+        Very precise case on very simple graph to validate basics of drainer for ackward equations
+        python -m unittest tests.core.equations.TestEquations.backward_masked
+
+        """
+        imputer = init_imputer(self.input, self.output)
+        drainer = FiringGraphDrainer(1, self.fg_masked, imputer, 2)
+        drainer.drain(6)
+
+        # Assert unmasked structure is updated
+        self.assertEqual(self.sax_O[-1, 1], drainer.firing_graph.Ow[-1, 1] - 1)
+        self.assertEqual(len(drainer.firing_graph.Ow.nonzero()[0]), 1)
+
+        # Assert Iw has been updated
+        drainer.drain(2)
+
+        self.assertTrue((drainer.firing_graph.Iw == self.sax_I).toarray().all())
+        self.assertTrue((drainer.firing_graph.Dw == self.sax_D).toarray().all())
 
 
 def init_imputer(ax_input, ax_output):

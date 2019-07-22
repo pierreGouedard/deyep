@@ -81,13 +81,13 @@ class AndPattern2(TestPattern):
     significant number of iteration, only correct edges should remain
     """
 
-    def __init__(self, ni, no, w=100, p=0.5, random_target=False, seed=None):
+    def __init__(self, ni, no, w=100, p=0.5, t=1000, random_target=False, seed=None):
 
         if seed is not None:
             np.random.seed(seed)
 
         # Core params of test
-        self.ni, self.no, self.w, self.p, self.random_target = ni, no, w, p, random_target,
+        self.ni, self.no, self.w, self.p, self.t, self.random_target = ni, no, w, p, t, random_target,
 
         # Init
         self.firing_graph = None
@@ -115,7 +115,8 @@ class AndPattern2(TestPattern):
         # Build Firing graph
         sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no, self.no, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
-            'AndPatFinal', sax_D, sax_I, sax_O, 3, self.w, np.array([len(self.target[i]) for i in range(self.no)])
+            'AndPatFinal', sax_D, sax_I, sax_O, 3, self.t, np.array([len(self.target[i]) for i in range(self.no)]),
+            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
         )
 
         return self.firing_graph
@@ -130,7 +131,10 @@ class AndPattern2(TestPattern):
 
         # Build Firing graph
         sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no, self.no, weights=self.w)
-        self.firing_graph = FiringGraph.from_matrices('AndPat2', sax_D, sax_I, sax_O, self.depth + 1, self.w, [1, 1])
+        self.firing_graph = FiringGraph.from_matrices(
+            'AndPat2', sax_D, sax_I, sax_O, self.depth + 1, self.t, [1, 1],
+            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+        )
 
         return self.firing_graph
 
@@ -187,7 +191,7 @@ class AndPattern3(TestPattern):
     The primary test purpose of this pattern is to test for edge removal in a firing graph of depth 3. After a
     significant number of iteration, only correct edges should remain
     """
-    def __init__(self, ni, no, w=100, p=0.5, n_selected=2, random_target=False, seed=None):
+    def __init__(self, ni, no, w=100, p=0.5, t=1000, n_selected=2, random_target=False, seed=None):
 
         try:
             assert n_selected < ni
@@ -198,7 +202,7 @@ class AndPattern3(TestPattern):
             np.random.seed(seed)
 
         # Core params of test
-        self.ni, self.no, self.nc, self.w, self.p, self.random_target = ni, no, 3, w, p, random_target
+        self.ni, self.no, self.nc, self.w, self.p, self.t, self.random_target = ni, no, 3, w, p, t, random_target
 
         # Init
         self.firing_graph = None
@@ -247,7 +251,10 @@ class AndPattern3(TestPattern):
 
         # Build Firing graph
         sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no * self.nc, self.no, weights=self.w)
-        self.firing_graph = FiringGraph.from_matrices('AndPat3', sax_D, sax_I, sax_O, self.depth + 1, self.w, ax_levels)
+        self.firing_graph = FiringGraph.from_matrices(
+            'AndPat3', sax_D, sax_I, sax_O, self.depth + 1, self.t, ax_levels,
+            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+        )
 
         return self.firing_graph
 
@@ -279,7 +286,10 @@ class AndPattern3(TestPattern):
 
         # Build Firing graph
         sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no * self.nc, self.no, weights=self.w)
-        self.firing_graph = FiringGraph.from_matrices('AndPatInit', sax_D, sax_I, sax_O, self.depth + 1, self.w, ax_levels)
+        self.firing_graph = FiringGraph.from_matrices(
+            'AndPatInit', sax_D, sax_I, sax_O, self.depth + 1, self.t, ax_levels,
+            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+        )
 
         return self.firing_graph
 
@@ -305,6 +315,9 @@ class AndPattern3(TestPattern):
             for i in range(self.no):
                 ax_inputs[0, self.target[i]] = 0
 
+                if np.random.binomial(1, 0.5) == 1:
+                    ax_inputs[0, self.target_selected[i]] = 1
+
         # Generate outputs
         ax_outputs = np.zeros((1, self.no))
 
@@ -319,13 +332,13 @@ class AndPattern3(TestPattern):
         pos.update({'inputs': {'pos': {i: (0, i) for i in range(self.ni * self.no)}, 'color': 'r'}})
         n = self.ni * self.no
 
+        pos['cores'] = {'pos': {}, 'color': 'k'}
         for i in range(self.no):
-            pos.update({'cores': {
-                'pos': {(n + (i * self.nc)): (1, ((self.ni * i) + (self.ni * (i + 1))) / 4),
-                        (n + + (i * self.nc) + 1):  (1, (((self.ni * i) + (self.ni * (i + 1))) * 3) / 4),
-                        (n + + (i * self.nc) + 2): (2, ((self.ni * i) + (self.ni * (i + 1))) / 2)},
-                'color': 'k'}
-            })
+            pos['cores']['pos'].update(
+                {n: (1, ((self.ni * i) * 3 + (self.ni * (i + 1))) / 4),
+                 n + 1:  (1, ((self.ni * i) + (self.ni * (i + 1)) * 3) / 4),
+                 n + 2: (2, ((self.ni * i) + (self.ni * (i + 1))) / 2)}
+            )
             n += self.nc
 
         pos.update({'outputs': {
@@ -334,72 +347,3 @@ class AndPattern3(TestPattern):
         })
 
         return pos
-
-
-class RandomPattern(TestPattern):
-    """
-    random generation with the correct convergence sentence
-    """
-    def __init__(self, ni, nd, no, depth, p, seed=666):
-
-        self.ni, self.nd, self.no, self.depth, self.p, self.seed = ni, nd, no, depth, p, seed
-
-        # Build list of vertices
-        input_vertices = ['input_{}'.format(i) for i in range(self.ni)]
-        core_vertices = ['core_{}'.format(i) for i in range(self.nd)]
-        output_vertices = ['output_{}'.format(i) for i in range(self.no)]
-
-        TestPattern.__init__(self, 'random', input_vertices, core_vertices, output_vertices, self.depth)
-
-    def build_graph_pattern_final(self):
-        raise NotImplementedError
-
-    def build_graph_pattern_init(self, decrease='linear'):
-        np.random.seed(self.seed)
-
-        l_selected = [c for c in self.core_vertices if np.random.choice([0, 1], p=[1 - self.p, self.p]) == 1]
-        l_candidates = [n for n in self.core_vertices if n not in l_selected]
-        l_edges = [(np.random.choice(self.input_vertices), c) for c in l_selected]
-
-        for i in range(100):
-
-            if decrease == 'linear':
-                p = self.p / (i + 2)
-
-            elif decrease == 'exponential':
-                p = pow(self.p, i)
-
-            l_selected_ = [c for c in l_candidates if np.random.choice([0, 1], p=[1 - p, p]) == 1]
-
-            if len(l_selected_) == 0:
-                break
-
-            l_edges += [(np.random.choice(l_selected), c) for c in l_selected_]
-            l_selected = list(l_selected_)
-            l_candidates = [n for n in self.core_vertices if n not in l_selected]
-
-        return l_edges
-
-    def build_deterministic_io(self):
-        return self.build_random_io()
-
-    def build_random_io(self):
-        ax_inputs = np.array([np.random.choice([0, 1]) for _ in range(self.ni)])
-        ax_outputs = np.array([np.random.choice([0, 1]) for _ in range(self.ni)])
-
-        return ax_inputs, ax_outputs
-
-    def init_io_sequence(self):
-        return np.zeros((1, self.ni)), np.zeros((1, self.no))
-
-    def layout(self, ax_graph):
-        pos, pos_ = {}, nx.spring_layout(nx.from_numpy_array(ax_graph))
-        pos.update({'inputs': {'pos': {i: pos_[i] for i in range(self.ni)}, 'color': 'r'}})
-        pos.update({'networks': {'pos': {self.ni + i: pos_[self.ni + i] for i in range(self.nd)}, 'color': 'k'}})
-        pos.update({'outputs': {'pos': {self.ni + self.nd + i: pos_[self.ni + self.nd + i] for i in range(self.no)},
-                                'color': 'b'}})
-
-        return pos
-
-
-

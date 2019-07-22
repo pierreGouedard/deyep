@@ -103,48 +103,47 @@ def vertices_from_mat(sax_core, sax_in, sax_out, capacity, ax_levels):
     # Finally, build nodes
     l_inputs = [
         vertex.InputVertex(
-            k_, 'input', Basis(min(v_['freqs']), n_freq, {}, 1),
-            zip(v_['children_name'], v_['children_weight'])
+            k_, 'input', Basis(min(v_['freqs']), n_freq, {}, 1), v_['children']
         ) for k_, v_ in sorted(d_inputs.items(), key=lambda (k, v): k)
         ]
     l_cores = [
         vertex.CoreVertex(
             k_, 'core',
-            Basis(min(v_['freqs']), n_freq, d_forward_freqs.get('core_{}'.format(k_), []), capacity),
-            zip(v_['children_name'], v_['children_weight']), ax_levels[k_]
+            Basis(min(v_['freqs']), n_freq, d_forward_freqs.get('core_{}'.format(k_), []), capacity), v_['children'],
+            ax_levels[k_]
         ) for k_, v_ in sorted(d_cores.items(), key=lambda (k, v): k)
         ]
 
-    l_outputs = [vertex.OutputVertex(k_, 'output', zip(v_['parents_name'], v_['parents_weight']))
-                 for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)]
+    l_outputs = [
+        vertex.OutputVertex(k_, 'output', v_['parents']) for k_, v_ in sorted(d_outputs.items(), key=lambda (k, v): k)
+    ]
 
     return l_inputs, l_outputs, l_cores, n_freq
 
 
-def set_vertices_from_mat(mat, key):
+def set_vertices_from_mat(sax_mat, key):
     """
     build a dictionnary version of vertex
-    :param mat: scipy.sparse matrice of the graph
-    :param key: str in 'input', 'core' or 'output
-    :return:
+    :param sax_mat: scipy.sparse matrice of the graph
+    :param key: str in 'input', 'core' or 'output'
+    :return: dictionary of vertices
     """
     if key == 'input':
-        d_vertices = {i: {'children_name': [], 'children_weight': [], 'freqs': []} for i in range(mat.shape[0])}
-        for i, j in zip(*mat.nonzero()):
-            d_vertices[i]['children_name'] += ['core_{}'.format(j)]
-            d_vertices[i]['children_weight'] += [mat[i, j]]
+        d_vertices = {i: {'children': [], 'freqs': [], 'update': False} for i in range(sax_mat.shape[0])}
+        for i, j in zip(*sax_mat.nonzero()):
+            d_vertices[i]['children'] += \
+                [{'name': 'core_{}'.format(j), 'weight': sax_mat[i, j]}]
 
     elif key == 'output':
-        d_vertices = {i: {'parents_name': [], 'parents_weight': [], 'freqs': []} for i in range(mat.shape[1])}
-        for i, j in zip(*mat.nonzero()):
-            d_vertices[j]['parents_name'] += ['core_{}'.format(i)]
-            d_vertices[j]['parents_weight'] += [mat[i, j]]
+        d_vertices = {i: {'parents': [], 'freqs': []} for i in range(sax_mat.shape[1])}
+        for i, j in zip(*sax_mat.nonzero()):
+            d_vertices[j]['parents'] += [{'name': 'core_{}'.format(i), 'weight': sax_mat[i, j]}]
 
     elif key == 'core':
-        d_vertices = {i: {'children_name': [], 'children_weight': [], 'freqs': []} for i in range(mat.shape[0])}
-        for i, j in zip(*mat.nonzero()):
-            d_vertices[i]['children_name'] += ['core_{}'.format(j)]
-            d_vertices[i]['children_weight'] += [mat[i, j]]
+        d_vertices = {i: {'children': [], 'freqs': [], 'update': False} for i in range(sax_mat.shape[0])}
+        for i, j in zip(*sax_mat.nonzero()):
+            d_vertices[i]['children'] += \
+                [{'name': 'core_{}'.format(j), 'weight': sax_mat[i, j]}]
     else:
         raise ValueError('Choose key between \'input\', \'output\' or \'core\'')
 
@@ -162,9 +161,9 @@ def set_frequencies(d_vertices, freqs, capacity, d_forward_freqs, offset=0):
     :return:
     """
     for k, v in d_vertices.items():
-        if len(v['children_name']) > 0:
+        if len(v['children']) > 0:
             # Look for sibling
-            freqs_ = freqs.difference(get_occupied_freqs(k, v['children_name'], d_vertices))
+            freqs_ = freqs.difference(get_occupied_frequencies(k, v['children'], d_vertices))
 
             if len(freqs_) > 0:
                 # Distribute available freqs
@@ -178,8 +177,9 @@ def set_frequencies(d_vertices, freqs, capacity, d_forward_freqs, offset=0):
             d_vertices[k]['freqs'] = [list(freqs)[0]]
 
         if d_forward_freqs is not None:
-            for child in v['children_name']:
-                d_forward_freqs[child] = d_forward_freqs.get(child, []) + [offset + (d_vertices[k]['freqs'][0] * capacity)]
+            for d_child in v['children']:
+                d_forward_freqs[d_child['name']] = d_forward_freqs.get(d_child['name'], []) + \
+                                                   [offset + (d_vertices[k]['freqs'][0] * capacity)]
 
     for k, v in d_vertices.items():
         v['freqs'] = [offset + (min(v['freqs']) * capacity)]
@@ -187,7 +187,7 @@ def set_frequencies(d_vertices, freqs, capacity, d_forward_freqs, offset=0):
     return d_vertices, freqs, d_forward_freqs
 
 
-def get_occupied_freqs(k, l_children, d_vertices):
+def get_occupied_frequencies(k, l_children, d_vertices):
     """
     Get occupied freqs
     :param k: int key of the vertex
@@ -196,9 +196,9 @@ def get_occupied_freqs(k, l_children, d_vertices):
     :return: set of int that identify frequencies that assigned to vetices identified by list of key n l_children
     """
     occupied_freqs = []
-    for child in l_children:
+    for d_child in l_children:
         for k_, v_ in d_vertices.items():
-            if child in v_['children_name'] and k != k_ and len(v_['freqs']) > 0:
+            if d_child['name'] in [d_child_['name'] for d_child_ in v_['children']] and k != k_ and len(v_['freqs']) > 0:
                 occupied_freqs += v_['freqs']
 
     return set(occupied_freqs)
