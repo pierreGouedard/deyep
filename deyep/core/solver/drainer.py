@@ -54,7 +54,7 @@ class FiringGraphDrainer(object):
         self.sax_sib, self.sax_snb, self.sax_sob, self.sax_sab = \
             FiringGraphDrainer.init_core_backward_signal(self.firing_graph)
 
-    def drain(self, n):
+    def drain(self, n, early_stoping=False):
 
         i = 0
         while i < n:
@@ -84,6 +84,11 @@ class FiringGraphDrainer(object):
                 i += 1
 
             self.t += 1
+
+            # stop if no draining needed
+            if not self.firing_graph.I_mask.toarray().any() and not self.firing_graph.D_mask.toarray().any() and \
+                    not self.firing_graph.O_mask.toarray().any() and early_stoping:
+                break
 
             if self.verbose == 1 and self.t % 100 == 0:
                 print '[Drainer Info]: iteration {} completed'.format(self.t, n)
@@ -179,7 +184,6 @@ class FiringGraphDrainer(object):
 
         # Backward network process
         self.sax_snb = bnp(self.firing_graph.core_vertices, self.sax_snb, t, self.key_inputs)
-
 
     @staticmethod
     def generate_input_signals(sax_i, input_vertices):

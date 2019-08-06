@@ -105,23 +105,26 @@ class FiringGraph(object):
         self.mask_mat.update({'O': diags(self.mask_vertices['D']).dot(self.graph['{}w'.format('O')] > 0)})
 
     def update_bakward_firing(self, sax_Iu, sax_Du, sax_Ou):
-        # TODO update mask only if specified (costly op)
+        # TODO update mask only if specified (costly op) and optimize operation
         if sax_Iu is not None:
             self.backward_firing['ip'] += (sax_Iu > 0)
             self.backward_firing['in'] += (sax_Iu < 0)
             self.mask_mat['I'] = \
-                self.mask_mat['I'].multiply(self.backward_firing['ip'] + self.backward_firing['in'] < self.t)
+                self.mask_mat['I'].multiply(self.backward_firing['ip'] + self.backward_firing['in'] < self.t)\
+                    .multiply(self.I)
 
         if sax_Ou is not None and sax_Du is not None:
             self.backward_firing['cp'] += (sax_Du > 0)
             self.backward_firing['cn'] += (sax_Du < 0)
             self.mask_mat['D'] = \
-                self.mask_mat['D'].multiply(self.backward_firing['cp'] + self.backward_firing['cn'] < self.t)
+                self.mask_mat['D'].multiply(self.backward_firing['cp'] + self.backward_firing['cn'] < self.t)\
+                    .multiply(self.D)
 
             self.backward_firing['op'] += (sax_Ou > 0)
             self.backward_firing['on'] += (sax_Ou < 0)
             self.mask_mat['O'] = \
-                self.mask_mat['O'].multiply(self.backward_firing['op'] + self.backward_firing['on'] < self.t)
+                self.mask_mat['O'].multiply(self.backward_firing['op'] + self.backward_firing['on'] < self.t)\
+                    .multiply(self.O)
 
     def update_forward_firing(self, sax_i, sax_c, sax_o):
         self.forward_firing['i'] += sax_i.sum(axis=0)

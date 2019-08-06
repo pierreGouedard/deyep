@@ -52,7 +52,7 @@ class Sampler(object):
 
     def sample(self):
 
-        if self.preselect_bits is None:
+        if len(self.preselect_bits) == 0:
             if self.supervised:
                 self.sample_supervised()
             else:
@@ -74,20 +74,20 @@ class Sampler(object):
                     self.preselect_bits[i] = set(sax_si.nonzero()[1])
 
                     # Remove already selected bits
-                    if self.selected_bits:
+                    if len(self.selected_bits) > 0:
                         self.preselect_bits[i] = self.preselect_bits[i].difference(set(self.selected_bits[i]))
 
                     ax_selected[i] = True
 
         return self
 
-    def build_graph_multiple_output(self, name='sampler'):
+    def build_graph_multiple_output(self, t, name='sampler'):
         """
 
         :return:
         """
         # Init parameter of the firing graph
-        l_edges, l_weights, n_core, d_levels = [], [], 0, {}
+        l_edges, d_mask, n_core, d_levels = [], {'I': np.zeros(self.ni)}, 0, {}
 
         if self.selected_bits is not None:
             capacity = Sampler.capacity_core
@@ -96,32 +96,34 @@ class Sampler(object):
 
         # Build matrices of the firing graph
         for i in range(self.no):
-            l_edges, l_weights, n_core, d_levels = self.build_graph(i, l_edges, l_weights, n_core, d_levels)
+            l_edges, d_mask, n_core, d_levels = self.build_graph(i, l_edges, d_mask, n_core, d_levels)
 
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni, n_core, self.no, weights=l_weights)
+        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni, n_core, self.no, weights=self.w)
 
         # Build level array
         ax_levels = np.zeros(n_core)
         for i, v in d_levels.items():
             ax_levels[i] = v
 
+        # Complete mask
+        d_mask['D'] = np.zeros(n_core)
+
         # Build firing graph
-        self.firing_graph = FiringGraph.from_matrices(name, sax_D, sax_I, sax_O, capacity, self.w, ax_levels)
+        self.firing_graph = FiringGraph.from_matrices(name, sax_D, sax_I, sax_O, capacity, t, ax_levels, d_mask)
 
         return self
 
-    def build_graph(self, i, l_edges, l_weights, n_core, d_levels):
+    def build_graph(self, i, l_edges, d_mask, n_core, d_levels):
 
         # Create first layer of graph (input vertices)
         for pb in self.preselect_bits[i]:
             l_edges += [('input_{}'.format(pb), 'core_{}'.format(n_core))]
-            l_weights += [self.w]
+            d_mask['I'][pb] = 1
 
         # If some bits have already been selected
         if self.selected_bits:
             for b in self.selected_bits[i]:
                 l_edges += [('input_{}'.format(b), 'core_{}'.format(n_core + 1))]
-                l_weights += [np.float('inf')]
 
             # Add core edges
             l_edges += [
@@ -129,7 +131,6 @@ class Sampler(object):
                 ('core_{}'.format(n_core + 1), 'core_{}'.format(n_core + 2)),
                 ('core_{}'.format(n_core + 2), 'output_{}'.format(i))
             ]
-            l_weights += [np.float('inf')] * 3
 
             # Update levels
             d_levels.update({n_core: 1, n_core + 1: len(self.selected_bits[i]), n_core + 2: 2})
@@ -138,9 +139,8 @@ class Sampler(object):
         else:
             # Add core edges and update levels
             l_edges += [('core_{}'.format(n_core), 'output_{}'.format(i))]
-            l_weights += [np.float('inf')]
             d_levels.update({n_core: 1})
 
             n_core += 1
 
-        return l_edges, l_weights, n_core, d_levels
+        return l_edges, d_mask, n_core, d_levels

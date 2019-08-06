@@ -18,29 +18,41 @@ class TestSignal(object):
     def target_norm(self):
         raise NotImplementedError
 
-    def phi(self, nu):
+    def phi(self, omega):
+        raise NotImplementedError
+
+    def omega(self, i):
         raise NotImplementedError
 
     def nu(self, i):
         raise NotImplementedError
 
-    def rho(self, i):
+    def mu(self, i):
         raise NotImplementedError
 
-    def T(self, t, i):
+    def rho(self, i):
         raise NotImplementedError
 
     def N(self, t, i):
         raise NotImplementedError
 
     def get_tuple(self, i, t):
-        raise NotImplementedError
+        return self.omega(i), self.rho(i), t, self.N(t, i)
 
     def generate_io_sequence(self, n):
         raise NotImplementedError
 
-    def stream_io_sequence(self, n):
-        raise NotImplementedError
+    def stream_io_sequence(self, n, return_dirs=True):
+        sax_in, sax_out = self.generate_io_sequence(n)
+
+        if return_dirs:
+            self.imputer, tmpdiri, tmpdiro = self.create_imputer(sax_in, sax_out, return_dirs=return_dirs)
+            return self.imputer, tmpdiri, tmpdiro
+
+        else:
+            self.imputer = self.create_imputer(sax_in, sax_out)
+
+        return self.imputer
 
     def create_imputer(self, sax_in, sax_out, return_dirs=False):
 
@@ -72,7 +84,7 @@ class SignalPlusNoise(TestSignal):
     def __init__(self, n_sim, n_bits, p_target, n_targets, p_noise):
 
         # Size of the simulation
-        self.n_sim, self.n_bits, self.n_targets = n_sim, n_bits,n_targets
+        self.n_sim, self.n_bits, self.n_targets = n_sim, n_bits, n_targets
 
         # Base param of simulation
         self.p_target, self.p_noise = p_target, p_noise
@@ -85,45 +97,36 @@ class SignalPlusNoise(TestSignal):
     def target_norm(self):
         return self.p_target + ((1 - self.p_target) * pow(self.p_noise, self.n_targets))
 
-    def phi(self, nu):
-        return (self.p_target / (self.p_target + nu))
+    def phi(self, omega):
+        return self.p_target / (self.p_target + (1 - self.p_target) * omega)
 
-    def nu(self, i):
-        return (1 - self.p_target) * (1 + self.p_noise) * pow(self.p_noise, i)
+    def mean_score_signal(self, t, i):
+        return self.N(t, i) + int(t * (self.phi(self.omega(i) - self.delta(i)) * (self.rho(i) + 1) - self.rho(i)))
+
+    def mean_score_noise(self, t, i):
+        return self.N(t, i) + int(t * (self.phi(self.omega(i) + self.delta(i)) * (self.rho(i) + 1) - self.rho(i)))
+
+    def omega(self, i):
+        return (1 + self.p_noise) * pow(self.p_noise, i) / 2.
+
+    def delta(self, i):
+        return (1 - self.p_noise) * pow(self.p_noise, i) / 2
 
     def rho(self, i):
-        return np.ceil(self.phi(self.nu(i)) / (1 - self.phi(self.nu(i))))
-
-    def T(self, t, i):
-        return t / (self.p_target + self.nu(i))
+        return np.ceil(self.phi(self.omega(i)) / (1 - self.phi(self.omega(i))))
 
     def N(self, t, i):
-        return - int(t * (self.phi(self.nu(i)) * (self.rho(i) + 1) - self.rho(i)))
-
-    def get_tuple(self, i, t):
-        return self.nu(i), self.rho(i), self.T(t, i), self.N(t, i)
+        return - int(t * (self.phi(self.omega(i)) * (self.rho(i) + 1) - self.rho(i)))
 
     def generate_io_sequence(self, n):
 
         ax_inoise, ax_onoise = self.generate_noise_sequence(n)
         ax_itarget, ax_otarget = self.generate_target_sequence(n)
 
-        ax_inputs = ax_inoise + ax_itarget > 0
-        ax_outputs = ax_onoise + ax_otarget > 0
+        ax_inputs = (ax_inoise + ax_itarget) > 0
+        ax_outputs = (ax_onoise + ax_otarget) > 0
 
         return csc_matrix(ax_inputs, dtype=bool), csc_matrix(ax_outputs, dtype=bool)
-
-    def stream_io_sequence(self, n, return_dirs=True):
-        sax_in, sax_out = self.generate_io_sequence(n)
-
-        if return_dirs:
-            self.imputer, tmpdiri, tmpdiro = self.create_imputer(sax_in, sax_out, return_dirs=return_dirs)
-            return self.imputer, tmpdiri, tmpdiro
-
-        else:
-            self.imputer = self.create_imputer(sax_in, sax_out)
-
-        return self.imputer
 
     def generate_noise_sequence(self, n):
         # Init noisy sequence
@@ -149,3 +152,43 @@ class SignalPlusNoise(TestSignal):
                     ax_inputs[i, self.target_bits[j]], ax_outputs[i, j] = 1, 1
 
         return ax_inputs, ax_outputs
+
+
+class SparseActivation(TestSignal):
+
+    def __init__(self, p_targets, p_bits, n_targets, n_bits):
+
+        # Size of the simulation
+        self.n_bits, self.n_targets = n_bits, n_targets
+
+        # Base param of simulation
+        self.p_targets, self.p_bits = p_targets, p_bits
+
+        # Init mapping targets to bits
+        self.map_targets_bits = {'target_{}'.format(j): [] for j in range(self.n_targets)}
+
+        TestSignal.__init__(self, 'SparseActivation')
+
+    def build_map_targets_bits(self,):
+
+        for k in self.map_targets_bits.keys():
+            self.map_targets_bits[k] = np.arange(len(self.n_bits))[np.random.binomial(1, self.p_bits, self.n_bits)]
+
+        return self
+
+    def generate_io_sequence(self, n):
+
+        ax_outputs = np.random.binomial(1, self.p_targets, (n, self.n_targets))
+        ax_inputs = self.generate_bit_sequences(ax_outputs)
+
+        return csc_matrix(ax_inputs, dtype=bool), csc_matrix(ax_outputs, dtype=bool)
+
+    def generate_bit_sequences(self, ax_activations):
+
+        ax_inputs = np.zeros((ax_activations.shape[0], self.n_bits))
+        for i, ax_activation in enumerate(ax_activations):
+            for j, activation in enumerate(ax_activation):
+                if activation:
+                    ax_inputs[i, self.map_targets_bits[i]] = 1
+
+        return ax_inputs

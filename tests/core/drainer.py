@@ -1,6 +1,7 @@
 # Global imports
 import unittest
 from scipy.sparse import csc_matrix
+import numpy as np
 
 # Local import
 from deyep.core.firing_graph.utils import gather_matrices
@@ -28,6 +29,33 @@ class TestDrainer(unittest.TestCase):
         self.ni, self.no, self.n_selected = 15, 2, 3
         self.ap3 = ap3(self.ni, self.no, n_selected=self.n_selected, w=self.w0, t=2000, seed=1234)
         self.ap3_fg = self.ap3.build_graph_pattern_init()
+
+    def time_mask(self):
+
+        """
+        Test the well functioning of mask on backward updates
+        python -m unittest tests.core.drainer.TestDrainer.time_mask
+
+        """
+
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap2.generate_io_sequence(1000, seed=1234)
+        imputer = create_imputer('andpattern2', csc_matrix(ax_input), csc_matrix(ax_output))
+
+        # Create drainer
+        self.ap2_fg.t = 9
+        drainer = FiringGraphDrainer(1, self.ap2_fg, imputer, depth=self.ap2.depth, verbose=1)
+        drainer.drain(n=100)
+
+        # Get matrice of the graph
+        fg, fg_final, fg_init = drainer.firing_graph, self.ap2.build_graph_pattern_final(), self.ap2.build_graph_pattern_init()
+        I, I_init, I_final = fg.Iw.toarray(), fg_init.Iw.toarray(), fg_final.Iw.toarray()
+
+        # Assert mask are working
+        self.assertTrue((I[(10 > I) & (I > 0)] == I[(I_init > 0) & (I_final == 0)]).all())
+        self.assertEqual(len(I[10 < I]), len(I_final[I_final > 0]))
+        self.assertEqual(len(np.unique(I[10 < I])), 1)
+        self.assertEqual(np.unique(I[10 < I])[0], self.w0 + self.ap2_fg.t)
 
     def andpattern2(self):
 

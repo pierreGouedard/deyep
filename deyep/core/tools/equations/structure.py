@@ -40,7 +40,8 @@ def bdu(sax_snb, fg, penalty=1., n_jobs=1):
     else:
         sax_Du = vstack([n.basis.base for n in fg.core_vertices], format='csc').dot(sax_snb_).multiply(fg.D)
 
-    fg.graph['Dw'] += sax_Du.multiply(fg.D_mask)
+    sax_Du = sax_Du.multiply(fg.D_mask)
+    fg.graph['Dw'] += sax_Du
 
     return sax_Du
 
@@ -75,7 +76,8 @@ def bou(sax_sob, sax_A, fg, penalty=1., n_jobs=1):
             .dot(sax_sob)\
             .multiply(fg.O.multiply(sax_A.transpose()))
 
-    fg.graph['Ow'] += sax_Ou.multiply(fg.O_mask)
+    sax_Ou = sax_Ou.multiply(fg.O_mask)
+    fg.graph['Ow'] += sax_Ou
 
     return sax_Ou
 
@@ -106,6 +108,7 @@ def biu(sax_snb, fg, penalty=1., n_jobs=1):
     else:
         sax_Iu = vstack([n.basis.base for n in fg.input_vertices], format='csc').dot(sax_snb).multiply(fg.I)
 
-    fg.graph['Iw'] += sax_Iu.multiply(fg.I_mask)
+    sax_Iu = sax_Iu.multiply(fg.I_mask)
+    fg.graph['Iw'] += sax_Iu
 
     return sax_Iu
