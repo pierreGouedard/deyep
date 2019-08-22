@@ -127,6 +127,7 @@ class FiringGraph(object):
                     .multiply(self.O)
 
     def update_forward_firing(self, sax_i, sax_c, sax_o):
+        print sax_i.toarray().sum(axis=0)[8]
         self.forward_firing['i'] += sax_i.sum(axis=0)
         self.forward_firing['c'] += sax_c.sum(axis=0)
         self.forward_firing['o'] += sax_o.sum(axis=0)

@@ -14,10 +14,6 @@ class TestSignal(object):
         self.name = name
         self.imputer = None
 
-    @property
-    def target_norm(self):
-        raise NotImplementedError
-
     def phi(self, omega):
         raise NotImplementedError
 
@@ -93,10 +89,6 @@ class SignalPlusNoise(TestSignal):
 
         TestSignal.__init__(self, 'SignalPlusNoise')
 
-    @property
-    def target_norm(self):
-        return self.p_target + ((1 - self.p_target) * pow(self.p_noise, self.n_targets))
-
     def phi(self, omega):
         return self.p_target / (self.p_target + (1 - self.p_target) * omega)
 
@@ -156,25 +148,60 @@ class SignalPlusNoise(TestSignal):
 
 class SparseActivation(TestSignal):
 
-    def __init__(self, p_targets, p_bits, n_targets, n_bits):
+    def __init__(self, p_targets, p_bits, n_targets, n_bits, purity_rank=2):
 
         # Size of the simulation
         self.n_bits, self.n_targets = n_bits, n_targets
 
         # Base param of simulation
-        self.p_targets, self.p_bits = p_targets, p_bits
+        self.p_targets, self.p_bits, self.purity_rank = p_targets, p_bits, purity_rank
 
         # Init mapping targets to bits
         self.map_targets_bits = {'target_{}'.format(j): [] for j in range(self.n_targets)}
 
         TestSignal.__init__(self, 'SparseActivation')
 
-    def build_map_targets_bits(self,):
+    def phi(self, omega):
+        return self.p_targets / (self.p_targets + (1 - self.p_targets) * omega)
 
+    def mean_score(self, t, i, purity=None):
+        return self.N(t, i) + \
+               int(t * (self.phi(self.omega(i, purity=purity)) * (self.rho(i) + 1) - self.rho(i)))
+
+    def omega(self, i, purity=None):
+        if i > 0:
+            raise NotImplemented
+
+        if purity is None:
+            purity = self.purity_rank
+
+        assert purity >= 1
+
+        return 1 - pow(1 - self.p_targets, purity - 1)
+
+    def rho(self, i):
+        return np.ceil(self.phi(self.omega(i)) / (1 - self.phi(self.omega(i))))
+
+    def N(self, t, i):
+        return - int(t * (self.phi(self.omega(i)) * (self.rho(i) + 1) - self.rho(i)))
+
+    def build_map_targets_bits(self,):
         for k in self.map_targets_bits.keys():
-            self.map_targets_bits[k] = np.arange(len(self.n_bits))[np.random.binomial(1, self.p_bits, self.n_bits)]
+            ax_mask = np.random.binomial(1, self.p_bits, self.n_bits).astype(bool)
+            self.map_targets_bits[k] = np.arange(self.n_bits)[ax_mask]
 
         return self
+
+    def get_ranks(self, key):
+
+        d_score = {i: 0 for i in self.map_targets_bits['target_{}'.format(key)]}
+
+        for v in self.map_targets_bits.values():
+            for i in v:
+                if d_score.get(i, -1) >= 0:
+                    d_score[i] += 1
+
+        return d_score
 
     def generate_io_sequence(self, n):
 
@@ -188,7 +215,7 @@ class SparseActivation(TestSignal):
         ax_inputs = np.zeros((ax_activations.shape[0], self.n_bits))
         for i, ax_activation in enumerate(ax_activations):
             for j, activation in enumerate(ax_activation):
-                if activation:
-                    ax_inputs[i, self.map_targets_bits[i]] = 1
+                if activation > 0:
+                    ax_inputs[i, self.map_targets_bits['target_{}'.format(j)]] = 1
 
         return ax_inputs

@@ -125,7 +125,7 @@ def multi_line_plot_legend(d_series, title='line_plot', lloc='upper left'):
     plt.show()
 
 
-def multi_line_plot_colored(d_series, title='line_plot', ylab='y', xlab='x'):
+def multi_line_plot_colored(d_series, title='line_plot', ylab='y', xlab='x', cmap=None):
     """
     Plot multiple line whose values are hosted in d_series.
 
@@ -134,13 +134,16 @@ def multi_line_plot_colored(d_series, title='line_plot', ylab='y', xlab='x'):
     :return: figure
     :rtype: matplotlib.pyplot.figure
     """
+    if cmap is None:
+        cmap = {}
+
     # Create figure
     fig = plt.figure(figsize=(20, 15), dpi=72, facecolor=(1, 1, 1), edgecolor=(0, 0, 0))
     plt.style.use('bmh')
 
     for color, l_series in d_series.items():
         for s_series in l_series:
-            plt.plot(s_series, '-', linewidth=2, c=color)
+            plt.plot(s_series, '-', linewidth=2, c=cmap.get(color, color))
 
     plt.ylabel(ylab, fontdict={'size': 18, 'usetex': True}, **{'usetex': True})
     plt.xlabel(xlab,  fontdict={'size': 18, 'usetex': True}, **{'usetex': True})
@@ -151,7 +154,7 @@ def multi_line_plot_colored(d_series, title='line_plot', ylab='y', xlab='x'):
     plt.show()
 
 
-def multi_box_plot(d_series, title='multiple boxplot', ylab='y', xlab='x'):
+def multi_box_plot(d_series, title='multiple boxplot', ylab='y', xlab='x', name_data='data'):
     """
     Plot multiple line whose values are hosted in d_series.
 
@@ -164,7 +167,7 @@ def multi_box_plot(d_series, title='multiple boxplot', ylab='y', xlab='x'):
     fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(20, 15), dpi=72, facecolor=(1, 1, 1), edgecolor=(0, 0, 0))
 
     for name, d_box in d_series.items():
-        bplot = axes.boxplot(labels=d_box['x'], x=d_box['data'], patch_artist=True)
+        bplot = axes.boxplot(labels=d_box['x'], x=d_box[name_data], patch_artist=True)
 
         for patch in bplot['boxes']:
             patch.set_facecolor(d_box['color'])
