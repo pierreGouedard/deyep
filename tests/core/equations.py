@@ -13,29 +13,72 @@ __maintainer__ = 'Pierre Gouedard'
 
 
 class TestEquations(unittest.TestCase):
+    """
+    Test forward:
+        Graph:
+              i0      i1
+             /  \    / \
+            /   \   /   \
+           c0    c1      c2
+            \    /        |
+             \  /         |
+              o0          o2
+
+        Levels:
+         c0 = 1, c1 = 2, c2 = 1
+
+        Table Input -> Core:
+        | i0 | i1 | -> | c0 | c1 | c2 |
+        | 0  |  0 | -> | 0  |  0 | 0  |
+        | 1  |  0 | -> | 1  |  0 | 0  |
+        | 0  |  1 | -> | 0  |  0 | 1  |
+        | 1  |  1 | -> | 1  |  1 | 1  |
+
+        Table Core -> Output:
+        | c0 | c1 | c2 | -> | o0 | o1 |
+        | 0  |  0 | 0  | -> | 0  | 0  |
+        | 1  |  0 | 0  | -> | 1  | 0  |
+        | 0  |  0 | 1  | -> | 0  | 1  |
+        | 1  |  1 | 1  | -> | 1  | 1  |
+
+        Table Target Input -> Output:
+        | i0 | i1 | -> | o0 | o1 |
+        | 0  |  0 | -> | 0  |  0 |
+        | 1  |  0 | -> | 0  |  0 |
+        | 0  |  1 | -> | 0  |  1 |
+        | 1  |  1 | -> | 1  |  1 |
+
+    """
     def setUp(self):
-
-        np.random.seed(392)
-
         # Create a simple deep network (2 input vertices, 3 network vertices,, 2 output vertices)
-        self.n_i, self.n_rn, self.n_o, self.capacity = 2, 4, 2, 10
-        l_edges = [('input_0', 'core_0'), ('core_0', 'core_1')] +  \
-                  [('input_0', 'core_2'), ('core_2', 'core_1')] + \
-                  [('input_1', 'core_3'), ('core_3', 'output_1')]
+        self.ni, self.nc, self.no, self.depth, self.weight, self.penalty, self.batch_size = 2, 3, 2, 2, 10, 3, 4
+        l_edges = [('input_0', 'core_0'), ('core_0', 'output_0')] +  \
+                  [('input_0', 'core_1'), ('core_1', 'output_0')] + \
+                  [('input_1', 'core_1')] + \
+                  [('input_1', 'core_2'), ('core_2', 'output_1')]
 
-        # Get matrices from list of edges and build network
-        self.sax_I, self.sax_D, self.sax_O = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
-        self.mask_drain = {'I': np.ones(self.sax_I.shape[0]), 'D': np.zeros(self.sax_D.shape[0])}
-        self.mask_drain_ = {'I': np.zeros(self.sax_I.shape[0]), 'D': np.ones(self.sax_D.shape[0])}
+        self.levels = np.array([1, 2, 1], dtype=int)
+        self.sax_I, self.sax_C, self.sax_O = mat_from_tuples(self.ni, self.no, self.nc, l_edges, self.weight)
+        self.mask_vertice_drain_a = {'I': np.ones(self.ni), 'C': np.ones(self.nc)}
+        self.mask_vertice_drain_b = {'I': np.ones(self.ni), 'C': np.zeros(self.nc)}
+        self.mask_vertice_drain_c = {'I': np.zeros(self.ni), 'C': np.ones(self.nc)}
 
-        self.fg = FiringGraph.from_matrices(
-            'test_equation', self.sax_D, self.sax_I, self.sax_O, self.capacity, 100, [1, 1, 1, 1], self.mask_drain
+        # Create firing graphs
+        self.fga = FiringGraph.from_matrices(
+            'test_equation_a', self.sax_I, self.sax_C, self.sax_O, self.levels,  self.mask_vertice_drain_a
         )
-        self.fg_masked = FiringGraph.from_matrices(
-            'test_equation', self.sax_D, self.sax_I, self.sax_O, self.capacity, 100, [1, 1, 1, 1], self.mask_drain_
+
+        self.fgb = FiringGraph.from_matrices(
+            'test_equation_b', self.sax_I, self.sax_C, self.sax_O, self.levels,  self.mask_vertice_drain_b
         )
-        self.input = csc_matrix(([1., 1.], ([0, 1], [1, 0])), shape=(10, 2), dtype=int)
-        self.output = csc_matrix(([1., 1.], ([0, 2], [1, 0])), shape=(10, 2), dtype=int)
+
+        self.fgc = FiringGraph.from_matrices(
+            'test_equation_c', self.sax_I, self.sax_C, self.sax_O, self.levels,  self.mask_vertice_drain_c
+        )
+
+        # Create test signals
+        self.input = csc_matrix([[0, 0], [1, 0], [0, 1], [1, 1]])
+        self.output = csc_matrix([[0, 0], [0, 0], [0, 1], [1, 1]])
 
     def forward(self):
         """
@@ -44,121 +87,111 @@ class TestEquations(unittest.TestCase):
 
         """
 
+        # Create imputer and drainer
         imputer = init_imputer(self.input, self.output)
-        drainer = FiringGraphDrainer(1, self.fg, imputer, 2)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fga, imputer)
 
-        # Run for one epoch (forward transmitting)
-        drainer.drain(1)
-        self.assertAlmostEqual(len(drainer.sax_so.nonzero()[0]), 0)
-        self.assertAlmostEqual(len(np.unique(drainer.sax_sn.nonzero()[1])), 1)
-        self.assertAlmostEqual(np.unique(drainer.sax_sn.nonzero()[1])[0], 3)
+        # Run for Two iteration and check forward signals are as expected
+        drainer.run_iteration(True, False)
+        drainer.iter += 1
+        self.assertTrue((drainer.sax_c.toarray() == np.array([[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 1, 1]])).all())
 
-        # Run for one other epoch (forward processing)
-        drainer.drain(1)
-        vertex = drainer.firing_graph.core_vertices[3]
-        self.assertEqual(len([t for t in vertex.basis.queue_forward if t is not None]), 1)
-        self.assertEqual(vertex.basis.queue_forward[0], (0, ['k=0,N=21']))
-
-        for vertex in drainer.firing_graph.core_vertices[:-1]:
-            self.assertEqual(len([t for t in vertex.basis.queue_forward if t is not None]), 0)
-
-        # Run epoch (2nd forward transmitting)
-        drainer.drain(1)
-        self.assertAlmostEqual(len(np.unique(drainer.sax_so.nonzero()[1])), 1)
-        self.assertAlmostEqual(np.unique(drainer.sax_so.nonzero()[1])[0], 1)
-        self.assertAlmostEqual(len(np.unique(drainer.sax_sn.nonzero()[1])), 2)
-
-        # Run one epoch (backward buffer and 2nd forward processing)
-        drainer.drain(1)
-        d_test = {0: 1, 1: 0, 2: 1, 3: 1}
-        for i, v in d_test.items():
-            vertex = drainer.firing_graph.core_vertices[i]
-            self.assertEqual(len([t for t in vertex.basis.queue_forward if t is not None]), v)
-
-        self.assertTrue((drainer.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
-        self.assertTrue((drainer.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
-        self.assertEqual(np.unique(drainer.sax_sob.nonzero()[1])[0], 1)
+        drainer.run_iteration(True, False)
+        self.assertTrue((drainer.sax_o.toarray() == np.array([[0, 0], [1, 0], [0, 1], [2, 1]])).all())
 
     def backward(self):
         """
-        Very precise case on very simple graph to validate basics of drainer for ackward equations
+        Very precise case on very simple graph to validate basics of drainer for backward equations
         python -m unittest tests.core.equations.TestEquations.backward
 
         """
+        # Create imputer and drainer
         imputer = init_imputer(self.input, self.output)
-        drainer = FiringGraphDrainer(1, self.fg, imputer, 2)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fga, imputer)
 
-        # Run for sufficient number of epoch to reach first backward processing
-        ax_out = drainer.firing_graph.O.toarray()
-        drainer.drain(5)
+        # Run for Two iteration and check backward signals are as expected
+        drainer.run_iteration(True, True)
+        drainer.iter += 1
+        drainer.forward_transmiting(True)
+        drainer.forward_processing(True)
 
-        vertex = drainer.firing_graph.core_vertices[-1]
-        self.assertTrue((ax_out == drainer.firing_graph.O.toarray()).all())
+        # Output feedback
+        drainer.backward_processing()
 
-        ax_out = drainer.sax_sob.toarray().transpose()
-        ax_test = vertex.basis.base.toarray()[0]
-        self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
+        # Build expected backward signals
+        ax_expected = np.hstack(
+            (np.zeros((self.no, self.batch_size)), np.array([[0, -3, 0, 1], [0, 0, 1, 1]]),
+             np.zeros((self.no, 2 * self.batch_size)))
+        )
+        # Check correctness of feedback
+        self.assertTrue((drainer.sax_ob.toarray() == ax_expected).all())
 
-        ax_test = vertex.basis.base_from_key('k={},N={}'.format(vertex.basis.key, vertex.basis.N), offset=1).toarray()[0]
-        self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
-        self.assertTrue((drainer.sax_snb.toarray() == 0).all())
+        # Core adjacency matrix update
+        drainer.backward_transmiting()
+        drainer.iter += 1
 
-        # Run first backward transmitting
-        ax_Ow, ax_Dw, ax_Iw = drainer.firing_graph.Ow, drainer.firing_graph.Dw, drainer.firing_graph.Iw
-        drainer.drain(1)
+        # Build expected backward signals
+        ax_O_expected = np.array([[1 - self.penalty,  0.], [1.,  0.], [0.,  2.]])
+        ax_O_expected = ax_O_expected + (ax_O_expected != 0) * self.weight
+        ax_O_track = np.array([[2,  0.], [1.,  0.], [0.,  2.]])
 
-        # Make sure update of network is ok
-        self.assertTrue(not (ax_Dw != drainer.firing_graph.Dw).toarray().any())
-        self.assertTrue(not (ax_Iw != drainer.firing_graph.Iw).toarray().any())
+        # Check correctness of core structure updates
+        self.assertTrue((drainer.firing_graph.Ow.toarray() == ax_O_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['o'].toarray() == ax_O_track).all())
 
-        # Make sure vertices have received their backward message
-        self.assertEqual(len(np.unique(drainer.sax_snb.nonzero()[1])), 1)
+        drainer.forward_transmiting(True)
+        drainer.forward_processing(True)
+        drainer.backward_processing()
+        drainer.backward_transmiting()
 
-        # Run second backward processing
-        drainer.drain(1)
+        # Build expected backward signals
+        ax_I_expected = np.array([[1 - self.penalty, 1, 0], [0, 1, 2]])
+        ax_I_expected = ax_I_expected + (ax_I_expected != 0) * self.weight
+        ax_I_track = np.array([[2, 1, 0], [0, 1, 2]])
 
-        # Make sure no candidate has been updated
-        self.assertEqual(len(drainer.firing_graph.Ow.nonzero()[0]), 1)
+        # Check correctness of backward signals
+        self.assertTrue((drainer.firing_graph.Iw.toarray() == ax_I_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['i'].toarray() == ax_I_track).all())
 
-        # Make sure sax_sob is all zero
-        self.assertEqual(drainer.sax_sob.nnz, 0)
-
-        # make sure backward messages are correct
-        vertex = drainer.firing_graph.input_vertices[-1]
-
-        self.assertEqual(drainer.sax_snb[:, -1].toarray()[:, 0].dot(vertex.basis.base.toarray()[0]), 1)
-        self.assertEqual(vertex.basis.depth_from_basis(drainer.sax_snb[:, -1].transpose()), ([0], [1.]))
-
-        # Backward transmiting
-        Iw = drainer.firing_graph.Iw
-        drainer.drain(1)
-
-        # Assert Iw has been updated
-        self.assertEqual(drainer.firing_graph.Iw[1, -1], Iw[1, -1] + 1)
-        self.assertTrue((drainer.firing_graph.Ow == self.sax_O).toarray().all())
-
-        # just to make sure that the rest is ok
-        drainer.drain(10)
-
-    def backward_masked(self):
+    def drain_mask(self):
         """
-        Very precise case on very simple graph to validate basics of drainer for ackward equations
-        python -m unittest tests.core.equations.TestEquations.backward_masked
+        Very precise case on very simple graph to validate effectiveness of mask for draining
+        python -m unittest tests.core.equations.TestEquations.drain_mask
 
         """
+        # Create imputer and drainer
         imputer = init_imputer(self.input, self.output)
-        drainer = FiringGraphDrainer(1, self.fg_masked, imputer, 2)
-        drainer.drain(6)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fgb, imputer)
 
-        # Assert unmasked structure is updated
-        self.assertEqual(self.sax_O[-1, 1], drainer.firing_graph.Ow[-1, 1] - 1)
-        self.assertEqual(len(drainer.firing_graph.Ow.nonzero()[0]), 1)
+        # Run for 1 epoch and check backward signals are as expected
+        drainer.drain(1)
 
-        # Assert Iw has been updated
-        drainer.drain(2)
+        # Build expected backward signals
+        ax_I_expected = np.array([[1 - self.penalty, 1, 0], [0, 1, 2]])
+        ax_I_expected = ax_I_expected + (ax_I_expected != 0) * self.weight
+        ax_I_track = np.array([[2, 1, 0], [0, 1, 2]])
 
-        self.assertTrue((drainer.firing_graph.Iw == self.sax_I).toarray().all())
-        self.assertTrue((drainer.firing_graph.Dw == self.sax_D).toarray().all())
+        # Check correctness of backward signals
+        self.assertTrue((drainer.firing_graph.Iw.toarray() == ax_I_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['i'].toarray() == ax_I_track).all())
+        self.assertTrue((drainer.firing_graph.Ow.toarray() == self.fga.Ow.toarray()).all())
+
+        # Create imputer and drainer
+        imputer = init_imputer(self.input, self.output)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fgc, imputer)
+
+        # Run for 1 epoch and check backward signals are as expected
+        drainer.drain(1)
+
+        # Build expected backward signals
+        ax_O_expected = np.array([[1 - self.penalty,  0.], [1.,  0.], [0.,  2.]])
+        ax_O_expected = ax_O_expected + (ax_O_expected != 0) * self.weight
+        ax_O_track = np.array([[2,  0.], [1.,  0.], [0.,  2.]])
+
+        # Check correctness of core structure updates
+        self.assertTrue((drainer.firing_graph.Ow.toarray() == ax_O_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['o'].toarray() == ax_O_track).all())
+        self.assertTrue((drainer.firing_graph.Iw.toarray() == self.fga.Iw.toarray()).all())
 
 
 def init_imputer(ax_input, ax_output):

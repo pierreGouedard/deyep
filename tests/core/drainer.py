@@ -21,14 +21,14 @@ class TestDrainer(unittest.TestCase):
         self.visual = False
 
         # Create And pattern of depth 2 /!\ Do not change those parameter for the test /!\
-        self.n, self.ni, self.no, self.w0 = 500, 10, 2, 10
-        self.ap2 = ap2(self.ni, self.no, w=self.w0, t=2000, seed=1234)
+        self.n, self.ni, self.no, self.w0, self.t_mask = 100, 10, 2, 10, 5
+        self.ap2 = ap2(self.ni, self.no, w=self.w0, seed=1234)
         self.ap2_fg = self.ap2.build_graph_pattern_init()
 
         # Create And pattern of depth 3
-        self.ni, self.no, self.n_selected = 15, 2, 3
-        self.ap3 = ap3(self.ni, self.no, n_selected=self.n_selected, w=self.w0, t=2000, seed=1234)
-        self.ap3_fg = self.ap3.build_graph_pattern_init()
+        # self.ni, self.no, self.n_selected = 15, 2, 3
+        # self.ap3 = ap3(self.ni, self.no, n_selected=self.n_selected, w=self.w0, seed=1234)
+        # self.ap3_fg = self.ap3.build_graph_pattern_init()
 
     def time_mask(self):
 
@@ -43,19 +43,16 @@ class TestDrainer(unittest.TestCase):
         imputer = create_imputer('andpattern2', csc_matrix(ax_input), csc_matrix(ax_output))
 
         # Create drainer
-        self.ap2_fg.t = 9
-        drainer = FiringGraphDrainer(1, self.ap2_fg, imputer, depth=self.ap2.depth, verbose=1)
-        drainer.drain(n=100)
+        drainer = FiringGraphDrainer(self.t_mask, 1, 1, self.ap2_fg, imputer, verbose=1)
+        drainer.drain(100)
 
         # Get matrice of the graph
         fg, fg_final, fg_init = drainer.firing_graph, self.ap2.build_graph_pattern_final(), self.ap2.build_graph_pattern_init()
         I, I_init, I_final = fg.Iw.toarray(), fg_init.Iw.toarray(), fg_final.Iw.toarray()
 
-        # Assert mask are working
-        self.assertTrue((I[(10 > I) & (I > 0)] == I[(I_init > 0) & (I_final == 0)]).all())
-        self.assertEqual(len(I[10 < I]), len(I_final[I_final > 0]))
-        self.assertEqual(len(np.unique(I[10 < I])), 1)
-        self.assertEqual(np.unique(I[10 < I])[0], self.w0 + self.ap2_fg.t)
+        # Assert mask are working (no more than self.t_mask structure update
+        self.assertTrue((I[I >= self.w0] == I_final[I_final > 0] + self.t_mask).all())
+        self.assertTrue((I[(0 < I) & (I <= self.w0)] == I_init[~(I_final > 0) & (I_init > 0)] - self.t_mask).all())
 
     def andpattern2(self):
 
@@ -70,26 +67,26 @@ class TestDrainer(unittest.TestCase):
         imputer = create_imputer('andpattern2', csc_matrix(ax_input), csc_matrix(ax_output))
 
         # Create drainer
-        drainer = FiringGraphDrainer(1, self.ap2_fg, imputer, depth=self.ap2.depth, verbose=1)
-        drainer.drain(n=self.n * 2)
+        drainer = FiringGraphDrainer(1000, 1, 10, self.ap2_fg, imputer, verbose=1)
+        drainer.drain(n=10)#self.n)
 
         # Get Data and assert result is as expected
         model_fg, I = self.ap2.build_graph_pattern_final(), drainer.firing_graph.Iw
         track_if = drainer.firing_graph.forward_firing['i']
-        track_ib = drainer.firing_graph.backward_firing['ip'] + drainer.firing_graph.backward_firing['in']
+        track_ib = drainer.firing_graph.backward_firing['i']
 
+        # Check correctness of structure
         self.assertTrue((drainer.firing_graph.I.toarray() == model_fg.I.toarray()).all())
 
-        # Those test could be done for 0, ..., no-1, here just for 0, and 1
+        # Test firing tracker
         self.assertTrue(all([I[j, 0] == track_ib[j, 0] + self.w0 for j in self.ap2.target[0]]))
         self.assertTrue(all([I[j, 1] == track_ib[j, 1] + self.w0 for j in self.ap2.target[1]]))
-        self.assertTrue(all([(-3 < track_ib[j, 0] - track_if[0, j] < 0) for j in self.ap2.target[0]]))
-        self.assertTrue(all([(-3 < track_ib[j, 1] - track_if[0, j] < 0) for j in self.ap2.target[1]]))
+        self.assertTrue(all([(-3 < track_ib[j, 0] - track_if[0, j] <= 0) for j in self.ap2.target[0]]))
+        self.assertTrue(all([(-3 < track_ib[j, 1] - track_if[0, j] <= 0) for j in self.ap2.target[1]]))
 
-        # Make sure imputer did the job correctly
-        mask = (ax_output.sum(axis=1) == 1)
-        ax_tp = ax_input[:self.n, :][mask[:self.n], :].sum(axis=0)
-        self.assertTrue((track_if[0, self.ap2.target[0]].toarray() == ax_tp[self.ap2.target[0]]).all())
+        # TODO: don't understand the difference between tracking backward and the actual value of edge's link
+        import IPython
+        IPython.embed()
 
         # VISUAL TEST:
         if self.visual:
@@ -111,7 +108,6 @@ class TestDrainer(unittest.TestCase):
         python -m unittest tests.core.drainer.TestDrainer.andpattern3
 
         """
-
         # Create I/O and save it into tmpdir files
         ax_input, ax_output = self.ap3.generate_io_sequence(1000, seed=1234)
         imputer = create_imputer('andpattern3', csc_matrix(ax_input), csc_matrix(ax_output))

@@ -81,16 +81,16 @@ class AndPattern2(TestPattern):
     significant number of iteration, only correct edges should remain
     """
 
-    def __init__(self, ni, no, w=100, p=0.5, t=1000, random_target=False, seed=None):
+    def __init__(self, ni, no, w=100, p=0.5, random_target=False, seed=None):
 
         if seed is not None:
             np.random.seed(seed)
 
         # Core params of test
-        self.ni, self.no, self.w, self.p, self.t, self.random_target = ni, no, w, p, t, random_target,
+        self.ni, self.no, self.w, self.p, self.random_target = ni, no, w, p, random_target,
 
         # Init
-        self.firing_graph = None
+        self.mask_vertice_drain, firing_graph = {'I': np.ones(self.ni * self.no), 'C': np.zeros(self.no)}, None
 
         # Set targets
         self.target = [
@@ -113,10 +113,9 @@ class AndPattern2(TestPattern):
         l_edges += zip(self.core_vertices, self.output_vertices)
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no, self.no, weights=self.w)
+        sax_I, sax_C, sax_O = mat_from_tuples(self.ni * self.no, self.no, self.no, l_edges, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
-            'AndPatFinal', sax_D, sax_I, sax_O, 3, self.t, np.array([len(self.target[i]) for i in range(self.no)]),
-            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+            'AndPatFinal2', sax_I, sax_C, sax_O, np.ones(self.no), self.mask_vertice_drain, self.depth
         )
 
         return self.firing_graph
@@ -130,10 +129,9 @@ class AndPattern2(TestPattern):
         l_edges += zip(self.core_vertices, self.output_vertices)
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no, self.no, weights=self.w)
+        sax_I, sax_C, sax_O = mat_from_tuples(self.ni * self.no, self.no, self.no, l_edges, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
-            'AndPat2', sax_D, sax_I, sax_O, self.depth + 1, self.t, [1, 1],
-            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+            'AndPat2', sax_I, sax_C, sax_O, np.ones(self.no), self.mask_vertice_drain, self.depth
         )
 
         return self.firing_graph
@@ -191,7 +189,7 @@ class AndPattern3(TestPattern):
     The primary test purpose of this pattern is to test for edge removal in a firing graph of depth 3. After a
     significant number of iteration, only correct edges should remain
     """
-    def __init__(self, ni, no, w=100, p=0.5, t=1000, n_selected=2, random_target=False, seed=None):
+    def __init__(self, ni, no, w=100, p=0.5, n_selected=2, random_target=False, seed=None):
 
         try:
             assert n_selected < ni
@@ -202,10 +200,10 @@ class AndPattern3(TestPattern):
             np.random.seed(seed)
 
         # Core params of test
-        self.ni, self.no, self.nc, self.w, self.p, self.t, self.random_target = ni, no, 3, w, p, t, random_target
+        self.ni, self.no, self.nc, self.w, self.p, self.random_target = ni, no, 3, w, p, random_target
 
         # Init
-        self.firing_graph = None
+        self.firing_graph, self.mask_vertice_drain = None, {'I': np.ones(self.ni * self.no), 'C': np.zeros(self.no)}
 
         # Set targets
         self.target = [
@@ -250,10 +248,9 @@ class AndPattern3(TestPattern):
             ax_levels[i * self.nc + self.nc - 1] = self.nc - 1
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no * self.nc, self.no, weights=self.w)
+        sax_I, sax_C, sax_O = mat_from_tuples(self.ni * self.no, self.no * self.nc, self.no, l_edges, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
-            'AndPat3', sax_D, sax_I, sax_O, self.depth + 1, self.t, ax_levels,
-            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+            'AndPatFinal3', sax_I, sax_C, sax_O, ax_levels, self.mask_vertice_drain, self.depth
         )
 
         return self.firing_graph
@@ -285,10 +282,9 @@ class AndPattern3(TestPattern):
             ax_levels[i * self.nc + self.nc - 1] = self.nc - 1
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(l_edges, self.ni * self.no, self.no * self.nc, self.no, weights=self.w)
+        sax_I, sax_D, sax_O = mat_from_tuples(self.ni * self.no, self.no * self.nc, self.no, l_edges, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
-            'AndPatInit', sax_D, sax_I, sax_O, self.depth + 1, self.t, ax_levels,
-            {'I': np.ones(sax_I.shape[0]), 'D': np.ones(sax_D.shape[0])}
+            'AndPatInit3', sax_I, sax_C, sax_O, ax_levels, self.mask_vertice_drain, self.depth
         )
 
         return self.firing_graph
