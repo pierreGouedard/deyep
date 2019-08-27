@@ -75,7 +75,6 @@ def mat_mask_from_vertice_mask(sax_I, sax_C, sax_O, mask_vertice_drain):
     :return:
     """
     mask_mat = {}
-
     mask_mat['Im'] = diags(mask_vertice_drain['I']).dot(sax_I > 0)
     mask_mat['Cm'] = diags(mask_vertice_drain['C']).dot(sax_C > 0)
     mask_mat['Om'] = diags(mask_vertice_drain['C']).dot(sax_O > 0)

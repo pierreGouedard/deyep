@@ -92,7 +92,6 @@ def fpc(sax_c, sax_cm, ax_levels):
     """
     # Compare forward strength to level for activation
     sax_c = (sax_c >= csc_matrix(ax_levels[newaxis, :].repeat(sax_c.shape[0], axis=0))).astype(int)
-
     # Get forward signal
     sax_cm = vstack([sax_c, sax_cm[:sax_cm.shape[0] - sax_c.shape[0], :]])
 
@@ -122,4 +121,5 @@ def fpo(sax_o, imputer, batch_size, penalty):
 
     # Compute feedback
     sax_ob = ((penalty + 1) * sax_got.multiply(sax_o > 0)) - (penalty * (sax_o > 0).astype(int))
+
     return sax_ob.transpose().tocsc()

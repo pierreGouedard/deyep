@@ -26,10 +26,14 @@ class FiringGraphDrainer(object):
         self.sax_cb, self.sax_ob = init_backward_signal(self.firing_graph, batch_size)
         self.iter = 0
 
-    def reset(self):
-        self.reset_imputer()
+    def reset_all(self, imputer=False):
+
         self.reset_forward()
         self.reset_backward()
+        self.iter = 0
+
+        if imputer:
+            self.reset_imputer()
 
     def reset_imputer(self):
         self.imputer.stream_features()
@@ -41,7 +45,7 @@ class FiringGraphDrainer(object):
     def reset_backward(self):
         self.sax_cb, self.sax_ob = init_backward_signal(self.firing_graph, self.bs)
 
-    def drain(self, n):
+    def drain(self, n=1):
 
         early_stopping, j = False, 0
         while j < n:

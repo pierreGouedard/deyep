@@ -26,9 +26,9 @@ class TestDrainer(unittest.TestCase):
         self.ap2_fg = self.ap2.build_graph_pattern_init()
 
         # Create And pattern of depth 3
-        # self.ni, self.no, self.n_selected = 15, 2, 3
-        # self.ap3 = ap3(self.ni, self.no, n_selected=self.n_selected, w=self.w0, seed=1234)
-        # self.ap3_fg = self.ap3.build_graph_pattern_init()
+        self.ni, self.no, self.n_selected = 15, 2, 3
+        self.ap3 = ap3(self.ni, self.no, n_selected=self.n_selected, w=self.w0, seed=1234)
+        self.ap3_fg = self.ap3.build_graph_pattern_init()
 
     def time_mask(self):
 
@@ -68,7 +68,7 @@ class TestDrainer(unittest.TestCase):
 
         # Create drainer
         drainer = FiringGraphDrainer(1000, 1, 10, self.ap2_fg, imputer, verbose=1)
-        drainer.drain(n=10)#self.n)
+        drainer.drain(n=self.n)
 
         # Get Data and assert result is as expected
         model_fg, I = self.ap2.build_graph_pattern_final(), drainer.firing_graph.Iw
@@ -81,12 +81,8 @@ class TestDrainer(unittest.TestCase):
         # Test firing tracker
         self.assertTrue(all([I[j, 0] == track_ib[j, 0] + self.w0 for j in self.ap2.target[0]]))
         self.assertTrue(all([I[j, 1] == track_ib[j, 1] + self.w0 for j in self.ap2.target[1]]))
-        self.assertTrue(all([(-3 < track_ib[j, 0] - track_if[0, j] <= 0) for j in self.ap2.target[0]]))
-        self.assertTrue(all([(-3 < track_ib[j, 1] - track_if[0, j] <= 0) for j in self.ap2.target[1]]))
-
-        # TODO: don't understand the difference between tracking backward and the actual value of edge's link
-        import IPython
-        IPython.embed()
+        self.assertTrue(all([track_ib[j, 0] - track_if[0, j] == 0 for j in self.ap2.target[0]]))
+        self.assertTrue(all([track_ib[j, 1] - track_if[0, j] == 0 for j in self.ap2.target[1]]))
 
         # VISUAL TEST:
         if self.visual:
@@ -113,17 +109,18 @@ class TestDrainer(unittest.TestCase):
         imputer = create_imputer('andpattern3', csc_matrix(ax_input), csc_matrix(ax_output))
 
         # Create drainer
-        drainer = FiringGraphDrainer(1, self.ap3_fg, imputer, depth=self.ap3.depth, verbose=1)
-        drainer.drain(n=self.n * 2)
+        drainer = FiringGraphDrainer(1000, 1, 10, self.ap3_fg, imputer, verbose=1)
+        drainer.drain(n=self.n)
 
         # Get Data and assert result is as expected
         model_fg, I = self.ap3.build_graph_pattern_final(), drainer.firing_graph.Iw
         track_if = drainer.firing_graph.forward_firing['i']
-        track_ib = drainer.firing_graph.backward_firing['ip'] + drainer.firing_graph.backward_firing['in']
+        track_ib = drainer.firing_graph.backward_firing['i']
 
+        # Make sure that drained structure is as expected
         self.assertTrue((drainer.firing_graph.I.toarray() == model_fg.I.toarray()).all())
 
-        # Those test could be done for 0, ..., no-1
+        # Test for forward and backward firing tracking and coherence
         self.assertTrue(
             all([I[j, 1] == track_ib[j, 1] + self.w0 for j in self.ap3.target[0]
                  if j not in self.ap3.target_selected[0]])
@@ -133,11 +130,11 @@ class TestDrainer(unittest.TestCase):
                  if j not in self.ap3.target_selected[1]])
         )
         self.assertTrue(
-            all([(-3 < track_ib[j, 1] - track_if[0, j] < 0) for j in self.ap3.target[0]
+            all([track_ib[j, 1] - track_if[0, j] == 0 for j in self.ap3.target[0]
                  if j not in self.ap3.target_selected[0]])
         )
         self.assertTrue(
-            all([(-3 < track_ib[j, 4] - track_if[0, j] < 0) for j in self.ap3.target[1]
+            all([track_ib[j, 4] - track_if[0, j] == 0 for j in self.ap3.target[1]
                  if j not in self.ap3.target_selected[1]])
         )
 

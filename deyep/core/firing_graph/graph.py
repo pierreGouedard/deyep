@@ -3,6 +3,7 @@ import pickle
 import random
 import string
 from scipy.sparse import lil_matrix
+import copy
 
 # Local import
 import settings
@@ -188,15 +189,21 @@ class FiringGraph(object):
         with open(driver.join(self.dir_graph, '{}.pckl'.format(self.graph_id)), 'wb') as handle:
             pickle.dump(d_graph, handle)
 
-    def to_dict(self):
+    def to_dict(self, is_copy=False):
+
         d_graph = {
             'is_drained': self.is_drained, 'is_dried': False, 'matrices': self.matrices, 'levels': self.levels,
             'depth': self.depth
         }
+
+        if is_copy:
+            d_graph.update({'matrices': copy.deepcopy(self.matrices), 'levels': self.levels.copy()})
+
         return d_graph
 
     def delete(self):
         if driver.exists(driver.join(self.dir_graph, '{}.pckl'.format(self.graph_id))):
             driver.remove(driver.join(self.dir_graph, '{}.pckl'.format(self.graph_id)))
 
-
+    def copy(self):
+        return self.from_dict(self.to_dict(is_copy=True), self.project, self.graph_id)

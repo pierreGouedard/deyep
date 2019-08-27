@@ -50,12 +50,9 @@ class TestSampler(unittest.TestCase):
         sampler.build_graph_multiple_output()
 
         # Test dim of Firing graph
-        self.assertEqual(len(sampler.firing_graph.core_vertices), 2)
-        self.assertEqual(len(sampler.firing_graph.input_vertices), self.ni)
-        self.assertEqual(len(sampler.firing_graph.output_vertices), self.no)
-
-        # Test level of core vertices
-        self.assertTrue(all([v.l0 == 1 for v in sampler.firing_graph.core_vertices]))
+        self.assertEqual(sampler.firing_graph.C.shape[0], 2)
+        self.assertEqual(sampler.firing_graph.I.shape[0], self.ni)
+        self.assertEqual(sampler.firing_graph.O.shape[1], self.no)
 
     def sampler_main(self):
         """
@@ -81,14 +78,17 @@ class TestSampler(unittest.TestCase):
         sampler.build_graph_multiple_output()
 
         # Test dim of Firing graph
-        self.assertEqual(len(sampler.firing_graph.core_vertices), 6)
-        self.assertEqual(len(sampler.firing_graph.input_vertices), self.ni)
-        self.assertEqual(len(sampler.firing_graph.output_vertices), self.no)
+        self.assertEqual(sampler.firing_graph.C.shape[0], 6)
+        self.assertEqual(sampler.firing_graph.I.shape[0], self.ni)
+        self.assertEqual(sampler.firing_graph.O.shape[1], self.no)
 
         # Test level of core vertices
         for i in range(self.no):
-            l_v = sampler.firing_graph.core_vertices[i * 3: (i+1) * 3]
-            self.assertEqual([v.l0 for v in l_v], [1, len(self.selected_bits[i]), 2])
+            l_core_vetices = sampler.core_vertices[i]
+            self.assertEqual(
+                list(sampler.firing_graph.levels[[map(lambda x: int(x.split('_')[1]), l_core_vetices)]]),
+                [1, len(self.selected_bits[i]), 2]
+            )
 
 
 def init_imputer(ax_input, ax_output):

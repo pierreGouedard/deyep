@@ -57,7 +57,6 @@ def bui(sax_cb, sax_im, firing_graph):
     :return: update of adjacency matrix
     :rtype: scipy.sparse.spmatrix
     """
-
     sax_Iu = sax_cb.dot(sax_im).transpose().multiply(firing_graph.I.astype(int))
     sax_track = (sax_cb != 0).astype(int).dot(sax_im).transpose().multiply(firing_graph.I.multiply(firing_graph.Im).astype(int))
     firing_graph.matrices['Iw'] += sax_Iu.multiply(firing_graph.Im)

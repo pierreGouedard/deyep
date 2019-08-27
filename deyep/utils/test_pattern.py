@@ -203,7 +203,8 @@ class AndPattern3(TestPattern):
         self.ni, self.no, self.nc, self.w, self.p, self.random_target = ni, no, 3, w, p, random_target
 
         # Init
-        self.firing_graph, self.mask_vertice_drain = None, {'I': np.ones(self.ni * self.no), 'C': np.zeros(self.no)}
+        self.firing_graph, self.mask_vertice_drain = None, {'I': np.ones(self.ni * self.no),
+                                                            'C': np.zeros(self.no * self.nc)}
 
         # Set targets
         self.target = [
@@ -248,7 +249,7 @@ class AndPattern3(TestPattern):
             ax_levels[i * self.nc + self.nc - 1] = self.nc - 1
 
         # Build Firing graph
-        sax_I, sax_C, sax_O = mat_from_tuples(self.ni * self.no, self.no * self.nc, self.no, l_edges, weights=self.w)
+        sax_I, sax_C, sax_O = mat_from_tuples(self.ni * self.no, self.no, self.no * self.nc, l_edges, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
             'AndPatFinal3', sax_I, sax_C, sax_O, ax_levels, self.mask_vertice_drain, self.depth
         )
@@ -282,7 +283,7 @@ class AndPattern3(TestPattern):
             ax_levels[i * self.nc + self.nc - 1] = self.nc - 1
 
         # Build Firing graph
-        sax_I, sax_D, sax_O = mat_from_tuples(self.ni * self.no, self.no * self.nc, self.no, l_edges, weights=self.w)
+        sax_I, sax_C, sax_O = mat_from_tuples(self.ni * self.no, self.no, self.no * self.nc, l_edges, weights=self.w)
         self.firing_graph = FiringGraph.from_matrices(
             'AndPatInit3', sax_I, sax_C, sax_O, ax_levels, self.mask_vertice_drain, self.depth
         )
