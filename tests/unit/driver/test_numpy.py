@@ -25,7 +25,7 @@ class TestDriverNumpy(unittest.TestCase):
     def test_load_and_save(self):
         """
 
-        python -m unittest tests.driver.test_numpy.TestDriverNumpy.test_load_and_save
+        python -m unittest tests.unit.driver.test_numpy.TestDriverNumpy.test_load_and_save
 
         """
 
@@ -54,7 +54,7 @@ class TestDriverNumpy(unittest.TestCase):
     def test_load_save_partition(self):
         """
 
-        python -m unittest tests.driver.test_numpy.TestDriverNumpy.test_load_save_partition
+        python -m unittest tests.unit.driver.test_numpy.TestDriverNumpy.test_load_save_partition
 
         """
 
@@ -88,7 +88,7 @@ class TestDriverNumpy(unittest.TestCase):
     def test_stream(self):
         """
 
-        python -m unittest tests.driver.test_numpy.TestDriverNumpy.test_stream
+        python -m unittest tests.unit.driver.test_numpy.TestDriverNumpy.test_stream
 
         """
 

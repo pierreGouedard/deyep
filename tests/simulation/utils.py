@@ -2,7 +2,7 @@
 import numpy as np
 
 # Local import
-from deyep.utils import test_signal as ts
+from tests.utils import test_signal as ts
 from deyep.core.solver import sampler, drainer
 
 

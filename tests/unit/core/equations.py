@@ -83,7 +83,7 @@ class TestEquations(unittest.TestCase):
     def forward(self):
         """
         Very precise case on very simple graph to validate basics of drainer for forward equations
-        python -m unittest tests.core.equations.TestEquations.forward
+        python -m unittest tests.unit.core.equations.TestEquations.forward
 
         """
 
@@ -102,7 +102,7 @@ class TestEquations(unittest.TestCase):
     def backward(self):
         """
         Very precise case on very simple graph to validate basics of drainer for backward equations
-        python -m unittest tests.core.equations.TestEquations.backward
+        python -m unittest tests.unit.core.equations.TestEquations.backward
 
         """
         # Create imputer and drainer
@@ -156,7 +156,7 @@ class TestEquations(unittest.TestCase):
     def drain_mask(self):
         """
         Very precise case on very simple graph to validate effectiveness of mask for draining
-        python -m unittest tests.core.equations.TestEquations.drain_mask
+        python -m unittest tests.unit.core.equations.TestEquations.drain_mask
 
         """
         # Create imputer and drainer

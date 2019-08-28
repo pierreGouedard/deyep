@@ -1,7 +1,6 @@
 # Global imports
 import unittest
 from scipy.sparse import csc_matrix
-import numpy as np
 
 # Local import
 from deyep.core.firing_graph.utils import gather_matrices
@@ -9,7 +8,7 @@ from deyep.core.imputer.array import DoubleArrayImputer
 from deyep.utils.driver.nmp import NumpyDriver
 from deyep.core.solver.drainer import FiringGraphDrainer
 from deyep.utils.interactive_plots import plot_graph
-from deyep.utils.test_pattern import AndPattern2 as ap2, AndPattern3 as ap3
+from tests.utils.test_pattern import AndPattern2 as ap2, AndPattern3 as ap3
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -34,7 +33,7 @@ class TestDrainer(unittest.TestCase):
 
         """
         Test the well functioning of mask on backward updates
-        python -m unittest tests.core.drainer.TestDrainer.time_mask
+        python -m unittest tests.unit.core.drainer.TestDrainer.time_mask
 
         """
 
@@ -58,7 +57,7 @@ class TestDrainer(unittest.TestCase):
 
         """
         Test And Pattern of depth 2
-        python -m unittest tests.core.drainer.TestDrainer.andpattern2
+        python -m unittest tests.unit.core.drainer.TestDrainer.andpattern2
 
         """
 
@@ -101,7 +100,7 @@ class TestDrainer(unittest.TestCase):
     def andpattern3(self):
         """
         Test And Pattern of depth 3
-        python -m unittest tests.core.drainer.TestDrainer.andpattern3
+        python -m unittest tests.unit.core.drainer.TestDrainer.andpattern3
 
         """
         # Create I/O and save it into tmpdir files
@@ -155,7 +154,7 @@ class TestDrainer(unittest.TestCase):
     def batch_size_2(self):
         """
         Test batch size coherence (depth 2)
-        python -m unittest tests.core.drainer.TestDrainer.batch_size_2
+        python -m unittest tests.unit.core.drainer.TestDrainer.batch_size_2
 
         """
         # Create I/O and save it into tmpdir files
@@ -192,7 +191,7 @@ class TestDrainer(unittest.TestCase):
     def batch_size_3(self):
         """
         Test batch size coherence (depth 3)
-        python -m unittest tests.core.drainer.TestDrainer.batch_size_3
+        python -m unittest tests.unit.core.drainer.TestDrainer.batch_size_3
 
         """
         # Create I/O and save it into tmpdir files

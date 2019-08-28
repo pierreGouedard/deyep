@@ -30,7 +30,7 @@ class TestSampler(unittest.TestCase):
         """
         sampler test for first usage (initialisation)
 
-        python -m unittest tests.core.sampler.TestSampler.sampler_init
+        python -m unittest tests.unit.core.sampler.TestSampler.sampler_init
 
         """
         # Create simple imputer and sampler
@@ -58,7 +58,7 @@ class TestSampler(unittest.TestCase):
         """
         sampler test for main usage of sampler (after initialisation)
 
-        python -m unittest tests.core.sampler.TestSampler.sampler_main
+        python -m unittest tests.unit.core.sampler.TestSampler.sampler_main
 
         """
         # Create simple imputer and sampler
