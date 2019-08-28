@@ -31,7 +31,7 @@ class TestBuilder(unittest.TestCase):
     def building_graph(self):
         """
         Test basic graph building
-        python -m unittest tests.core.builder.TestBuilder.building_graph
+        python -m unittest tests.unit.core.builder.TestBuilder.building_graph
 
         """
 

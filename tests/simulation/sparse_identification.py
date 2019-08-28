@@ -1,11 +1,7 @@
 # Global import
 import numpy as np
-from matplotlib.pyplot import cm
-from matplotlib.colors import rgb2hex
 
 # Local import
-from deyep.utils import test_signal as ts
-from deyep.core.solver import sampler, drainer
 from tests.simulation import utils as u
 from deyep.utils import interactive_plots as ip
 
