@@ -1,4 +1,4 @@
-# deyep V2 (INPROCESS) minimal
+# deyep V3: dry version for pubication
 
 
 
