@@ -1,160 +1,206 @@
 # Global imports
 import unittest
-
 import numpy as np
 from scipy.sparse import csc_matrix
 
-from deyep.core.builder.comon import mat_from_tuples
-from deyep.core.datastructures.deep_network import DeepNetwork
+from deyep.core.firing_graph.utils import mat_from_tuples
+from deyep.core.firing_graph.graph import FiringGraph
 from deyep.core.imputer.array import DoubleArrayImputer
-from deyep.core.solver.drainer import DeepNetDrainer
+from deyep.core.solver.drainer import FiringGraphDrainer
 from deyep.utils.driver.nmp import NumpyDriver
 
 __maintainer__ = 'Pierre Gouedard'
 
 
 class TestEquations(unittest.TestCase):
+    """
+    Test forward:
+        Graph:
+              i0      i1
+             /  \    / \
+            /   \   /   \
+           c0    c1      c2
+            \    /        |
+             \  /         |
+              o0          o2
+
+        Levels:
+         c0 = 1, c1 = 2, c2 = 1
+
+        Table Input -> Core:
+        | i0 | i1 | -> | c0 | c1 | c2 |
+        | 0  |  0 | -> | 0  |  0 | 0  |
+        | 1  |  0 | -> | 1  |  0 | 0  |
+        | 0  |  1 | -> | 0  |  0 | 1  |
+        | 1  |  1 | -> | 1  |  1 | 1  |
+
+        Table Core -> Output:
+        | c0 | c1 | c2 | -> | o0 | o1 |
+        | 0  |  0 | 0  | -> | 0  | 0  |
+        | 1  |  0 | 0  | -> | 1  | 0  |
+        | 0  |  0 | 1  | -> | 0  | 1  |
+        | 1  |  1 | 1  | -> | 1  | 1  |
+
+        Table Target Input -> Output:
+        | i0 | i1 | -> | o0 | o1 |
+        | 0  |  0 | -> | 0  |  0 |
+        | 1  |  0 | -> | 0  |  0 |
+        | 0  |  1 | -> | 0  |  1 |
+        | 1  |  1 | -> | 1  |  1 |
+
+    """
     def setUp(self):
+        # Create a simple deep network (2 input vertices, 3 network vertices,, 2 output vertices)
+        self.ni, self.nc, self.no, self.depth, self.weight, self.penalty, self.batch_size = 2, 3, 2, 2, 10, 3, 4
+        l_edges = [('input_0', 'core_0'), ('core_0', 'output_0')] +  \
+                  [('input_0', 'core_1'), ('core_1', 'output_0')] + \
+                  [('input_1', 'core_1')] + \
+                  [('input_1', 'core_2'), ('core_2', 'output_1')]
 
-        np.random.seed(392)
+        self.levels = np.array([1, 2, 1], dtype=int)
+        self.sax_I, self.sax_C, self.sax_O = mat_from_tuples(self.ni, self.no, self.nc, l_edges, self.weight)
+        self.mask_vertice_drain_a = {'I': np.ones(self.ni), 'C': np.ones(self.nc)}
+        self.mask_vertice_drain_b = {'I': np.ones(self.ni), 'C': np.zeros(self.nc)}
+        self.mask_vertice_drain_c = {'I': np.zeros(self.ni), 'C': np.ones(self.nc)}
 
-        # Create a simple deep network (2 input nodes, 3 network nodes,, 2 output nodes)
-        self.n_i, self.n_rn, self.n_o, self.capacity = 2, 4, 2, 10
-        l_edges = [('input_0', 'network_0'), ('network_0', 'network_1')] +  \
-                  [('input_0', 'network_2'), ('network_2', 'network_1')] + \
-                  [('input_1', 'network_3'), ('network_3', 'output_1')]
+        # Create firing graphs
+        self.fga = FiringGraph.from_matrices(
+            'test_equation_a', self.sax_I, self.sax_C, self.sax_O, self.levels,  self.mask_vertice_drain_a
+        )
 
-        # Get matrices from list of edges and build network
-        self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, self.n_i, self.n_rn, self.n_o)
-        self.dn = DeepNetwork.from_matrices('test_equation', self.mat_net, self.mat_in, self.mat_out, self.capacity)
+        self.fgb = FiringGraph.from_matrices(
+            'test_equation_b', self.sax_I, self.sax_C, self.sax_O, self.levels,  self.mask_vertice_drain_b
+        )
+
+        self.fgc = FiringGraph.from_matrices(
+            'test_equation_c', self.sax_I, self.sax_C, self.sax_O, self.levels,  self.mask_vertice_drain_c
+        )
+
+        # Create test signals
+        self.input = csc_matrix([[0, 0], [1, 0], [0, 1], [1, 1]])
+        self.output = csc_matrix([[0, 0], [0, 0], [0, 1], [1, 1]])
 
     def forward(self):
         """
-        Very precise case on very simple grpah to validate basics of drainer for forward equations
+        Very precise case on very simple graph to validate basics of drainer for forward equations
         python -m unittest tests.core.equations.TestEquations.forward
 
         """
 
-        imputer = init_imputer()
-        solver = DeepNetDrainer(self.dn, 2, imputer, p0=1)
-        import IPython
-        IPython.embed()
+        # Create imputer and drainer
+        imputer = init_imputer(self.input, self.output)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fga, imputer)
 
-        # Run for one epoch (forward transmitting)
-        solver.fit_epoch(1)
-        self.assertAlmostEqual(len(solver.sax_so.nonzero()[0]), 0)
-        self.assertAlmostEqual(len(np.unique(solver.sax_sn.nonzero()[1])), 1)
-        self.assertAlmostEqual(np.unique(solver.sax_sn.nonzero()[1])[0], 3)
+        # Run for Two iteration and check forward signals are as expected
+        drainer.run_iteration(True, False)
+        drainer.iter += 1
+        self.assertTrue((drainer.sax_c.toarray() == np.array([[0, 0, 0], [1, 0, 0], [0, 0, 1], [1, 1, 1]])).all())
 
-        # Run for one epoch (forward processing)
-        solver.fit_epoch(1)
-        node = solver.deep_network.network_nodes[3]
-        self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), 1)
-        self.assertEqual(node.basis.queue_forward[0], (0, ['N=21,k=0']))
-        self.assertTrue((solver.sax_C.toarray() == np.array([[False, False]] * 3 + [[True, False]], dtype=bool)).all())
-
-        for node in solver.deep_network.network_nodes[:-1]:
-            self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), 0)
-
-        # Run epoch (2nd forward transmitting)
-        solver.fit_epoch(1)
-        self.assertAlmostEqual(len(np.unique(solver.sax_so.nonzero()[1])), 1)
-        self.assertAlmostEqual(np.unique(solver.sax_so.nonzero()[1])[0], 1)
-        self.assertAlmostEqual(len(np.unique(solver.sax_sn.nonzero()[1])), 2)
-
-        # Run one epoch (backward buffer and 2nd forward processing)
-        solver.fit_epoch(1)
-        d_test = {0: 1, 1: 0, 2: 1, 3: 1}
-        for i, v in d_test.items():
-            node = solver.deep_network.network_nodes[i]
-            self.assertEqual(len([t for t in node.basis.queue_forward if t is not None]), v)
-
-        self.assertTrue((solver.sax_C == np.array([[True] * 2, [False] * 2, [True] * 2, [False] * 2])).all())
-        self.assertTrue((solver.sax_Cb.toarray() == np.array([[False, False]] * 3 + [[True, False]], dtype=bool)).all())
-        self.assertTrue((solver.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
-        self.assertTrue((solver.sax_sab.toarray() == np.array([[False, False, False, True]] * 2, dtype=bool)).all())
-        self.assertEqual(np.unique(solver.sax_sob.nonzero()[1])[0], 1)
+        drainer.run_iteration(True, False)
+        self.assertTrue((drainer.sax_o.toarray() == np.array([[0, 0], [1, 0], [0, 1], [2, 1]])).all())
 
     def backward(self):
         """
-        Very precise case on very simple graph to validate basics of drainer for ackward equations
+        Very precise case on very simple graph to validate basics of drainer for backward equations
         python -m unittest tests.core.equations.TestEquations.backward
 
         """
+        # Create imputer and drainer
+        imputer = init_imputer(self.input, self.output)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fga, imputer)
 
-        imputer = init_imputer()
-        solver = DeepNetDrainer(self.dn, 2, imputer, p0=1)
+        # Run for Two iteration and check backward signals are as expected
+        drainer.run_iteration(True, True)
+        drainer.iter += 1
+        drainer.forward_transmiting(True)
+        drainer.forward_processing(True)
 
-        # Run for sufficient number of epoch to reach first backward processing
-        ax_out = solver.deep_network.O.toarray()
-        solver.fit_epoch(5)
+        # Output feedback
+        drainer.backward_processing()
 
-        node = solver.deep_network.network_nodes[-1]
-        self.assertTrue((ax_out == solver.deep_network.O.toarray()).all())
+        # Build expected backward signals
+        ax_expected = np.hstack(
+            (np.zeros((self.no, self.batch_size)), np.array([[0, -3, 0, 1], [0, 0, 1, 1]]),
+             np.zeros((self.no, 2 * self.batch_size)))
+        )
+        # Check correctness of feedback
+        self.assertTrue((drainer.sax_ob.toarray() == ax_expected).all())
 
-        ax_out = solver.sax_sob.toarray().transpose()
-        ax_test = node.basis.base.toarray()[0]
-        self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
+        # Core adjacency matrix update
+        drainer.backward_transmiting()
+        drainer.iter += 1
 
-        ax_test = node.basis.base_from_key('N={},k={}'.format(node.basis.N, node.basis.key), offset=1).toarray()[0]
-        self.assertTrue((ax_out.dot(ax_test) == np.array([0, 1])).all())
-        self.assertTrue((solver.sax_snb.toarray() == 0).all())
+        # Build expected backward signals
+        ax_O_expected = np.array([[1 - self.penalty,  0.], [1.,  0.], [0.,  2.]])
+        ax_O_expected = ax_O_expected + (ax_O_expected != 0) * self.weight
+        ax_O_track = np.array([[2,  0.], [1.,  0.], [0.,  2.]])
 
-        # Run first backward transmitting
-        ax_Ow, ax_Dw, ax_Iw = solver.deep_network.Ow, solver.deep_network.Dw, solver.deep_network.Iw
-        solver.fit_epoch(1)
+        # Check correctness of core structure updates
+        self.assertTrue((drainer.firing_graph.Ow.toarray() == ax_O_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['o'].toarray() == ax_O_track).all())
 
-        # Make sure update of network is ok
-        self.assertEqual(ax_Ow[-1, 1], solver.deep_network.Ow[-1, 1] - 1)
-        self.assertEqual(len(solver.deep_network.Ow.nonzero()[0]), 1)
-        self.assertTrue((ax_Dw == solver.deep_network.Dw).toarray().all())
-        self.assertTrue((ax_Iw == solver.deep_network.Iw).toarray().all())
+        drainer.forward_transmiting(True)
+        drainer.forward_processing(True)
+        drainer.backward_processing()
+        drainer.backward_transmiting()
 
-        # Make sure nodes has received their backward message
-        self.assertEqual(len(np.unique(solver.sax_snb.nonzero()[1])), 1)
+        # Build expected backward signals
+        ax_I_expected = np.array([[1 - self.penalty, 1, 0], [0, 1, 2]])
+        ax_I_expected = ax_I_expected + (ax_I_expected != 0) * self.weight
+        ax_I_track = np.array([[2, 1, 0], [0, 1, 2]])
 
-        # Run second backward processing
-        solver.fit_epoch(1)
+        # Check correctness of backward signals
+        self.assertTrue((drainer.firing_graph.Iw.toarray() == ax_I_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['i'].toarray() == ax_I_track).all())
 
-        # Make sure no candidate has been updated
-        self.assertEqual(len(solver.deep_network.Ow.nonzero()[0]), 1)
-        self.assertEqual(len(solver.deep_network.Cm.nonzero()[0]), 1)
+    def drain_mask(self):
+        """
+        Very precise case on very simple graph to validate effectiveness of mask for draining
+        python -m unittest tests.core.equations.TestEquations.drain_mask
 
-        # Make sure sax_sob is all zero
-        self.assertEqual(solver.sax_sob.nnz, 0)
+        """
+        # Create imputer and drainer
+        imputer = init_imputer(self.input, self.output)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fgb, imputer)
 
-        # make sure backward messages are correct
-        node = solver.deep_network.input_nodes[-1]
+        # Run for 1 epoch and check backward signals are as expected
+        drainer.drain(1)
 
-        self.assertEqual(solver.sax_snb[:, -1].toarray()[:, 0].dot(node.basis.base.toarray()[0]), 1)
-        self.assertEqual(node.basis.depth_from_basis(solver.sax_snb[:, -1].transpose()), ([0], [1.]))
+        # Build expected backward signals
+        ax_I_expected = np.array([[1 - self.penalty, 1, 0], [0, 1, 2]])
+        ax_I_expected = ax_I_expected + (ax_I_expected != 0) * self.weight
+        ax_I_track = np.array([[2, 1, 0], [0, 1, 2]])
 
-        # Backward transmiting
-        Iw = solver.deep_network.Iw
-        solver.fit_epoch(1)
+        # Check correctness of backward signals
+        self.assertTrue((drainer.firing_graph.Iw.toarray() == ax_I_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['i'].toarray() == ax_I_track).all())
+        self.assertTrue((drainer.firing_graph.Ow.toarray() == self.fga.Ow.toarray()).all())
 
-        # Assert Iw has been updated
-        self.assertEqual(solver.deep_network.Iw[1, -1], Iw[1, -1] + 1)
+        # Create imputer and drainer
+        imputer = init_imputer(self.input, self.output)
+        drainer = FiringGraphDrainer(100, self.penalty, self.batch_size, self.fgc, imputer)
 
-        # Test update of Ow
-        solver.fit_epoch(1)
-        self.assertTrue(solver.sax_Cb[1, 0])
-        solver.fit_epoch(1)
-        self.assertEqual(solver.deep_network.Ow[1, 0], 5)
+        # Run for 1 epoch and check backward signals are as expected
+        drainer.drain(1)
 
-        # just to make sure that the rest is ok
-        solver.fit_epoch(10)
+        # Build expected backward signals
+        ax_O_expected = np.array([[1 - self.penalty,  0.], [1.,  0.], [0.,  2.]])
+        ax_O_expected = ax_O_expected + (ax_O_expected != 0) * self.weight
+        ax_O_track = np.array([[2,  0.], [1.,  0.], [0.,  2.]])
+
+        # Check correctness of core structure updates
+        self.assertTrue((drainer.firing_graph.Ow.toarray() == ax_O_expected).all())
+        self.assertTrue((drainer.firing_graph.backward_firing['o'].toarray() == ax_O_track).all())
+        self.assertTrue((drainer.firing_graph.Iw.toarray() == self.fga.Iw.toarray()).all())
 
 
-def init_imputer():
+def init_imputer(ax_input, ax_output):
     # Create temporary directory for test
     driver = NumpyDriver()
-    tmpdirin, tmpdirout = driver.TempDir('test_and_pattern', suffix='in', create=True), \
-                          driver.TempDir('test_and_pattern', suffix='out', create=True)
+    tmpdirin, tmpdirout = driver.TempDir('test_equation', suffix='in', create=True), \
+                          driver.TempDir('test_equation', suffix='out', create=True)
 
     # Create I/O and save it into tmpdir files
-    ax_input = csc_matrix(([1., 1.], ([0, 1], [1, 0])), shape=(10, 2), dtype=int)
-    ax_output = csc_matrix(([1., 1.], ([0, 2], [1, 0])), shape=(10, 2), dtype=int)
     driver.write_file(ax_input, driver.join(tmpdirin.path, 'forward.npz'), is_sparse=True)
     driver.write_file(ax_output, driver.join(tmpdirin.path, 'backward.npz'), is_sparse=True)
 

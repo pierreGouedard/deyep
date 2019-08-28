@@ -1,12 +1,11 @@
 # Global imports
 import unittest
-from scipy.sparse import csc_matrix as csc
 import numpy as np
+from scipy.sparse import csc_matrix
 
 # Local import
-from deyep.core.builder.comon import set_nodes_from_mat, set_frequencies, mat_from_tuples
-from deyep.core.builder.binomial import BinomialGraphBuilder
-
+from deyep.core.firing_graph.utils import mat_from_tuples
+from deyep.core.firing_graph.graph import FiringGraph
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -14,87 +13,46 @@ __maintainer__ = 'Pierre Gouedard'
 class TestBuilder(unittest.TestCase):
     def setUp(self):
 
-        # Create a simple deep network (2 input nodes, 3 network nodes,, 2 output nodes)
-        n_i, n_rn, n_o, self.capacity = 2, 5, 3, 20
-        l_edges = [('input_0', 'network_0'), ('network_0', 'network_1'), ('network_0', 'network_2'),
-                   ('network_1', 'output_0'), ('network_2', 'output_1')] +  \
-                  [('input_0', 'network_3'), ('network_3', 'network_2')] + \
-                  [('input_1', 'network_4'), ('network_4', 'output_2')] + \
-                  [('input_1', 'network_2')]
+        # Create a simple deep network (2 input nodes, 3 network nodes, 3 output nodes)
+        self.ni, self.nc, self.no = 2, 5, 3
+        self.l_edges = [('input_0', 'core_0'), ('core_0', 'core_1'), ('core_0', 'core_2'),
+                        ('core_1', 'output_0'), ('core_2', 'output_1')] + \
+                       [('input_0', 'core_3'), ('core_3', 'core_2')] + \
+                       [('input_1', 'core_4'), ('core_4', 'output_2')] + \
+                       [('input_1', 'core_2')]
+
+        self.weight = 10
+        self.ax_levels = [1, 1, 1, 1, 1]
+        self.mask_vertice_drain = {'I': np.zeros(self.ni), 'C': np.zeros(self.nc), 'O': np.zeros(self.no)}
 
         # Get matrices for building test
-        self.mat_in, self.mat_net, self.mat_out = mat_from_tuples(l_edges, n_i, n_rn, n_o)
+        self.sax_I, self.sax_C, self.sax_O = mat_from_tuples(self.ni, self.no, self.nc, self.l_edges, self.weight)
 
-        # Get matrices for refining test
-        self.sax_D, self.sax_I, self.sax_O, self.sax_Cm = csc((5, 5)), csc((1, 5)), csc((5, 2)), csc((5, 2))
-        self.sax_I[0, [0, 1]], self.sax_D[0, 2], self.sax_D[1, 3], self.sax_D[2, 4] = 1, 1, 1, 1
-
-    def building(self):
+    def building_graph(self):
         """
-        Test basic frequency management
-        python -m unittest tests.core.builder.TestBuilder.building
+        Test basic graph building
+        python -m unittest tests.core.builder.TestBuilder.building_graph
 
         """
 
-        # Build dictionary of nodes
-        d_inputs = set_nodes_from_mat(self.mat_in, 'input')
-        d_outputs = set_nodes_from_mat(self.mat_out, 'output')
-        d_networks = set_nodes_from_mat(self.mat_net, 'network')
+        # Update mask vertice drainer
+        self.mask_vertice_drain['I'][0] = 1
+        self.mask_vertice_drain['C'][3] = 1
+        self.mask_vertice_drain['C'][2] = 1
 
-        self.assertEqual(len(d_inputs), self.mat_in.shape[0])
-        self.assertEqual(len(d_networks), self.mat_net.shape[0])
-        self.assertEqual(len(d_outputs), self.mat_out.shape[-1])
-
-        # distribute frequency among input nodes,
-        d_inputs, set_freqs, d_forward_freqs = set_frequencies(d_inputs, {0}, 1, {})
-
-        # distribute frequencies among network nodes
-        d_networks, set_freqs_, d_forward_freqs = set_frequencies(d_networks, {0}, self.capacity, d_forward_freqs,
-                                                                  offset=len(set_freqs))
-
-        # Assert that no frequency are conflicting
-        self.assertEqual(set_freqs_, {0, 1})
-        self.assertEqual(set_freqs, {0})
-        self.assertTrue(all([d['freqs'] == [0] for _, d in d_inputs.items()]))
-        self.assertEqual(d_networks[3]['freqs'], [self.capacity + 1])
-        self.assertEqual(d_networks[0]['freqs'], [1])
-        self.assertEqual(d_forward_freqs, {'network_0': [0], 'network_1': [1], 'network_2': [0, 1, 21],
-                                           'network_3': [0], 'network_4': [0]})
-        self.assertEqual(((max(set_freqs_) + 1) * self.capacity) + len(set_freqs), (self.capacity * 2) + 1)
-
-    def refining(self):
-        """
-        python -m unittest tests.core.builder.TestBuilder.refining
-
-        """
-        # Case 1 (delay)
-        sax_Cm = self.sax_Cm.copy().astype(bool)
-        sax_Cm[:2, :] = True
-
-        d_depth = BinomialGraphBuilder.compute_depth(
-            self.sax_D.copy().transpose(), (sax_Cm < 1).transpose()
+        firing_graph = FiringGraph.from_matrices(
+            'test_build', self.sax_I, self.sax_C, self.sax_O, self.ax_levels,  self.mask_vertice_drain
         )
 
-        sax_I, sax_D = BinomialGraphBuilder.update_structure(self.sax_I.copy(), self.sax_D.copy(), d_depth)
+        # Assert adjacency matrices are correct
+        self.assertTrue(firing_graph.I[0, 3] and firing_graph.Iw[0, 3] == self.weight)
+        self.assertTrue(firing_graph.C[3, 2] and firing_graph.Cw[3, 2] == self.weight)
+        self.assertTrue(firing_graph.O[4, 2] and firing_graph.Ow[4, 2] == self.weight)
 
-        self.assertTrue((sax_I.astype(int).toarray() == np.array([2, 1, 0, 0, 0])).all())
-        self.assertTrue((sax_D[0, :].astype(int).toarray() == np.array([0, 0, 2, 0, 0])).all())
-        self.assertTrue((sax_D[1, :].astype(int).toarray() == np.array([0, 0, 0, 1, 0])).all())
-        self.assertTrue((sax_D[2, :].astype(int).toarray() == np.array([0, 0, 0, 0, 1])).all())
-        self.assertEqual(sax_D[3:, :].sum(), 0)
+        # Assert mask for drainer are correct
+        self.assertTrue(firing_graph.Im[1, :].nnz == 0 and firing_graph.Im[0, :].nnz == firing_graph.I[0, :].nnz)
+        self.assertTrue(firing_graph.Cm[[0, 1, 2, 4], :].nnz == 0 and firing_graph.Cm[3, :].nnz == firing_graph.C[3, :].nnz)
+        self.assertTrue(firing_graph.Om[[0, 1, 3, 4], :].nnz == 0 and firing_graph.Om[2, :].nnz == firing_graph.O[2, :].nnz)
 
-        # Case 2 (no delay)
-        sax_Cm = self.sax_Cm.copy().astype(bool)
 
-        d_depth = BinomialGraphBuilder.compute_depth(
-            self.sax_D.copy().transpose(), (sax_Cm < 1).transpose()
-        )
-
-        sax_I, sax_D = BinomialGraphBuilder.update_structure(self.sax_I.copy(), self.sax_D.copy(), d_depth)
-
-        self.assertTrue((sax_I.astype(int).toarray() == np.array([3, 2, 0, 0, 0])).all())
-        self.assertTrue((sax_D[0, :].astype(int).toarray() == np.array([0, 0, 2, 0, 0])).all())
-        self.assertTrue((sax_D[1, :].astype(int).toarray() == np.array([0, 0, 0, 1, 0])).all())
-        self.assertTrue((sax_D[2, :].astype(int).toarray() == np.array([0, 0, 0, 0, 1])).all())
-        self.assertEqual(sax_D[3:, :].sum(), 0)
 

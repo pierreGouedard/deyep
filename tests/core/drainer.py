@@ -1,16 +1,15 @@
 # Global imports
 import unittest
-
-import numpy as np
 from scipy.sparse import csc_matrix
+import numpy as np
 
-from deyep.core.builder.comon import mat_from_tuples, gather_matrices
-from deyep.core.datastructures.deep_network import DeepNetwork
+# Local import
+from deyep.core.firing_graph.utils import gather_matrices
 from deyep.core.imputer.array import DoubleArrayImputer
-from deyep.core.solver.drainer import DeepNetDrainer
 from deyep.utils.driver.nmp import NumpyDriver
+from deyep.core.solver.drainer import FiringGraphDrainer
 from deyep.utils.interactive_plots import plot_graph
-from tests.utils import testPattern as tp
+from deyep.utils.test_pattern import AndPattern2 as ap2, AndPattern3 as ap3
 
 __maintainer__ = 'Pierre Gouedard'
 
@@ -21,186 +20,216 @@ class TestDrainer(unittest.TestCase):
         # enable, disable visual inspection of graph
         self.visual = False
 
-        # Set core parameters
-        self.l0, self.tau, self.wo = 10, 5, 10
+        # Create And pattern of depth 2 /!\ Do not change those parameter for the test /!\
+        self.n, self.ni, self.no, self.w0, self.t_mask = 100, 10, 2, 10, 5
+        self.ap2 = ap2(self.ni, self.no, w=self.w0, seed=1234)
+        self.ap2_fg = self.ap2.build_graph_pattern_init()
 
-        # Create And pattern
-        self.n_and = 10
-        self.and_pat = tp.AndPattern(self.n_and)
-        mat_in, mat_net, mat_out = mat_from_tuples(
-            self.and_pat.build_graph_pattern_init(), len(self.and_pat.input_nodes), len(self.and_pat.network_nodes),
-            len(self.and_pat.output_nodes),  weights=[20] * len(self.and_pat.build_graph_pattern_init())
-        )
-        self.and_dn = DeepNetwork.from_matrices(
-            'test_and', mat_net, mat_in, mat_out, 10, w0=self.wo, l0=self.l0, tau=self.tau
-        )
+        # Create And pattern of depth 3
+        self.ni, self.no, self.n_selected = 15, 2, 3
+        self.ap3 = ap3(self.ni, self.no, n_selected=self.n_selected, w=self.w0, seed=1234)
+        self.ap3_fg = self.ap3.build_graph_pattern_init()
 
-        # Create Xor pattern
-        self.n_xor = 10
-        self.xor_pat = tp.XorPattern(self.n_xor, self.n_xor)
-        mat_in, mat_net, mat_out = mat_from_tuples(
-            self.xor_pat.build_graph_pattern_init(), len(self.xor_pat.input_nodes), len(self.xor_pat.network_nodes),
-            len(self.xor_pat.output_nodes), weights=[10] * len(self.xor_pat.build_graph_pattern_init())
-        )
-        self.xor_dn = DeepNetwork.from_matrices(
-            'test_xor', mat_net, mat_in, mat_out, 10, w0=self.wo, l0=self.l0, tau=self.tau
-        )
-
-        mat_in, mat_net, mat_out = mat_from_tuples(
-            self.xor_pat.build_graph_pattern_final(), len(self.xor_pat.input_nodes), len(self.xor_pat.network_nodes),
-            len(self.xor_pat.output_nodes), weights=[10] * len(self.xor_pat.build_graph_pattern_init())
-        )
-        self.xor_dn_f = DeepNetwork.from_matrices(
-            'test_xor_final', mat_net, mat_in, mat_out, 100, w0=self.wo, l0=self.l0, tau=self.tau
-        )
-
-        # Create Tree patter
-        self.tree_pat = tp.TreePattern(5, 2)
-        mat_in, mat_net, mat_out = mat_from_tuples(
-            self.tree_pat.build_graph_pattern_init(), len(self.tree_pat.input_nodes), len(self.tree_pat.network_nodes),
-            len(self.tree_pat.output_nodes), weights=[10] * len(self.tree_pat.build_graph_pattern_init())
-        )
-        self.tree_dn = DeepNetwork.from_matrices(
-            'test_tree', mat_net, mat_in, mat_out, 10, w0=self.wo, l0=self.l0, tau=self.tau
-        )
-
-        mat_in, mat_net, mat_out = mat_from_tuples(
-            self.tree_pat.build_graph_pattern_final(), len(self.tree_pat.input_nodes), len(self.tree_pat.network_nodes),
-            len(self.tree_pat.output_nodes), weights=[10] * len(self.tree_pat.build_graph_pattern_final())
-        )
-        self.tree_dn_f = DeepNetwork.from_matrices(
-            'test_tree_final', mat_net, mat_in, mat_out, 10, w0=self.wo, l0=self.l0, tau=self.tau
-        )
-
-        # Create params for matching test
-        self.n_match, self.ni_match, self.p_match = 100, 2, 3
-
-        graph = {
-            'Iw': csc_matrix((0, 0)), 'Dw': csc_matrix((0, 0)), 'Ow': csc_matrix((0, 0)), 'Cm': csc_matrix((0,0)),
-            'IOw': csc_matrix((self.ni_match, self.ni_match))
-        }
-        self.dn_match = DeepNetwork('test_match', 1, 10, 5, [], [], [], graph, 0, 0)
-
-    def andpattern(self):
-        """
-        python -m unittest tests.core.drainer.TestDrainer.andpattern
+    def time_mask(self):
 
         """
-        # Create I/O and save it into tmpdir files
-        ax_input, ax_output = self.and_pat.generate_io_sequence(1000, seed=1234)
-        imputer = create_imputer('andpattern', csc_matrix(ax_input), csc_matrix(ax_output))
-
-        # Create drainer
-        drainer = DeepNetDrainer(self.and_dn, self.and_pat.delay, imputer, p0=1)
-        drainer.fit_epoch(n=500)
-
-        # Assert result is as expected
-        self.assertTrue(all([drainer.deep_network.network_nodes[0].d_levels[i] < self.tau for i in range(self.n_and)]))
-        self.assertTrue(drainer.deep_network.network_nodes[0].d_levels[10] > self.tau)
-
-        # VISUAL TEST:
-        if self.visual:
-            ax_graph_conv = gather_matrices(self.and_dn.Iw.toarray(), self.and_dn.Dw.toarray(), self.and_dn.Ow.toarray())
-            plot_graph(ax_graph_conv, self.and_pat.layout())
-
-    def xorpattern(self):
-        """
-        python -m unittest tests.core.drainer.TestDrainer.xorpattern
-
-        """
-        # Create I/O and save it into tmpdir files
-        ax_input, ax_output = self.xor_pat.generate_io_sequence(1000)
-        imputer = create_imputer('xorpattern', csc_matrix(ax_input), csc_matrix(ax_output))
-
-        # Create drainer
-        self.xor_dn.graph['Ow'] *= 10
-        drainer = DeepNetDrainer(self.xor_dn, self.xor_pat.delay, imputer, p0=1)
-        drainer.fit_epoch(n=800)
-
-        self.assertTrue(all([drainer.deep_network.network_nodes[0].d_levels[i] < self.tau for i in range(self.n_xor)]))
-        self.assertTrue(all([drainer.deep_network.network_nodes[1].d_levels[i] < self.tau for i in range(self.n_xor)]))
-        self.assertTrue((drainer.deep_network.Iw.toarray()[:self.n_xor, 0] > 0).all())
-        self.assertTrue((drainer.deep_network.Iw.toarray()[self.n_xor:, 0] == 0).all())
-        self.assertTrue((drainer.deep_network.Iw.toarray()[:self.n_xor, 1] == 0).all())
-        self.assertTrue((drainer.deep_network.Iw.toarray()[self.n_xor:, 1] > 0).all())
-
-        # VISUAL TEST:
-        if self.visual:
-            # Resulting network
-            ax_graph = gather_matrices(self.xor_dn.Iw.toarray(), self.xor_dn.Dw.toarray(), self.xor_dn.Ow.toarray())
-            plot_graph(ax_graph, self.xor_pat.layout(), 'Resulting graph test xor')
-
-            # Expected network
-            ax_graph = gather_matrices(self.xor_dn_f.Iw.toarray(), self.xor_dn_f.Dw.toarray(),
-                                       self.xor_dn_f.Ow.toarray())
-            plot_graph(ax_graph, self.xor_pat.layout(), 'Expecting graph test xor')
-
-    def treepattern(self):
-        """
-        python -m unittest tests.core.drainer.TestDrainer.treepattern
+        Test the well functioning of mask on backward updates
+        python -m unittest tests.core.drainer.TestDrainer.time_mask
 
         """
 
         # Create I/O and save it into tmpdir files
-        ax_input, ax_output = self.tree_pat.generate_io_sequence(1000)
-        imputer = create_imputer('treepattern', csc_matrix(ax_input), csc_matrix(ax_output))
+        ax_input, ax_output = self.ap2.generate_io_sequence(1000, seed=1234)
+        imputer = create_imputer('andpattern2', csc_matrix(ax_input), csc_matrix(ax_output))
 
         # Create drainer
-        drainer = DeepNetDrainer(self.tree_dn, self.tree_pat.delay, imputer, p0=1)
-        l_t_epoch, l_t_forwardp, l_t_forwardt, l_t_backwardp, l_t_backwardt = drainer.epoch_analysis(100)
+        drainer = FiringGraphDrainer(self.t_mask, 1, 1, self.ap2_fg, imputer, verbose=1)
+        drainer.drain(100)
 
-        print 'Mean running time of epoch: {} seconds'.format(np.mean(l_t_epoch))
-        print 'Mean running time of forward transmit: {} seconds'.format(np.mean(l_t_forwardt))
-        print 'Mean running time of backward transmit: {} seconds'.format(np.mean(l_t_backwardt))
-        print 'Mean running time of forward process: {} seconds'.format(np.mean(l_t_forwardp))
-        print 'Mean running time of backward process: {} seconds'.format(np.mean(l_t_backwardp))
+        # Get matrice of the graph
+        fg, fg_final, fg_init = drainer.firing_graph, self.ap2.build_graph_pattern_final(), self.ap2.build_graph_pattern_init()
+        I, I_init, I_final = fg.Iw.toarray(), fg_init.Iw.toarray(), fg_final.Iw.toarray()
 
-        for i, j in zip(*self.tree_dn_f.O.nonzero()):
-            self.assertTrue(drainer.deep_network.Ow[i, j] > 0)
+        # Assert mask are working (no more than self.t_mask structure update
+        self.assertTrue((I[I >= self.w0] == I_final[I_final > 0] + self.t_mask).all())
+        self.assertTrue((I[(0 < I) & (I <= self.w0)] == I_init[~(I_final > 0) & (I_init > 0)] - self.t_mask).all())
+
+    def andpattern2(self):
+
+        """
+        Test And Pattern of depth 2
+        python -m unittest tests.core.drainer.TestDrainer.andpattern2
+
+        """
+
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap2.generate_io_sequence(1000, seed=1234)
+        imputer = create_imputer('andpattern2', csc_matrix(ax_input), csc_matrix(ax_output))
+
+        # Create drainer
+        drainer = FiringGraphDrainer(1000, 1, 10, self.ap2_fg, imputer, verbose=1)
+        drainer.drain(n=self.n)
+
+        # Get Data and assert result is as expected
+        model_fg, I = self.ap2.build_graph_pattern_final(), drainer.firing_graph.Iw
+        track_if = drainer.firing_graph.forward_firing['i']
+        track_ib = drainer.firing_graph.backward_firing['i']
+
+        # Check correctness of structure
+        self.assertTrue((drainer.firing_graph.I.toarray() == model_fg.I.toarray()).all())
+
+        # Test firing tracker
+        self.assertTrue(all([I[j, 0] == track_ib[j, 0] + self.w0 for j in self.ap2.target[0]]))
+        self.assertTrue(all([I[j, 1] == track_ib[j, 1] + self.w0 for j in self.ap2.target[1]]))
+        self.assertTrue(all([track_ib[j, 0] - track_if[0, j] == 0 for j in self.ap2.target[0]]))
+        self.assertTrue(all([track_ib[j, 1] - track_if[0, j] == 0 for j in self.ap2.target[1]]))
 
         # VISUAL TEST:
         if self.visual:
-            # Resulting graph
-            ax_graph = gather_matrices(self.tree_dn.Iw.toarray(), self.tree_dn.Dw.toarray(), self.tree_dn.Ow.toarray())
-            plot_graph(ax_graph, self.tree_pat.layout(ax_graph))
+            # GOT
+            fg_got = self.ap2.build_graph_pattern_final()
+            ax_graph_got = gather_matrices(fg_got.Iw.toarray(), fg_got.Dw.toarray(), fg_got.Ow.toarray())
+            plot_graph(ax_graph_got, self.ap2.layout(), title='GOT')
 
-            # Expected graph
-            ax_graph = gather_matrices(self.tree_dn_f.Iw.toarray(), self.tree_dn_f.Dw.toarray(),
-                                       self.tree_dn_f.Ow.toarray())
-            plot_graph(ax_graph, self.tree_pat.layout(ax_graph))
+            # Fring Graph at convergence
+            ax_graph_conv = gather_matrices(
+                self.ap2_fg.Iw.toarray(), self.ap2_fg.Dw.toarray(), self.ap2_fg.Ow.toarray()
+            )
 
-    def matching(self):
+            plot_graph(ax_graph_conv, self.ap2.layout(), title='Result Test')
+
+    def andpattern3(self):
         """
-        python -m unittest tests.core.drainer.TestDrainer.matching
+        Test And Pattern of depth 3
+        python -m unittest tests.core.drainer.TestDrainer.andpattern3
+
         """
-        sax_si = rs([self.n_match, self.ni_match], w0=1)
-        n1, n2, sax_so = sax_si[:, 0].sum(), sax_si[:, 1].sum(), sax_si.copy()
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap3.generate_io_sequence(1000, seed=1234)
+        imputer = create_imputer('andpattern3', csc_matrix(ax_input), csc_matrix(ax_output))
 
-        # Set sufficient number of entry to ensure no link
-        l_ids = np.random.choice(sax_si[:, 0].nonzero()[0], int(np.ceil(n1 / (self.p_match + 1)) + 1), replace=False)
-        sax_so[l_ids, 0] = 0
+        # Create drainer
+        drainer = FiringGraphDrainer(1000, 1, 1, self.ap3_fg, imputer, verbose=1)
+        drainer.drain(n=self.n * 10)
 
-        # Set sufficient number of entry to ensure link
-        l_ids = np.random.choice(sax_si[:, 1].nonzero()[0], int(np.floor(n2 / (self.p_match + 1)) - 1), replace=False)
-        sax_so[l_ids, 1] = 0
+        # Get Data and assert result is as expected
+        model_fg, I = self.ap3.build_graph_pattern_final(), drainer.firing_graph.Iw
+        track_if = drainer.firing_graph.forward_firing['i']
+        track_ib = drainer.firing_graph.backward_firing['i']
 
-        # Get hypothetical cross i-o links
-        l_10 = sax_si[:, 1].transpose().dot(sax_so[:, 0]) > self.p_match * ((sax_si[:, 1] - sax_so[:, 0]) > 0).sum()
-        l_01 = sax_si[:, 0].transpose().dot(sax_so[:, 1]) > self.p_match * ((sax_si[:, 0] - sax_so[:, 1]) > 0).sum()
+        # Make sure that drained structure is as expected
+        self.assertTrue((drainer.firing_graph.I.toarray() == model_fg.I.toarray()).all())
 
-        # Create imputer
-        imputer = create_imputer('match', sax_si, sax_so)
-        dn_ = DeepNetDrainer.match(self.dn_match, imputer, p=self.p_match)
+        # Test for forward and backward firing tracking and coherence
+        self.assertTrue(
+            all([I[j, 1] == track_ib[j, 1] + self.w0 for j in self.ap3.target[0]
+                 if j not in self.ap3.target_selected[0]])
+        )
+        self.assertTrue(
+            all([I[j, 4] == track_ib[j, 4] + self.w0 for j in self.ap3.target[1]
+                 if j not in self.ap3.target_selected[1]])
+        )
+        self.assertTrue(
+            all([track_ib[j, 1] - track_if[0, j] == 0 for j in self.ap3.target[0]
+                 if j not in self.ap3.target_selected[0]])
+        )
+        self.assertTrue(
+            all([track_ib[j, 4] - track_if[0, j] == 0 for j in self.ap3.target[1]
+                 if j not in self.ap3.target_selected[1]])
+        )
 
-        # Assert dn_ predictable properties
-        self.assertTrue(not dn_.IOw[0, 0] and dn_.IOw[1, 1])
-        self.assertEqual(dn_.IOw[0, 1], l_01)
-        self.assertEqual(dn_.IOw[1, 0], l_10)
+        # VISUAL TEST:
+        if self.visual:
+            # GOT
+            fg_got = self.ap3.build_graph_pattern_final()
+            ax_graph_got = gather_matrices(fg_got.Iw.toarray(), fg_got.Dw.toarray(), fg_got.Ow.toarray())
+            plot_graph(ax_graph_got, self.ap3.layout(), title='GOT')
+
+            # Fring Graph at convergence
+            ax_graph_conv = gather_matrices(
+                self.ap3_fg.Iw.toarray(), self.ap3_fg.Dw.toarray(), self.ap3_fg.Ow.toarray()
+            )
+
+            plot_graph(ax_graph_conv, self.ap3.layout(), title='Result Test')
+
+    def batch_size_2(self):
+        """
+        Test batch size coherence (depth 2)
+        python -m unittest tests.core.drainer.TestDrainer.batch_size_2
+
+        """
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap2.generate_io_sequence(1000, seed=1234)
+        imputer, tmpdiri, tmpdiro  = create_imputer(
+            'andpattern2', csc_matrix(ax_input), csc_matrix(ax_output), return_dirs=True
+        )
+
+        # Drain with batch size of 2
+        drainer_2 = FiringGraphDrainer(1000, 1, 2, self.ap2_fg.copy(), imputer, verbose=1)
+        drainer_2.drain(n=200)
+
+        # Drain with batch size of 1
+        imputer.stream_features()
+        drainer_1 = FiringGraphDrainer(1000, 1, 1, self.ap2_fg.copy(), imputer, verbose=1)
+        drainer_1.drain(n=400)
+
+        # There should be no more difference between edges weight than difference of batch size
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_2.firing_graph.Iw.toarray())
+        self.assertTrue(((-2 < ax_diff) & (ax_diff < 2)).all())
+
+        # Drain with manual iteration management
+        imputer.stream_features()
+        drainer_1m = FiringGraphDrainer(1000, 1, 1, self.ap2_fg.copy(), imputer, verbose=1)
+        for _ in range(400):
+            drainer_1m.drain()
+            drainer_1m.reset_all()
+
+        # Compare to auto iteration, no difference in edges weight higher than the one due to inertia of auto iter*
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_1m.firing_graph.Iw.toarray())
+        self.assertTrue(((-3 < ax_diff) & (ax_diff < 3)).all())
+        tmpdiri.remove(), tmpdiro.remove()
+
+    def batch_size_3(self):
+        """
+        Test batch size coherence (depth 3)
+        python -m unittest tests.core.drainer.TestDrainer.batch_size_3
+
+        """
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap3.generate_io_sequence(1000, seed=1234)
+        imputer, tmpdiri, tmpdiro = create_imputer(
+            'andpattern3', csc_matrix(ax_input), csc_matrix(ax_output), return_dirs=True
+        )
+
+        # Drain with batch size of 2
+        drainer_2 = FiringGraphDrainer(1000, 1, 2, self.ap3_fg.copy(), imputer, verbose=1)
+        drainer_2.drain(n=100)
+
+        # Drain with batch size of 1
+        imputer.stream_features()
+        drainer_1 = FiringGraphDrainer(1000, 1, 1, self.ap3_fg.copy(), imputer, verbose=1)
+        drainer_1.drain(n=200)
+
+        # There should be no more difference between edges weight than difference of batch size
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_2.firing_graph.Iw.toarray())
+        self.assertTrue(((-2 < ax_diff) & (ax_diff < 2)).all())
+
+        # Drain with manual iteration management
+        imputer.stream_features()
+        drainer_1m = FiringGraphDrainer(1000, 1, 1, self.ap3_fg.copy(), imputer, verbose=1)
+        for _ in range(200):
+            drainer_1m.drain()
+            drainer_1m.reset_all()
+
+        # Compare to auto iteration, no difference in edges weight higher than the one due to inertia of auto iter*
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_1m.firing_graph.Iw.toarray())
+        self.assertTrue(((-5 < ax_diff) & (ax_diff < 5)).all())
+        tmpdiri.remove(), tmpdiro.remove()
 
 
-def rs(l_dim, w0=5):
-    return csc_matrix((np.random.randn(*l_dim) - .75 > 0) * w0)
-
+# *The inertia cited here refer to the fact that for automatic iteration, forward signal are sent subsequently. Thus a
+# signal can be sent even if it go through an edge that it is supposed to be removed from feedback of signal sent before
+# Using a manual iteration, we wait for the feedback of each forward signal before sending new forward signal.
 
 def create_imputer(name, sax_in, sax_out, return_dirs=False):
 
