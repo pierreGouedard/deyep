@@ -94,7 +94,7 @@ class Sampler(object):
         # Init parameter of the firing graph
         l_edges, d_mask, n_core, d_levels = [], {'I': np.zeros(self.ni)}, 0, {}
 
-        if self.selected_bits is not None:
+        if len(self.selected_bits) == 0:
             depth = Sampler.depth_init
         else:
             depth = Sampler.depth_core
@@ -114,7 +114,6 @@ class Sampler(object):
         d_mask['C'] = np.zeros(n_core)
 
         # Build firing graph
-
         self.firing_graph = FiringGraph.from_matrices(name, sax_I, sax_C, sax_O, ax_levels, d_mask, depth)
 
         return self

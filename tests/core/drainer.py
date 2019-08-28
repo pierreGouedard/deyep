@@ -109,8 +109,8 @@ class TestDrainer(unittest.TestCase):
         imputer = create_imputer('andpattern3', csc_matrix(ax_input), csc_matrix(ax_output))
 
         # Create drainer
-        drainer = FiringGraphDrainer(1000, 1, 10, self.ap3_fg, imputer, verbose=1)
-        drainer.drain(n=self.n)
+        drainer = FiringGraphDrainer(1000, 1, 1, self.ap3_fg, imputer, verbose=1)
+        drainer.drain(n=self.n * 10)
 
         # Get Data and assert result is as expected
         model_fg, I = self.ap3.build_graph_pattern_final(), drainer.firing_graph.Iw
@@ -152,6 +152,84 @@ class TestDrainer(unittest.TestCase):
 
             plot_graph(ax_graph_conv, self.ap3.layout(), title='Result Test')
 
+    def batch_size_2(self):
+        """
+        Test batch size coherence (depth 2)
+        python -m unittest tests.core.drainer.TestDrainer.batch_size_2
+
+        """
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap2.generate_io_sequence(1000, seed=1234)
+        imputer, tmpdiri, tmpdiro  = create_imputer(
+            'andpattern2', csc_matrix(ax_input), csc_matrix(ax_output), return_dirs=True
+        )
+
+        # Drain with batch size of 2
+        drainer_2 = FiringGraphDrainer(1000, 1, 2, self.ap2_fg.copy(), imputer, verbose=1)
+        drainer_2.drain(n=200)
+
+        # Drain with batch size of 1
+        imputer.stream_features()
+        drainer_1 = FiringGraphDrainer(1000, 1, 1, self.ap2_fg.copy(), imputer, verbose=1)
+        drainer_1.drain(n=400)
+
+        # There should be no more difference between edges weight than difference of batch size
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_2.firing_graph.Iw.toarray())
+        self.assertTrue(((-2 < ax_diff) & (ax_diff < 2)).all())
+
+        # Drain with manual iteration management
+        imputer.stream_features()
+        drainer_1m = FiringGraphDrainer(1000, 1, 1, self.ap2_fg.copy(), imputer, verbose=1)
+        for _ in range(400):
+            drainer_1m.drain()
+            drainer_1m.reset_all()
+
+        # Compare to auto iteration, no difference in edges weight higher than the one due to inertia of auto iter*
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_1m.firing_graph.Iw.toarray())
+        self.assertTrue(((-3 < ax_diff) & (ax_diff < 3)).all())
+        tmpdiri.remove(), tmpdiro.remove()
+
+    def batch_size_3(self):
+        """
+        Test batch size coherence (depth 3)
+        python -m unittest tests.core.drainer.TestDrainer.batch_size_3
+
+        """
+        # Create I/O and save it into tmpdir files
+        ax_input, ax_output = self.ap3.generate_io_sequence(1000, seed=1234)
+        imputer, tmpdiri, tmpdiro = create_imputer(
+            'andpattern3', csc_matrix(ax_input), csc_matrix(ax_output), return_dirs=True
+        )
+
+        # Drain with batch size of 2
+        drainer_2 = FiringGraphDrainer(1000, 1, 2, self.ap3_fg.copy(), imputer, verbose=1)
+        drainer_2.drain(n=100)
+
+        # Drain with batch size of 1
+        imputer.stream_features()
+        drainer_1 = FiringGraphDrainer(1000, 1, 1, self.ap3_fg.copy(), imputer, verbose=1)
+        drainer_1.drain(n=200)
+
+        # There should be no more difference between edges weight than difference of batch size
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_2.firing_graph.Iw.toarray())
+        self.assertTrue(((-2 < ax_diff) & (ax_diff < 2)).all())
+
+        # Drain with manual iteration management
+        imputer.stream_features()
+        drainer_1m = FiringGraphDrainer(1000, 1, 1, self.ap3_fg.copy(), imputer, verbose=1)
+        for _ in range(200):
+            drainer_1m.drain()
+            drainer_1m.reset_all()
+
+        # Compare to auto iteration, no difference in edges weight higher than the one due to inertia of auto iter*
+        ax_diff = (drainer_1.firing_graph.Iw.toarray() - drainer_1m.firing_graph.Iw.toarray())
+        self.assertTrue(((-5 < ax_diff) & (ax_diff < 5)).all())
+        tmpdiri.remove(), tmpdiro.remove()
+
+
+# *The inertia cited here refer to the fact that for automatic iteration, forward signal are sent subsequently. Thus a
+# signal can be sent even if it go through an edge that it is supposed to be removed from feedback of signal sent before
+# Using a manual iteration, we wait for the feedback of each forward signal before sending new forward signal.
 
 def create_imputer(name, sax_in, sax_out, return_dirs=False):
 

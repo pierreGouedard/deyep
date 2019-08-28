@@ -1,5 +1,6 @@
 # Global import
-from scipy.sparse import csc_matrix, csr_matrix, vstack
+from scipy.sparse import csc_matrix, csr_matrix
+import numpy as np
 
 # Local import
 from deyep.core.tools.equations.backward import bpo, bpc, btc
@@ -45,6 +46,28 @@ class FiringGraphDrainer(object):
     def reset_backward(self):
         self.sax_cb, self.sax_ob = init_backward_signal(self.firing_graph, self.bs)
 
+    def drain_all(self, max_batch_iteration=10000):
+
+        stop, j, max_batch_size = False, 0, self.bs
+        while not stop:
+            for _ in range(int(max_batch_size / self.bs)):
+                # Drain
+                self.drain()
+                self.reset_all()
+
+            # Stop conditions
+            if self.firing_graph.Im.nnz == 0 and self.firing_graph.Cm.nnz == 0 and self.firing_graph.Om.nnz == 0:
+                stop = True
+
+            if j > max_batch_iteration:
+                stop = True
+
+            j += 1
+            print("[Drainer]: {} batch has been completed".format(j * self.bs))
+
+            # Adapt batch size and reset signals
+            self.adapt_batch_size(max_batch_size)
+
     def drain(self, n=1):
 
         early_stopping, j = False, 0
@@ -53,7 +76,7 @@ class FiringGraphDrainer(object):
 
             # Display
             if j % 100 == 0 and j != 0:
-                print("[Drainer]: {} batch has been completed")
+                print("[Drainer]: {} batch has been completed".format(j))
 
             # Condition of stop that has to be put in the drainer
             if self.firing_graph.Im.nnz == 0 and self.firing_graph.Cm.nnz == 0 and self.firing_graph.Om.nnz == 0:
@@ -62,7 +85,6 @@ class FiringGraphDrainer(object):
 
             # Increment count iteration
             j += 1
-            self.iter += 1
 
         # Flush remaining forward and backward signals
         if not early_stopping:
@@ -79,12 +101,37 @@ class FiringGraphDrainer(object):
         self.backward_processing()
         self.backward_transmiting()
 
+        # Increment iteration nb
+        self.iter += 1
+
     def flush_signals(self):
         for _ in range(self.firing_graph.depth - 1):
             self.run_iteration(False, True)
 
         for _ in range(self.firing_graph.depth - 1):
             self.run_iteration(False, False)
+
+    def adapt_batch_size(self, max_batch_size):
+
+        l_batch_size = []
+        # With output matrix
+        if self.firing_graph.Om.nnz > 0:
+            sax_bfo = self.firing_graph.backward_firing['o'].multiply(self.firing_graph.Om)
+            l_batch_size += [max(min(self.t - sax_bfo.tocsc().max(), max_batch_size), 1)]
+
+        # With Core matrix
+        if self.firing_graph.Cm.nnz > 0:
+            sax_bfc = self.firing_graph.backward_firing['c'].multiply(self.firing_graph.Cm)
+            l_batch_size += [max(min(self.t - sax_bfc.tocsc().max(), max_batch_size), 1)]
+
+        # With Input matrix
+        if self.firing_graph.Cm.nnz > 0:
+            sax_bfi = self.firing_graph.backward_firing['i'].multiply(self.firing_graph.Im)
+            l_batch_size += [max(min(self.t - sax_bfi.tocsc().max(), max_batch_size), 1)]
+
+        # Adapt batch size
+        batch_size = min(l_batch_size)
+        self.bs = int(max_batch_size / np.ceil(max_batch_size / batch_size))
 
     def forward_transmiting(self, load_input=True):
         # Get new input

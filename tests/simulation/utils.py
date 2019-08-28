@@ -46,12 +46,11 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
             i, t, simu.N(t, i), simu.mean_score_signal(t, i)
         ))
 
-    stop, j, fg = False, 0, resolution
+    stop, j = False, 0
     while not stop:
-        print('Iteration {}'.format((j + 1) * resolution))
-
         for _ in range(int(resolution / drn.bs)):
             fg = drn.drain().firing_graph
+            drn.reset_all()
 
         ax_noisy_bits = np.hstack((ax_noisy_bits, fg.Iw.toarray()[l_noisy_bits, 0][:, np.newaxis]))
         ax_target_bits = np.hstack((ax_target_bits, fg.Iw.toarray()[l_target_bits, 0][:, np.newaxis]))
@@ -60,24 +59,13 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
             stop = True
             continue
 
+        # Adapt batch size according to distance with t
         batch_size = max(min(t - fg.backward_firing['i'].toarray().max(), resolution), 1)
         drn.bs = int(resolution / np.ceil(resolution / batch_size))
-        print('batch_size: {}'.format(drn.bs))
         drn.reset_all()
         j += 1
 
-    from deyep.utils import interactive_plots as ip
-
-    import IPython
-    IPython.embed()
-
-    ip.multi_line_plot_colored(
-        {'b': ax_target_bits[:, 1:], 'r': ax_noisy_bits[:, 1:],
-         'k': np.ones((1, ax_target_bits.shape[1])) * simu.mean_score_signal(t, 0)},
-        title=r'Score processes ($p_f=0.3$, $p_n=0.3$, $t=500$) ',
-        ylab=r'Value of the score process',
-        xlab=r"Number of iteration ($\times 10$)"
-    )
+        print('Iteration {}'.format(j * resolution))
 
     # Remove tmpdir
     dirin.remove(), dirout.remove()
@@ -85,7 +73,7 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
     return ax_noisy_bits, ax_target_bits, simu
 
 
-def run_sparse_simulation(t, n_bits, p_noise, p_target, n_targets, i, resolution=10):
+def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits, purity_rank, d_cmap, target=0):
     """
 
     :param t:
@@ -96,4 +84,62 @@ def run_sparse_simulation(t, n_bits, p_noise, p_target, n_targets, i, resolution
     :param i:
     :return:
     """
-    raise NotImplemented
+    # Create simulation abd generate I/O
+    simu = ts.SparseActivation(p_targets, p_bits, n_targets, n_bits, purity_rank=purity_rank) \
+        .build_map_targets_bits()
+    imputer, dirin, dirout = simu.stream_io_sequence(10000, return_dirs=True)
+
+    if i > 0:
+        target_bits = {0: np.random.choice(simu.map_targets_bits[target], i, replace=False)}
+    else:
+        target_bits = None
+
+    # Sample and drain
+    smp = sampler.Sampler([simu.n_bits, simu.n_targets], simu.N(t, i), imputer, selected_bits=target_bits) \
+        .sample() \
+        .build_graph_multiple_output()
+
+    # Get targets bits and compute their rank
+    l_bits = list(smp.preselect_bits[target])
+    ax_bits = np.zeros((len(l_bits), 1))
+    d_rank = simu.get_ranks(target)
+
+    # Drain
+    drn = drainer.FiringGraphDrainer(t, simu.rho(i), resolution, smp.firing_graph.copy(), imputer)
+    stop, j = False, 0
+    while not stop:
+        for _ in range(int(resolution / drn.bs)):
+            fg = drn.drain().firing_graph
+            drn.reset_all()
+
+        ax_bits = np.hstack((ax_bits, fg.Iw.toarray()[l_bits, target][:, np.newaxis]))
+
+        if not fg.Im.toarray().any():
+            stop = True
+            continue
+
+        # Adapt batch size according to distance with t
+        sax_bfi = fg.backward_firing['i'].multiply(fg.Im)
+        batch_size = max(min(t - sax_bfi.tocsc().max(), resolution), 1)
+        drn.bs = int(resolution / np.ceil(resolution / batch_size))
+        drn.reset_all()
+        j += 1
+
+        print('Iteration {}'.format(j * resolution))
+
+    # Remove tmpdir
+    dirin.remove(), dirout.remove()
+
+    # Map score stochastic process by colour (= purity rank)
+    d_colored_series, d_rank_color = {}, {}
+    for k, v in d_rank.items():
+        if v < 1:
+            continue
+
+        if v not in d_rank_color.keys():
+            c = d_cmap[v]
+            d_rank_color[v] = c
+
+        d_colored_series[v] = d_colored_series.get(v, []) + [ax_bits[l_bits.index(k), 1:]]
+
+    return d_colored_series, d_rank_color
