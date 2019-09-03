@@ -6,7 +6,7 @@ from tests.utils import test_signal as ts
 from deyep.core.solver import sampler, drainer
 
 
-def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i, resolution=10, verbose=0):
+def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i, p_sample=1., resolution=10, verbose=0):
     """
 
     :param t:
@@ -29,7 +29,7 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
 
     # Sample and drain
     smp = sampler.Sampler(
-        [simu.n_sim * simu.n_bits, simu.n_sim], simu.N(t, i), imputer, selected_bits=target_bits
+        [simu.n_sim * simu.n_bits, simu.n_sim], simu.N(t, i), imputer, p_sample=p_sample, selected_bits=target_bits,
     ).sample().build_graph_multiple_output()
 
     # Drain

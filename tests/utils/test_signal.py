@@ -92,6 +92,9 @@ class SignalPlusNoise(TestSignal):
     def phi(self, omega):
         return self.p_target / (self.p_target + (1 - self.p_target) * omega)
 
+    def mu(self, j):
+        return pow(self.p_noise, j)
+
     def mean_score_signal(self, t, i):
         return self.N(t, i) + int(t * (self.phi(self.omega(i) - self.delta(i)) * (self.rho(i) + 1) - self.rho(i)))
 

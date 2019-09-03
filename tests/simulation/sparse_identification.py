@@ -30,7 +30,7 @@ d_colored_series, d_rank_color = u.run_sparse_simulation(
 
 ip.multi_line_plot_colored(
     d_colored_series,
-    title=r'Score process for different vertice colored according to their rank',
+    title=r'',
     ylab=r'Value of the score process',
     xlab=r"Number of iteration ($\times 10$)",
     cmap=d_rank_color
