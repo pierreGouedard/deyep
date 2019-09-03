@@ -427,63 +427,68 @@ This paragraph intend to deliver useful properties for the analysis of the algor
 Let $v_1(I, l_0)$, $v_2(J, 0)$ and $v_3(K, 0)$, be three vertice of the same firing graph, with the same input domain $\mathcal{G}$ such that $I = J \cup K$ and $J \cap K = \emptyset$, then, $\forall x \in F_2(S(\mathcal{G}), \mathcal{G})$
 
 \begin{equation}
+\label{prop:partition-1}
 \mathcal{P}_I^{l_0}\left[ x \right] = \sum_{l=l_0}^{\vert I \vert} \sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] 
 \end{equation} 
 
 In paticular for $v \in I$
 
 \begin{equation}
+\label{prop:partition-2}
 \mathcal{P}_{I, l}\left[ x \right] = \mathcal{P}_{I\setminus \{ v\}, l}\left[ x \right] \cdot \mathcal{P}_{\{ v\}, 0}\left[ x \right] + \mathcal{P}_{I\setminus \{ v\}, l-1}\left[ x \right] \cdot \mathcal{P}_{\{ v\}, 1}\left[ x \right]
 \end{equation} 
 
 \underline{Decomposition}\\
 
-Let $G$ be a firing graph composed of a set of $\mathcal{G}$ of vertice of layer 0. $u(I, l_u)$, $v(I', l_v)$ such that $I \cap I' = \emptyset$ as vertice of layer 1 and $w(\{ u, v \}, 2)$ as vertex of layer 2. Let $K \in S(I', l_v)$ then 
+Let $G$ be a firing graph composed of a set of $\mathcal{G}$ of vertice of layer 0. $u(I, l_u)$, $v(I', l_v)$ such that $I \cap I' = \emptyset$ as vertice of layer 1 and $w(\{ u, v \}, 2)$ as vertex of layer 2. Let $K \in S(I', l_v)$, $x \in F_2(S(\mathcal{G}), \mathcal{G})$ and $x' = \begin{bmatrix} \mathcal{P}_{u}[x] &\mathcal{P}_{v}[x] \end{bmatrix}$ then 
 
 
 \begin{equation}
 \label{prop:2layer-1}
-\mathcal{P}_{K, \vert K \vert} \cdot \mathcal{P}_{\{u, v\}, 2} = \sum_{l=l_u}^{\vert I \vert}  \sum_{J \in S(I, l)} \mathcal{P}_{J \cup K, l + \vert K \vert }
+\mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2}\left[ x' \right] = \sum_{l=l_u}^{\vert I \vert}  \sum_{J \in S(I, l)} \mathcal{P}_{J \cup K, l + \vert K \vert }\left[ x \right]
 \end{equation}
 
-In particular if $l_u = \vert I \vert$ and $l_u = 1$ , then for any vertex of layer 0 $v\in I'$
+In particular if $l_u = \vert I \vert$ and $l_v = 1$ , then for any vertex of layer 0 $b \in I'$
 
 \begin{equation}
 \label{prop:2layer-2}
- \mathcal{P}_{b, 1} \cdot \mathcal{P}_{\{u, v\}, 2} = \mathcal{P}_{I \cup \{b\}, \vert I \vert + 1}
+ \mathcal{P}_{b, 1}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2} \left[ x' \right]= \mathcal{P}_{I \cup \{b\}, \vert I \vert + 1}\left[ x \right]
 \end{equation}
 
 
 \subsubsection*{Metrics}
 
-Throughout this section, we consider a firing graph $G$ where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \mathcal{F}$ denote some factor. Finally we use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". \\
+Throughout this section, we consider $G$ to be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be denoted  $d$ and $d'$ and the event "factor $f$ is active" will be denoted by $e$. \\
 
 \underline{Precision of vertex}\\
 
-Let $v$ be a vertex connected to a set $I$ subset of vertex of its input domain and let $f \in \mathcal{F}$ be some factor. Then the precision of $v$ with respect to $f$ is
+Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l \in \{1, \ldots, \vert I \vert \} $ and let $f \in \mathcal{F}$ be some factor. Then the precision of $v$ with respect to $f$ is
 
 \begin{equation}
 \label{prop:precision1}
 \phi_{v, f} = \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{v, f}}
 \end{equation}
 
-Furthermore we have
+Furthermore, if $\mu_{v, f} = 1$ we have
 
 \begin{equation}
+\label{prop:precision2}
 \phi_{v, f} \leq \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{\mathcal{G}(f),\vert \mathcal{G}(f) \vert, f}} 
 \end{equation}
 
 \underline{Recall of vertex}\\
 
-Let $v$ be a vertex connected to a set $I$ of vertex of its input domain and let $f \in \mathcal{F}$ be some factor. Then the recall of $v$ with respect to $f$ is
+Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l \in \{1, \ldots, \vert I \vert \} $ and let $f \in \mathcal{F}$ be some factor. Then the recall of $v$ with respect to $f$ is
 
 \begin{equation}
+\label{prop:recall1}
 \psi_{v, f} = \mu_{v, f}
 \end{equation}
 
 Furthermore, 
 
 \begin{equation}
+\label{prop:recall2}
 0 \leq \phi_{v, f} \leq 1
 \end{equation}
 
@@ -499,6 +504,7 @@ Again, throughout this section, we consider a firing graph $G$ where the layer 0
 If denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, then
 
 \begin{equation}
+\label{prop:reward_mean}
 \mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{v, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
 \end{equation}
 
@@ -507,6 +513,7 @@ If denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.
 if $p_{v, f}[t]$ denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, then
 
 \begin{equation}
+\label{prop:penalty_mean}
 \mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
 \end{equation}
 
@@ -523,7 +530,7 @@ Furthermore,
 
 \begin{equation}
 \label{prop:score_var}
-\Var \left[ s_{v,\rho, t, f}  \right] = ???
+\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
 \end{equation}
 
 \section{Identification of Latent Factor}
@@ -1004,12 +1011,21 @@ The signal plus noise model is implemented in python and mainly use standard num
 \label{signal_noise_SNR}
 \end{figure}
 
-In every experiement, following the procedure described in the previous section we end with $\rho=1$. Furthermore, each of the figure above shows the values of the score process through the tracking of the weight of edges of a single sampled firing graph. Blue lines show the weight of edges outcoming from input vertices whose activation corresponds to activation of some bits $b\in \mathcal{G}(f)$. Red lines correspond to the weight of edges outcoming from input vertices whose activation corresponds to noisy activation. Finally the black horizontal line represents the theoretical mean value of of the score process, with respect to $f$, with parameter $N, T, \rho$ chosen as described previously, of an edge outcoming from a input vertex that activates as a bits of the grids linked to $f$. As theoretical modelisation suggests we have a clear separation between the two kind of bits and a convergence toward theoretical mean for process corresponding to factors activation. Yet the higher is the noisy activation probability the more difficult it is to separate the tow category of bits sampled. In order to highlight it we run a new simulation with $n=1000$, $\vert \mathcal{G}(f)\vert = 50$, $p_f=0.3$, $T=200$ and $p_{\mathcal{S}}$. Yet at the end of the draining we choose all the input vertices of the firing graph that stil have outcoming edges, and use their combined activation as estimator of the factor's activation measuring their precision and recall over $100$ repetion for each SNR ratio \\
+In every experiement, following the procedure described in the previous section we end with $\rho=1$. Furthermore, each of the figure above shows the values of the score process through the tracking of the weight of edges of a single sampled firing graph. Blue lines show the weight of edges outcoming from input vertices whose activation corresponds to activation of some bits $b\in \mathcal{G}(f)$. Red lines correspond to the weight of edges outcoming from input vertices whose activation corresponds to noisy activation. Finally the black horizontal line represents the theoretical mean value of of the score process, with respect to $f$, with parameter $N, T, \rho$ chosen as described previously, of an edge outcoming from a input vertex that activates as a bits of the grids linked to $f$. As theoretical modelisation suggests we have a clear separation between the two kind of bits and a convergence toward theoretical mean for process corresponding to factors activation. Yet the higher is the noisy activation probability the more difficult it is to separate the tow category of bits sampled. In order to highlight it we run a new simulation with $n=1000$, $\vert \mathcal{G}(f)\vert = 50$, $p_f=0.3$, $T=200$ and $p_{\mathcal{S}}$. Yet at the end of the draining we choose all the input vertices of the firing graph that stil have outcoming edges, and use their combined activation as estimator of the factor's activation measuring their precision and recall over $100$ repetion for each SNR ratio
 
-TABLE \\
+\begin{table}[]
+\caption{Evaluation of naive factor's activation estimation, $T=200$, $100$ repetitions}
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+$P_N$ & Mean $\phi$ & Standard deviation $\phi$ & Mean $\psi$ & Standard deviation $\psi$ & Number of fails \\ \hline
+0.3   & 1.0         & 0.0                       & 0.7         & 0.29                      & 0               \\ \hline
+0.5   & 1.0         & 0.03                      & 0.6         & 0.42                      & 0               \\ \hline
+0.7   & 0.97        & 0.1                       & 0.46        & 0.46                      & 4               \\ \hline
+0.9   & 0.75        & 0.15                      & 0.32        & 0.32                      & 19              \\ \hline
+\end{tabular}
+\end{table}
 
-
-The table above show quality indicator of the estimator for different signal to noise ratio and $T=200$. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are closed to each other. Finally we run the same experiment in the settings of joint sampled firing graph using again a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to to target factor $f$ that activate with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
+The table above show quality indicator of the estimator for different SNR ratio. the two first columns gives respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any remaining input vertex, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveal that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally we run the same experiment in the settings of joint sampled firing graph using again a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to to target factor $f$ that activate with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
 \caption{Observation of the score process in a joint sampled firing graph with $T=500$}
@@ -1124,6 +1140,361 @@ MAY BE ADD A FUCKING JOINT SAMPLED FIRING GRAPH DRAINING
 \appendix
 
 \section{Properties}
+
+\underline{Partition}\\
+
+$v_1(I, l_0)$, $v_2(J, 0)$ and $v_3(K, 0)$ are three vertices of the same firing graph, with the same input domain $\mathcal{G}$ such that $I = J \cup K$ and $J \cap K = \emptyset$. result (\ref{prop:partition-1}) stands that $\forall x \in F_2(S(\mathcal{G}), \mathcal{G})$
+
+\begin{equation*}
+\mathcal{P}_I^{l_0}\left[ x \right] = \sum_{l=l_0}^{\vert I \vert} \sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] 
+\end{equation*} 
+
+\textbf{Proof.} The statement above can also be written
+
+\begin{equation*}
+\mathcal{P}_{I,l} \left[ x \right] = \sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] 
+\end{equation*} 
+
+$\forall$ $l\in \{l_0, \ldots, \vert I\vert\}$, now we propose a simple proof by contradiction, there exist a $l\in \{l_O, \ldots, \vert I\vert\}$ such that there exist $X \in S(\mathcal{G})$, $x \in F_2(\{X\}, \mathcal{G})$ and 
+
+\begin{align*}
+\mathcal{P}_{I,l} \left[ x \right] &= 1\\
+\sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] &= 0
+\end{align*}
+
+$J$ and $K$ compose a partition of $I$ and $\vert I \cap X \vert = l$, thus there exists a couple $(j^{*}, k^{*})$ such taht
+
+\begin{align*}
+\vert X \cap J \vert &= j^{*}\\
+\vert X \cap K \vert &= k^{*}\\
+j^{*} + k^{*} = l
+\end{align*}
+
+Thus for $x \in  F_2(\{ X \}, \mathcal{G})$ 
+
+\begin{align*}
+\mathcal{P}_{J, j^{*}}\left[ x \right] \cdot \mathcal{P}_{K, k^{*}}\left[ x \right] = 1\\
+\end{align*}
+
+which contradict our first assumption. Now assume there exist a $l \in \{l_O, \ldots, \vert I \vert\}$ such that there exist $X \in S(\mathcal{G})$, $x \in F_2(\{X\}, \mathcal{G})$
+
+\begin{align*}
+\mathcal{P}_{I,l} \left[ x \right] &= 0\\
+\sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] &= 1
+\end{align*}
+
+Thus above statement implies that there exists a $j^{*} \in \{0, \ldots, min(l, \vert J \vert)\}$ such that  
+
+\begin{equation*}
+\mathcal{P}_{J, j^{*}}\left[ x \right]  \cdot \mathcal{P}_{K, l - ^{*}}\left[ x \right] = 1
+\end{equation*}
+
+Thus $\vert X \cap J \vert = j^{*}$ and $\vert X \cap K \vert = l - j^{*}$. Since $J$ and $K$ is a partion of $I$ we must have
+
+\begin{equation*}
+\vert X \cap I \vert = \vert X \cap J \vert + \vert X \cap K \vert = l
+\end{equation*}
+
+As a consequence for $x \in F_2(\{X\}, \mathcal{G})$, $\mathcal{P}_{I,l} \left[ x \right] = 1$ and give us the contradiction. 
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+Result (\ref{prop:partition-2}) is a particular case of result (\ref{prop:partition-1})\\
+
+\underline{Decomposition}\\
+
+$G$ is a firing graph composed of a set of $\mathcal{G}$ of vertice of layer 0. $u(I, l_u)$, $v(I', l_v)$ such that $I \cap I' = \emptyset$ as vertice of layer 1 and $w(\{ u, v \}, 2)$ as vertex of layer 2. Let $K \in \cup_{l \in \{l_v, \ldots, \vert I' \vert \}} S(I', l)$, $x \in F_2(S(\mathcal{G}), \mathcal{G})$ and $x' = \begin{bmatrix} \mathcal{P}_{u}[x] &\mathcal{P}_{v}[x] \end{bmatrix}$, the result (\ref{prop:2layer-1}) stands
+
+\begin{equation*}
+\mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2}\left[ x' \right] = \sum_{l=l_u}^{\vert I \vert}  \sum_{J \in S(I, l)} \mathcal{P}_{J \cup K, l + \vert K \vert }\left[ x \right]
+\end{equation*}
+
+\textbf{Proof.} The proof the above statement is derived by a straight forward development of the equation, first using result (\ref{prop:2layer-1}) and the fact that $K$ and $I' \setminus K$ is a partition of $I'$ we can write 
+
+\begin{align*}
+\mathcal{P}_{\{u, v\}, 2} \left[ x' \right] &= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l} \left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert} \mathcal{P}_{I', l}\left[ x \right] \right) \\
+&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \sum_{k=0}^{\vert K \vert} \mathcal{P}_{K, k}\left[ x \right] \cdot \mathcal{P}_{I \setminus K , l-k}\left[ x \right] \right) \\
+\end{align*}
+
+Thus 
+
+\begin{align*}
+\mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2} \left[ x' \right] &= \mathcal{P}_{K, \vert K \vert} \left[ x \right] \cdot \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l} \left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \sum_{k=0}^{\vert K \vert} \mathcal{P}_{K, k} \left[ x \right] \cdot \mathcal{P}_{I \setminus K , l-k} \left[ x \right] \right) \\
+&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{I \setminus K , l- \vert K \vert} \left[ x \right] \right)\\
+&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \cdot \mathcal{P}_{K, \vert K \vert}\left[ x \right] \right) \cdot \underbrace{ \sum_{l=0}^{\vert I' \vert - \vert K \vert} \mathcal{P}_{I \setminus K , l}\left[ x \right]}_{=1}\\
+&= \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \cdot \mathcal{P}_{K, \vert K \vert}\left[ x \right]
+\end{align*}
+
+The last line is equal to $\sum_{l=l_u}^{\vert I \vert}  \sum_{J \in S(I, l)} \mathcal{P}_{J \cup K, l + \vert K \vert }\left[ x \right]$ and thus the proof is achieved.
+
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+Result (\ref{prop:2layer-1}) is a particular case of result (\ref{prop:2layer-2})\\
+
+
+\underline{Precision of vertex}\\
+
+Let $G$ be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be denoted  $d$ and $d'$ and the event "factor $f$ is active" will be denoted by $e$. Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l \in \{1, \ldots, \vert I \vert \} $ and let $f \in \mathcal{F}$ be some factor. The  result (\ref{prop:precision1}) stands that the precision of $v$ with respect to $f$ writes
+
+\begin{equation*}
+\phi_{v, f} = \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{v, f}}
+\end{equation*}
+
+Furthermore, the result (\ref{prop:precision2}) stands that if $\mu_{v, f} = 1$ we have
+
+\begin{equation*}
+\phi_{v, f} \leq \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{\mathcal{G}(f),\vert \mathcal{G}(f) \vert, f}} 
+\end{equation*}
+
+\textbf{Proof.} First, starting from the defintion of $\phi_{v, f}$
+
+\begin{equation*}
+\phi_{v, f} = \phi_{I, l, f} = \frac{\Vert \mathcal{P}_{I}^{l} \Vert_{d, e}}{\Vert \mathcal{P}_{I}^{l} \Vert_{d}}
+\end{equation*}
+
+Thus using $\mathcal{P}_{*} = \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert}$ one have
+
+\begin{equation*}
+\phi_{v, f} = \frac{\langle \mathcal{P}_{I}^{l}, \mathcal{P}_{*} \rangle_{d, e} + \langle \mathcal{P}_{I}^{l}, \bar{\mathcal{P}}_{*} \rangle_{d, e} }{\langle \mathcal{P}_{I}^{l}, \mathcal{P}_{*} \rangle_{d, e} + \langle \mathcal{P}_{I}^{l}, \bar{\mathcal{P}}_{*} \rangle_{d, e} + \langle \mathcal{P}_{I}^{l}, \mathcal{P}_{*} \rangle_{d, \bar{e}} + \langle \mathcal{P}_{I}^{l}, \bar{\mathcal{P}}_{*} \rangle_{d, \bar{e}}}
+\end{equation*}
+
+Yet $\langle \mathcal{P}_{I}^{l}, \bar{\mathcal{P}}_{*} \rangle_{d, e} = 0$
+
+\begin{equation*}
+\phi_{v, f} = \frac{\langle \mathcal{P}_{I}^{l}, \mathcal{P}_{*} \rangle_{d \vert e} \times \Vert \mathcal{P}_{f} \Vert_{d'} }{\langle \mathcal{P}_{I}^{l}, \mathcal{P}_{*} \rangle_{d \vert e} \times \Vert \mathcal{P}_{f} \Vert_{d'} + \left( \langle \mathcal{P}_{I}^{l}, \mathcal{P}_{*} \rangle_{d \vert \bar{e}} + \langle \mathcal{P}_{I}^{l}, \bar{\mathcal{P}}_{*} \rangle_{d \vert \bar{e}} \right)\times \Vert \bar{\mathcal{P}}_{f} \Vert_{d'}} 
+\end{equation*}
+
+Finally by identification of term
+
+\begin{equation*}
+\phi_{v, f} = \frac{\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'} }{\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'} + \nu_{I, l, f} \times \left( 1 -  \Vert \mathcal{P}_{f} \Vert_{d'} \right)}
+\end{equation*}
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+With the same context, the result (\ref{prop:precision2}) stands that if $\mu_{v, f} = 1$ we have
+
+\begin{equation*}
+\phi_{v, f} \leq \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{\mathcal{G}(f),\vert \mathcal{G}(f) \vert, f}} 
+\end{equation*}
+
+\textbf{Proof.} The result (\ref{prop:precision2}) can be proven by simple contradiction, suppose there is a tuple $(I, l_0) \neq (\mathcal{G}(f), \vert \mathcal{G}(f) \vert)$ such that 
+
+\begin{align*}
+\mu_{I, l_0, f} &= 1 \\
+\nu_{I, l_0, f} &< \nu_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert, f}
+\end{align*}
+
+First, denoting $\mathcal{P}_{\mathcal{G}(f),\vert \mathcal{G}(f) \vert} = \mathcal{P}_{*}$ and using (\ref{prop:partition-1}) we have
+
+\begin{align*}
+\langle  \mathcal{P}_{I}^{l_0}, \mathcal{P}_{*}\rangle_{d} &=\sum_{l=l_0}^{\vert I \vert} \sum_{k=0}^{I\cap \mathcal{G}(f)} \langle \mathcal{P}_{I\cap \mathcal{G}(f), k} \cdot  \mathcal{P}_{I\setminus \mathcal{G}(f), l-k}, \mathcal{P}_{*} \rangle_{d} \\
+&= \sum_{l=l_0}^{\vert I \vert} \sum_{k=0}^{I\cap \mathcal{G}(f)} \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})} \mathcal{P}_{I\cap \mathcal{G}(f), k}[x] \cdot  \mathcal{P}_{I\setminus \mathcal{G}(f), l-k} [x] \cdot \mathcal{P}_{*}[x] \times d_{x}\\
+&= \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})}  \mathcal{P}_{*}[x] \cdot \left( \sum_{l=l_0}^{\vert I \vert} \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} [x] \right) \times d_{x}
+\end{align*}
+
+Where $d$ is any well defined ditribution on $F_2(S(\mathcal{G}), \mathcal{G})$. Thus, we have 
+
+\begin{equation*}
+\mu_{I, l_0, f} = \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})}  \mathcal{P}_{*}[x] \cdot \left( \sum_{l=l_0}^{\vert I \vert} \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} [x] \right) \times d_{x \vert e}
+\end{equation*}
+
+As a consequence, in order to have $\mu_{I, l_0, f} = 1$ we most have $ \lbrace \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} \rbrace_{l \in \{ l_0, \ldots, \vert I \vert \}}$ to be a partion of $F_2(S(\mathcal{G}), \mathcal{G})$. Thus $l_0 \leq \vert I \cap \mathcal{G}(f) \vert$. On the other end the precision coefficient writes
+
+\begin{equation*}
+\nu_{I, l_0, f} = \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})}  \mathcal{P}_{*}[x] \cdot \left( \sum_{l=l_0}^{\vert I \vert} \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} [x] \right) \times d_{x \vert \bar{e}} +  \langle  \mathcal{P}_{I}^{l_0}, \bar{\mathcal{P}}_{*}\rangle_{d \vert \bar{e}}
+\end{equation*}
+
+so if $l_0 \leq \vert I \cap \mathcal{G}(f) \vert$
+
+\begin{align*}
+\nu_{I, l_0, f} &=  \nu_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert, f} + \langle  \mathcal{P}_{I}^{l_0}, \bar{\mathcal{P}}_{*}\rangle_{d \vert \bar{e}}\\
+&\geq \nu_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert, f}
+\end{align*}
+
+Since $\langle  \mathcal{P}_{I}^{l_0}, \bar{\mathcal{P}}_{*}\rangle_{d \vert \bar{e}} \geq 0$, which lead to a contradiction.
+
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+\underline{Recall of vertex}\\
+
+Let $G$ be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be denoted  $d$ and $d'$ and the event "factor $f$ is active" will be denoted by $e$. Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l \in \{1, \ldots, \vert I \vert \} $ and let $f \in \mathcal{F}$ be some factor. The result (\ref{prop:recall1}) stands that the recall of $v$ with respect to $f$ is
+
+\begin{equation*}
+\psi_{v, f} = \mu_{v, f}
+\end{equation*}
+
+Furthermore, the result (\ref{prop:recall2}) stands that 
+
+\begin{equation*}
+0 \leq \phi_{v, f} \leq 1
+\end{equation*}
+
+Where right equality is reached whenever $v$ is connected to a set of measure grid's bit $I \in \mathcal{G}$, with level $l_0 = \vert I \vert$ such that $I \subset \mathcal{G}(f)$. \\ 
+
+\textbf{Proof.} From the definition of $\psi_{v, f}$ we have \\
+
+\begin{equation*}
+\psi_{v f} = \psi_{I, l, f} = \frac{\Vert \mathcal{P}^{l}_I \Vert_{d, e}}{\Vert \mathcal{P}_{\mathcal{G}(f)} \Vert_{d, e}}
+\end{equation*}
+
+Thus using $\mathcal{P}_{*} = \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert}$ one have
+
+
+\begin{equation*}
+\psi_{v f} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d, e} + \langle \mathcal{P}^{l}_I, \bar{\mathcal{P}}_{*} \rangle_{d, e}}{\Vert \mathcal{P}_{f} \Vert_{d'}}
+\end{equation*}
+
+Yet $\langle \mathcal{P}^{l}_I, \bar{\mathcal{P}}_{*} \rangle_{d, e} = 0$, thus 
+ 
+\begin{align*}
+\psi_{v f} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d, e}}{\Vert \mathcal{P}_{f} \Vert_{d'}} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d \vert e} \times \Vert \mathcal{P}_f \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}} = \mu_{v, f} 
+\end{align*}
+
+Finally the result (\ref{prop:recall2}) directly comes with the definition.
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+\underline{vertex's reward process}\\
+
+
+Let $G$ be a firing graph where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \in \mathcal{F}$ denote some target latent factor. We also use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". If $r_{v, f}[t]$ denote reward process of $v$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:reward_mean}) stands that
+
+\begin{equation*}
+\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{v, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
+\end{equation*}
+
+\textbf{Proof.} From the definition of the reward process we have 
+
+\begin{align*}
+r_{v, f}[t] &= r_{v, f}[t-1] + r_{v, f, t}\\
+&= \sum_{i=0}^{t-1} r_{v, f, i}
+\end{align*}
+
+with $\lbrace r_{v, f, i} \rbrace_{i=1, \ldots, t}$ a sequence of i.i.d bernouilli trial with parameter $p = q_r = \Vert \mathcal{P}_v \Vert_{d, e}$. Thus
+
+\begin{align*}
+\mathbb{E} \left[ r_{v, f}[t] \right] &= \sum_{i=0}^{t-1} \mathbb{E} \left[r_{v, f, i} \right]\\
+&= t \times \Vert \mathcal{P}_v \Vert_{d, e} \\
+&= t \times \langle \mathcal{P}_v, \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f)\vert}\rangle_{d \vert e}\times \Vert \mathcal{P}_f \Vert_{d'}
+\end{align*}
+
+the proof come with identification of terms.
+ 
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+
+\underline{vertex's penalty process}\\
+
+In the same context, if $p_{v, f}[t]$ denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:penalty_mean}) stands that
+
+\begin{equation*}
+\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
+\end{equation*}
+
+\textbf{Proof.} From the definition of the reward process we have 
+
+\begin{align*}
+p_{v, f}[t] &= p_{v, f}[t-1] + p_{v, f, t}\\
+&= \sum_{i=0}^{t-1} p_{v, f, i}
+\end{align*}
+
+with $\lbrace p_{v, f, i} \rbrace_{i=1, \ldots, t}$ a sequence of i.i.d bernouilli trial with parameter $p = q_p = \Vert \mathcal{P}_v \Vert_{d} - \Vert \mathcal{P}_v \Vert_{d, e}$. Thus
+
+\begin{align*}
+\mathbb{E} \left[ p_{v, f}[t] \right] &= \sum_{i=0}^{t-1} \mathbb{E} \left[p_{v, f, i} \right]\\
+&= t \times \left( \Vert \mathcal{P}_v \Vert_{d} - \Vert \mathcal{P}_v \Vert_{d, e} \right) \\
+&= t \times \left( \Vert \mathcal{P}_v \Vert_{d,e} +  \Vert \mathcal{P}_v \Vert_{d,\bar{e}} - \Vert \mathcal{P}_v \Vert_{d, e} \right) \\
+&= t \times \Vert \mathcal{P}_v \Vert_{d,\bar{e}} \\
+&= t \times \Vert \mathcal{P}_v \Vert_{d \vert \bar{e}} \times \Vert \vert_{d'}
+\end{align*}
+
+the proof come with identification of terms.
+
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+\underline{vertex's score process}\\
+
+Finally, in the same context, if $s_{v, f}[N, T, \rho]$ denotes the score process of $v$ with respect to $f$ as defined in section 1.2.2 with some $N, T, \rho \in \mathbb{N}^3$, the result (\ref{prop:score_mean}) stands that
+
+\begin{equation*}
+\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{v, f} \times (\rho + 1) - \rho)
+\end{equation*}
+
+
+\textbf{Proof.} From the definition of the score process we have 
+
+\begin{equation*}
+s_{v, f}[N, T, \rho] = N + \sum_{t=1}^{T} s_{v, \rho, f, t}
+\end{equation*}
+
+with $\lbrace s_{v, \rho, f, t} \rbrace_{t=1, \ldots, T}$ a sequence of i.i.d such that
+
+\begin{center}
+$s_{v, \rho, t, f} = \begin{cases} 1, & \text{with probability } q_s = \frac{q_r}{q_r + q_p}  \\ -\rho, & \text{with probability } 1 - q_s \end{cases}$
+\end{center}
+
+Thus we can write
+
+\begin{align*}
+\mathbb{E}\left[ s_{v, f}[N, T, \rho \right] &= N + \sum_{t=1}^{T} \mathbb{E} \left[ s_{v, \rho, t, f}\right]\\
+&= N + \sum_{t=1}^{T} q_s - \rho \times (1 - qs)\\
+&= N + \sum_{t=1}^{T} q_s \times (\rho + 1) - \rho \\
+&= N + T \times \left(q_s \times (\rho + 1) - \rho \right) 
+\end{align*}
+
+Yet $q_s = \frac{q_r}{q_r + q_p}$, with $q_r = \Vert \mathcal{P}_v \Vert_{d, e}$ and $q_p = \Vert \mathcal{P}_v \Vert_{d,\bar{e}}$, thus
+
+\begin{equation*}
+q_s = \frac{\Vert \mathcal{P}_v \Vert_{d, e}}{\Vert \mathcal{P}_v \Vert_{d, e} + \Vert \mathcal{P}_v \Vert_{d,\bar{e}}} = \frac{\Vert \mathcal{P}_v \Vert_{d, e}}{\Vert \mathcal{P}_v \Vert_{d}}
+\end{equation*}
+
+Which is the definition of $\phi_{v, f}$.
+
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
+Furthermore the result (\ref{prop:score_var}) stands that,
+
+\begin{equation*}
+\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
+\end{equation*}
+
+\textbf{Proof.} Using the result of previous proof we first compute $\mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right]$
+
+\begin{align*}
+\mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right] &= q_s + \rho^{2} \times (1 - q_s)\\
+&= \phi_{v, f} + \rho^{2} \times (1 - \phi_{v, f})\\
+&= \phi_{v, f}\times (1 + \rho)\times (1 - \rho) + \rho^{2}
+\end{align*}
+
+Furthermore we have seen previously that $\mathbb{E}\left[  s_{v,\rho, t, f}\right] = \phi_{v, f}\times (1 + \rho) - \rho$, thus
+
+\begin{equation*}
+\mathbb{E}\left[  s_{v,\rho, t, f}\right]^{2} = \phi_{v, f}\times (1 + \rho) \times \left( \phi_{v,f}\times (1 + \rho) - 2\times \rho \right) + \rho^{2}
+\end{equation*}
+
+Finally
+\begin{equation*}
+\Var \left[ s_{v,\rho, t, f}  \right] = \mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right] - \mathbb{E}\left[  s_{v,\rho, t, f}\right]^{2} = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
+\end{equation*}
+
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
+
 
 \section{Implementation}
 
