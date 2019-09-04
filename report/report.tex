@@ -78,7 +78,7 @@ Pierre Gouedard\\
 \setlength{\parindent}{0pt}
 
 \begin{abstract}
-Consider a set of latent factors whose observable effect of activation is caught on a measure space that take the form of a grid of bits tacking value in $\{0, 1 \}$. This paper intend to deliver a theoretical and practical answer to the question: Given that we have a perfect indicator of the activation of latent factor, is there a procedure that could achieve an optimal identification of factor's activation ?
+Consider a set of latent factors whose observable effect of activation is caught on a measure space that take the form of a grid of bits tacking value in $\{0, 1 \}$. This paper intend to deliver a theoretical and practical answer to the question: Given that we have a perfect indicator of the activation of latent factor, can we imagine tools and procedure that could achieve an identification of factor's activation ?
 \end{abstract}
 
 
@@ -94,12 +94,12 @@ In order to make the core subject of this report more consistent, we introduce t
 
 
 \begin{itemize}
+\item $n$ the size of the measure grid. 
 \item $\mathcal{G}$ the measure grid is a set of bit, $\mathcal{G} = \lbrace b_1, \ldots b_n \rbrace$.
-\item $n$ the size of the measure grid, $\vert \mathcal{G} \vert = n$. 
 \item $S(\mathcal{G})$  the set of all possible permutation of $\mathcal{G}$, $\vert S(\mathcal{G})\vert = 2^{n}$.
 \item $S(\mathcal{G}, l)$  the set of all permutation of $\mathcal{G}$ of size $l$.
+\item $K$ the number of latent factor.
 \item $\mathcal{F}$ the set of latent factor, $\mathcal{F} = \lbrace f_1, \ldots f_K \rbrace$.
-\item $K$ the number of latent factor, $\vert \mathcal{F} \vert = K$.
 \item $S(\mathcal{F})$  the set of all possible permutation of $\mathcal{F}$, $\vert S(\mathcal{F})\vert = 2^{K}$.
 \item $S(\mathcal{F}, l)$  the set of all permutation of $\mathcal{F}$ of size $l$.
 \item $\mathcal{G}(f)$  the set of bits activated by factor $f$, $\mathcal{G}(f) \in S(\mathcal{G})$ and $f \in \mathcal{F}$.  
@@ -110,7 +110,7 @@ In order to make the core subject of this report more consistent, we introduce t
 
 \subsection{Statistical definitions}
 
-In this section we provide formalism for the statistical description of factor's activity, there signature on the measure grid as well as the activation estimator.
+In this section we provide formalism for the statistical description of factor's activity and there signature on the measure grid.
 
 \subsubsection*{Activation of factors}
 
@@ -121,21 +121,21 @@ d' &: F(2)^{K} \rightarrow [0,1]\\
 d'_x &= \mathbb{P}\left(f_1 = x_1, \ldots, f_K = x_K \right)
 \end{align*}
 
-Factors have statistical signatures on the measure grid. That is, there activation lead to the activation of bits of the measure grid. Again, at this stage only the minimum requirement are specified for its statistical modelisation. That is for any $I \in S(\mathcal{G})$
+The statistical signature of a factor on the measure grid is describe how the factor is linked to some bits of the measure grid. At this stage we simply assume that there is a well defined probability measure so that for any $I \in S(\mathcal{G})$
 
 \begin{align*}
 \mathbb{P}(\mathcal{G}(f) = I) &\in [0, 1]\\
 \sum_{I \in S(\mathcal{G})} \mathbb{P}(\mathcal{G}(f) = I) &=1
 \end{align*}
 
-The modelisation of latent factor's activation and link to measure grid induce a distribution over combinations of activation of measure grid's bits. We refer to this distribution as $d$
+The latent factor's activation and signature on measure grid induce a randomness of activation of measure grid's bits. We  refer to this distribution as $d$, an define it as
 
 \begin{align*}
 d &: F(2)^{n} \rightarrow [0,1]\\
 d_x &= \mathbb{P}\left(b_1 = x_1, \ldots, b_n = x_n \right)
 \end{align*}
 
-Furthermore, for $I \in S(\mathcal{F})$, the modelisation of latent factor to bit' s links verifies also 
+Finally, we can also modelize the connection between factors and measure grid's bits as a signature of grid's bits on factor space. That is, for $I \in S(\mathcal{F})$, there is a well defined probability measure so that 
 
 \begin{align*}
 \mathbb{P}(\mathcal{G}^{-1}(b) = I) &\in [0, 1]\\
@@ -145,21 +145,38 @@ Furthermore, for $I \in S(\mathcal{F})$, the modelisation of latent factor to bi
 
 \subsubsection*{Characteristic polynome}
 
-The activity of a factors and grid's bit may be modelized using a set of multivariate polynomials whose fiber and image domain is respectively $F(2)^{n}$ and $F(2)$. $F(2)$ denotes the fields of two elements, $0$ and $1$, equipped with the logical XOR and logical AND as the addition and multiplication, respectively. The set of polynome associated with a set $I \in S(\mathcal{F})$ or $I' \in S(\mathcal{G})$ is denoted $\lbrace \mathcal{P}_{I, l} \rbrace_{l \in \mathbb{N}}$ and represents respectively a segmentation of states of factors and measure grid's bits in $I$ or $I'$. That is, in the measure grid's space space
+The activity of a factors and grid's bit may be modelized using a set of multivariate polynomials whose fiber and image domain is respectively $F(2)^{n}$ and $F(2)$. $F(2)$ denotes the fields of two elements, $0$ and $1$, equipped with the logical XOR and logical AND respectively as the addition and multiplication. The set of polynome associated with a set $I \in S(\mathcal{F})$ and $I' \in S(\mathcal{G})$ is denoted respectively $\lbrace \mathcal{P}_{I, l} \rbrace_{l \in \mathbb{N}}$  and $\lbrace \mathcal{P}_{I', l} \rbrace_{l \in \mathbb{N}}$. It represents a segmentation of states of respectively factors of $I$ and measure grid's bits of $I'$.
+
+
+\begin{align*}
+\mathcal{P}_{I, l}&: F(2)^{K} \rightarrow F(2)\\
+\mathcal{P}_{I, l} &= \begin{cases} \sum_{\pi \in S(I', l)} x_{\pi_1} \cdot \ldots \cdot x_{\pi_l}, & \text{if }\ l \in \lbrace 1, \ldots, \vert I \vert \rbrace \\ 0, & \text{otherwise} \end{cases}
+\end{align*}
+
+and 
 
 \begin{align*}
 \mathcal{P}_{I', l}&: F(2)^{n} \rightarrow F(2)\\
-\mathcal{P}_{I', l} &= \begin{cases} \sum_{\pi \in S(I', l)} x_{\pi_1} \cdot x_{\pi_2} \cdot \ldots \cdot x_{\pi_l}, & \text{if }\ l \in \lbrace 1, \ldots, \vert I \vert \rbrace \\ 0, & \text{otherwise} \end{cases}
+\mathcal{P}_{I', l} &= \begin{cases} \sum_{\pi \in S(I', l)} x_{\pi_1} \cdot \ldots \cdot x_{\pi_l}, & \text{if }\ l \in \lbrace 1, \ldots, \vert I \vert \rbrace \\ 0, & \text{otherwise} \end{cases}
 \end{align*}
 
-Where $S(I', l)$ is the set of all permutation of size $l$ of element of $I'$ and $x_b \in F(2)$ is the state of a bit $b \in \mathcal{G}$. Furthermore we define the characteristic polynomial of the set of bits $I'$ at level $l_0 \in \{0, \ldots, \vert I' \vert \}$ as 
 
+Where $S(I, l)$ and $S(I', l)$ are the set of all permutation of size $l$ of element of respectively $I$ and $I'$. $x_i \in F(2)$. Furthermore we define the characteristic polynomial of a set $I \in S(\mathcal{F})$ and $I' \in S(\mathcal{G})$ at level $l_0 \in \{0, \ldots, \vert I' \vert \}$ and $l'_0 \in \{0, \ldots, \vert I' \vert \}$  as 
+
+\vspace{10px}\noindent\begin{minipage}{.5\linewidth}
 \begin{align*}
-\mathcal{P}^{l_0}_{I'} &: F(2)^{n} \rightarrow F(2)\\
-\mathcal{P}^{l_0}_{I'} &= \sum_{l = l_0}^{\vert I' \vert} \mathcal{P}_{I', l}
+\mathcal{P}^{l_0}_{I} &: F(2)^{K} \rightarrow F(2)\\
+\mathcal{P}^{l_0}_{I} &= \sum_{l = l_0}^{\vert I' \vert} \mathcal{P}_{I, l}
 \end{align*}
+\end{minipage}%
+\noindent\begin{minipage}{.5\linewidth}
+\begin{align*}
+\mathcal{P}^{l'_0}_{I'} &: F(2)^{n} \rightarrow F(2)\\
+\mathcal{P}^{l'_0}_{I'} &= \sum_{l = l'_0}^{\vert I' \vert} \mathcal{P}_{I', l}
+\end{align*}
+\end{minipage}\vspace{15px}
 
-The same polynomial can be expressed to modelize states of set of factors. So far, the addition is set to be the logical XOR in the definition of fields $F(2)$. However, in the rest of this report, we will use symbol $+$ and $\sum$ as representation of a logical OR in $F(2)$. This notation enables us to save a lot of time in writing complex polynomials. Denoting $\oplus$ the logical XOR and $\bar{x}$ the opposite of $x$, one have
+So far, the addition is set to be the logical XOR in the definition of fields $F(2)$. However, in the rest of this report, we will use symbol $+$ and $\sum$ as representation of a logical OR in $F(2)$. This notation enables us to save a lot of time in writing complex polynomials. Denoting $\oplus$ the logical XOR and $\bar{x}$ the opposite of $x$, one have
 
 \begin{equation*}
 (x \cdot \bar{y}) \oplus (\bar{x} \cdot y) \oplus (x \cdot y) = x + y 
@@ -167,19 +184,19 @@ The same polynomial can be expressed to modelize states of set of factors. So fa
 
 \subsubsection*{Operators on polynome}
 
-In order to qualify a set of factors and grid's bits, we define some basic operator. First, let  $I_{\mathcal{G}}$ some subset of $S(\mathcal{G})$. Then we denote by $F_2(I_{\mathcal{G}}, \mathcal{G})$ the operators that transform $I_{\mathcal{G}}$ into a set of $\vert I_{\mathcal{G}} \vert$ vector in $F(2)^{\vert \mathcal{G} \vert}$. 
+In order to qualify a set of factors and grid's bits, we define some basic operator. First, let  $I_{\mathcal{G}}$ be a subset of $S(\mathcal{G})$, we denote by $F_2(I_{\mathcal{G}}, \mathcal{G})$ the operators that transform $I_{\mathcal{G}}$ into a set of $\vert I_{\mathcal{G}} \vert$ vector in $F(2)^{\vert \mathcal{G} \vert}$. 
 
 \begin{equation*}
 F_2(I_{\mathcal{G}}, \mathcal{G})  : S(\mathcal{G}) \rightarrow  F(2)^{\vert \mathcal{G} \vert \times \vert I_{\mathcal{G}} \vert} 
 \end{equation*}
 
-For each of the vector $X \in F_2(I_{\mathcal{G}}, \mathcal{G})$ that has been generated by corresponding set $I \in I_{\mathcal{G}}$, an entry takes value $1$ if the associated element belongs to $I$, 0 otherwise. This oprerator is convenient to evaluate the characteristic polynome of a set of grid's bit. As an example, let $I \in S(\mathcal{G})$ and $l_0 \in \{ 1, \ldots \vert I \vert \}$, then 
+For each of the vector $X \in F_2(\{I\}, \mathcal{G})$ such that $I\in I_{\mathcal{G}}$ an entry takes value $1$ if the associated index belongs to $I$, 0 otherwise. This operator is convenient to evaluate the characteristic polynome. As an example, let $I, I' \in S(\mathcal{G})$ and $l_0 \in \{ 1, \ldots \vert I \vert \}$ then 
 
 \begin{align*}
 \sum_{x \in F_2(\lbrace I' \rbrace, \mathcal{G})} \mathcal{P}_I^{l_0} \left[ x \right]  &= \begin{cases} 1, & \text{if }\ \vert I'\cap I \vert \geq l_0 \\ 0, & \text{otherwise} \end{cases}
 \end{align*}
 
-With $I'$ any subset of $\mathcal{G}$. Let the ditribution over states of grid's bits be denoted $d = \lbrace d_x \rbrace_{x \in F_2(S(\mathcal{G}), \mathcal{G})}$ with $d_x = \mathbb{P}(X = x)$, Then the norm of a characteristic Polynome $\mathcal{P}_I^{l_0}$ with respect to distribution $d$ is defined as
+Furthermore, given the ditribution over measure grid's bits activation $d$, we define the norm of a characteristic Polynome $\mathcal{P}_I^{l_0}$ with respect to $d$ as
 
 \begin{align*}
 \Vert . \Vert_{d} &: \mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})} \rightarrow \left[ 0, 1\right] \\
@@ -187,35 +204,36 @@ With $I'$ any subset of $\mathcal{G}$. Let the ditribution over states of grid's
 \end{align*}
 
 
-Where $ \forall x \in F_2(S(\mathcal{G}), \mathcal{G})$, $\mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})}$ the space of all polynomials with domain $F_2(S(\mathcal{G}), \mathcal{G})$ and $\times$ is the simple multiplication in $\mathbb{R}$. Finally, keeping previous notations, let $\lbrace \mathcal{P}_{I_{i}}^{l_i} \rbrace_{i=1, ..., k}$ a set of characteristic polynome for some $k \in \mathbb{N}$, we define the product operator as 
+Where $\mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})}$ the space of all polynomials with domain $F_2(S(\mathcal{G}), \mathcal{G})$ and $\times$ is the simple multiplication in $\mathbb{R}$. Finally, keeping previous notations, let $\lbrace \mathcal{P}_{I_{i}}^{l_i} \rbrace_{i=1, ..., k}$ a set of characteristic polynome for some $k \in \mathbb{N}$, we define the product operator as 
 
 \begin{align*}
 \langle ., \ldots, . \rangle_{d} &: \mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})}^{k} \rightarrow \left[ 0, 1\right] \\
 \langle \mathcal{P}^{l_1}_{I_1}, \ldots,  \mathcal{P}^{l_k}_{I_k} \rangle_{d} &= \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})} \left( \mathcal{P}^{l_1}_{I_1} \left[ x \right] \cdot \ldots \cdot \mathcal{P}^{l_k}_{I_k} \left[ x \right] \right) \times d_x
 \end{align*}
 
-Where $\cdot$ denotes the usual multiplication in $F(2)$ and $\times$ is the simple multiplication in $\mathbb{R}$. Every operator specified above in the measure grid space can be defined in the factor space, taking distribution of factor's activation $d'$ and input domain $\mathcal{F}$ instead of distribution $d$ and input space $\mathcal{G}$.
+Where $\cdot$ denotes the usual multiplication in $F(2)$ and $\times$ is the simple multiplication in $\mathbb{R}$. Every operator specified above in the measure grid space can be defined as well in the factor space. Taking characteristic polynomial in factor space and the distribution over factor's activation $d'$.
 
 
 \subsubsection*{Stochastic processus induced by factor's activation}
 
-The activation of factors can be observed through time where at each instant $t$ the realisation of the state of factors follow the distribution $d_x$ and are two-by-two independant. Thus each polynome in the factor space $\mathcal{P}_I^l$ with $I \in S(\mathcal{F})$ and $1\geq l \geq \vert I \vert$ can be observe through time. That is, at each instant $t \in \mathbb{N}$, we define
+The activation of factors is observed as a strictly stationnary stochastic processus. That is for a couple $(I, l) \in \mathcal{F} \times \{1, \ldots, \vert I \vert\}$  we associate a stochastic process $x_I^l[t]$ defined as 
 
 
 \begin{equation*}
 x_I^l[t] = \begin{cases} 1, & \text{with probability }\ \Vert \mathcal{P}_I^l \Vert_{d'}\\ 0, & \text{Otherwise} \end{cases}
 \end{equation*}
 
-The stochastic process that takes value 1 if the factor actvivates and 0 otherwise. The activation of factors leads to the activation of grid's bits. Again it induces a stochastic process for each characteristic polynome in the grid's space $\mathcal{P}_I^l$ with $I \in S(\mathcal{G})$ and $1\geq l \geq \vert I \vert$ . 
+with $\{ x_I^l[t] \}_{t\in \mathbb{N}}$ two-by-two independant. The factor's measure grid signature and there activation lead to the activation of grid's bits that is also observed as striclty stationary stochastic processus. Again for a couple $(I, l) \in \mathcal{G} \times \{1, \ldots, \vert I \vert\}$  we associate a stochastic process $x_I^l[t]$ defined as 
+
 
 \begin{equation*}
 x_I^l[t] = \begin{cases} 1, & \text{with probability }\ \Vert \mathcal{P}_I^l \Vert_{d} \\ 0, & \text{Otherwise} \end{cases}
 \end{equation*}
 
-The stochastic process that takes value 1 if the bit actvivates and 0 otherwise.
+with $\{ x_I^l[t] \}_{t\in \mathbb{N}}$ two-by-two independant.
 
 \subsection{Firing Graph}
-In this section we provide a description of the main datastructure used in our solution, the firing graph, as well as basic tools to help its analysis.
+The firing graph is the main data structure used in our solution. In this section we propose a definition of it, as well as basic tools to help its analysis.
   
 \subsubsection*{Graph specification}
 The algorithm presented in this report use a particular datastructure that we refer as firing graph and that we denote $G(V, D_w)$. 
@@ -225,7 +243,7 @@ The algorithm presented in this report use a particular datastructure that we re
 \item $D_w$ is the weighted direct link matrix, $D_w \in \mathbb{N}^{\vert V \vert \times \vert V \vert}$ and $\left[ D_w \right]_{i, j} = w$ indicate an edge of weight $w$ from vertex $v_i$ to vertex $v_j$ if $w > 0$  
 \end{itemize}
 
-$G$ is a directed weighted graph whose vertice are organized in layer. A vertex of some layer $i \in \mathbb{N}$ must have at least one incoming edge from a vertex of layer $i-1$. It may also have outcoming edges toward vertice of layer $j \in \mathbb{N}, j > i$ and incoming edges from vertice of layer $k \in \mathbb{N}, k < i$. Vertice of layer $0$ has no incoming edges, they corresponds to bits of the measure grid $\mathcal{G}$. Each vertex stores the tuple $(I, l_0)$
+$G$ is a directed weighted graph whose vertices are organized in layer. A vertex of some layer $i \in \mathbb{N}$ must have at least one incoming edge from a vertex of layer $i-1$. It may also have outcoming edges toward vertice of layer $j \in \mathbb{N}, j > i$ and incoming edges from vertice of layer $k \in \mathbb{N}, k < i$. Vertice of layer $0$ has no incoming edges, they corresponds to bits of the measure grid $\mathcal{G}$. Each vertex stores the tuple $(I, l_0)$
 
 \begin{itemize}
 \item $I$ the set of vertice at the tail of incoming edge of the vertex
@@ -238,48 +256,52 @@ $G$ is a directed weighted graph whose vertice are organized in layer. A vertex 
    \includegraphics[scale=0.25]{figures/firing_graph.png}
 \end{figure}
 
-In the figure we introduce the input domain of a vertex $v$ of the firing graph. It corresponds to the set of vertice that are candidate for an egde toward $v$. Vertice of the firing graph can also be characterized by there state that can take value 0 or 1 and there propagation through the graph at a rate $\tau$ that needs to be set. If at an instant $t_0$ we set the state of each vertex of layer $0 \leq i < k$ for some $k > 0$, then at instant $t_1 = t_0 + \tau$ vertice of layer $k$ will have there state updated according to their incoming links. The propagation of states through the graph may be modelized by a multivariate boolean polynomial.
+In the figure we introduce the input domain of a vertex $v$ of the firing graph. It corresponds to the set of vertices that are candidate for an egde toward $v$. Vertice of the firing graph can also be characterized by there state that can take value 0 or 1 and their propagation through the graph. If at an instant $t_0$ we set the state of each vertex of layer $0 \leq i < k$ for some $k > 0$, then at instant $t_1 = t_0 + 1$ each vertex of the layer $k$ will have its state updated according to its incoming edges.
 
 \subsubsection*{Graph Polynomials}
 
-As we have previously defined the characteristic polynome of a set of grid's bit and factors, we associate to a vertex $v(I, l_0)$ of the firing graph $v$ the set of polynome $\lbrace \mathcal{P}_{I, l} \rbrace_{l \in \{l_0, \ldots, \vert I \vert \ \}}$ that represent a segmentation of the state of a vertex at instant $t$ given the state of vertex in its input domain at instant $t-\tau$ . If we denote by $n$, $I$ and $l_0$ respectively the size of the input domain of $v$, the set of vertex that has a link toward $v$ and the level of the vertex, then 
+As for bits of the measure grid and factors, a vertex $v(I, l_0)$ of a firing graph is assiociated with the set of polynome $\lbrace \mathcal{P}_{I, l} \rbrace_{l \in \{l_0, \ldots, \vert I \vert \ \}}$. Each polynom is a segment of its characteristic polynome $\mathcal{P}_v$ that describe activation at instant $t$ of $v$ given activation of vertex in its input domain at instant $t-1$. If we denote by $n$, $I$ and $l_0$ respectively the size of the input domain of $v$, the set of vertex that has a link toward $v$ and the level of the vertex, then 
 
+\vspace{10px}\noindent\begin{minipage}{.5\linewidth}
 \begin{align*}
 \mathcal{P}_{v, l}&: F(2)^{n} \rightarrow F(2)\\
 \mathcal{P}_{v, l} &= \begin{cases} \sum_{\pi \in S(I, l)} x_{\pi_1} \cdot x_{\pi_2} \cdot \ldots \cdot x_{\pi_l}, & \text{if }\ l \in \lbrace l_0, \ldots, \vert I \vert \rbrace \\ 0, & \text{otherwise} \end{cases}
 \end{align*}
-
-Where $S(I, l)$ is the set of all permutation of size $l$ of element of $I$ and for any vertex $v \in V$, $x_{v} \in F(2)$, is the state of $v$. Furthermore we define the characteristic polynomial of a vertex $v$ as 
-
+\end{minipage}%
+\noindent\begin{minipage}{.5\linewidth}
 \begin{align*}
 \mathcal{P}_v &: F(2)^{n} \rightarrow F(2)\\
 \mathcal{P}_v &= \sum_{l = l_0}^{\vert I \vert} \mathcal{P}_{v, l}
 \end{align*}
+\end{minipage}\vspace{15px}
 
-Again all operators on polynome defined previously is applicable, let $v$ be some vertex of the firing graph and $d_x$ a ditribution over the combination activation of $v$'s input domain, denoted $d = \lbrace d_x \rbrace_{x \in F_2(S(\mathcal{G}), \mathcal{G})}$ with $d_x = \mathbb{P}(X = x)$. Then the norm of $v$ with respect to distribution $d$ is defined as
+Where $S(I, l)$ is the set of all permutation of size $l$ of element of $I$ and for any vertex $v \in V$, $x_{v} \in F(2)$, is the state of $v$. Furthermore, all operators on polynome defined previously is applicable, let $v, v_1, \ldots, v_k$  be some vertex of the firing graph with the same input domain and $d$ a distribution over activation of their input domain's vertices. Then the norm and the product with respect to distribution $d$ are defined as
 
-\begin{equation*}
+
+\vspace{10px}\begin{minipage}{.3\linewidth}
+\begin{align*}
 \Vert \mathcal{P}_v \Vert_{d} = \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})} \mathcal{P}_v\left[ x \right] \times d_x
-\end{equation*}
-
-Similarly, let $v_1, \ldots, v_k$ be any vertice of the firing graph with the same input domain and $d_x$ a ditribution over states of this input domain. Then the product with respect to distribution $d$ is defined as
-
-\begin{equation*}
+\end{align*}
+\end{minipage}%
+\noindent\begin{minipage}{.7\linewidth}
+\begin{align*}
 \langle \mathcal{P}_{v_1}, \ldots,  \mathcal{P}_{v_k} \rangle_{d} = \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})} \left( \mathcal{P}_{v_1} \left[ x \right] \cdot \ldots \cdot \mathcal{P}_{v_k} \left[ x \right] \right) \times d_x
-\end{equation*}
+\end{align*}
+\end{minipage}\vspace{15px}
 
-Finally, the activation of vertices can be seen as strictly stationnary stochastic processus. Given a vertex $v(I, l)$ we define
+
+Finally, the activation of vertices are observed as stochastic processus. Given a vertex $v(I, l)$ we define
 
 \begin{equation*}
 x_v[t] = \begin{cases} 1, & \text{with probability }\ \Vert \mathcal{P}_v \Vert_{d}\\ 0, & \text{Otherwise} \end{cases}
 \end{equation*}
 
-The stochastic process that takes value 1 if the vertex $v$ actvivates and 0 otherwise. $d$ is a well defined distribution over activation of $v$'s input domain.
+The stochastic process that takes value 1 if the vertex $v$ actvivates and 0 otherwise, where $d$ is a well defined distribution over activation of $v$'s input domain. If measure grid's bits compound layer 0 of the firing graph then from definition of stochastic processus of bits and linear of propagation of of states $x_v[t]$ is strictly stationary.
 
 
 \subsubsection*{Connection to grid's bit}
 
-The firing graph is a convenient data structure to evaluate polynome of group of measure grid's bits. Let $G$ be a firing graph with its layer 0 composed of the set of bits $\mathcal{G}$, then for any vertext of layer 1 $v(I, \vert I \vert)$ the characteristic polynome $v$ is equal to the characteristic polynome of the set of bits $I \in \mathcal{G}$ with level $\vert I \vert$.
+The firing graph is a convenient data structure to measure activity of a complex group of measure grid's bits. Let $G$ be a firing graph with its layer 0 composed of the set of bits $\mathcal{G}$, then for any vertext of layer 1 $v(I, \vert I \vert)$ the characteristic polynome $v$ is equal to the characteristic polynome of the set of bits $I \in \mathcal{G}$ with level $\vert I \vert$.
 
 \begin{align*}
 \mathcal{P}_{v} &= \mathcal{P}_{I, \vert I \vert}\\
@@ -294,15 +316,12 @@ x_v[t] &= \begin{cases} 1, & \text{if }\ \sum_{b \in I} x_{\{ b \}}^1[t - 1] > 0
 \end{align*}
 
 
-Besides, one can design more complexed arrangement of vertice that enables to modelize multiple set of measure grid's bits. Let $G$ be a firing graph with its layer 0 composed of the set of bits $\mathcal{G}$, let $u(I, \vert I \vert)$ and $v(I', 1)$, such that $I \cap I' = \emptyset$, be vertice of layer 1 and $w(\{ u, v \}, 2)$ a vertex of layer 2. Then one can easily see that that characteristic polynome of $w$ verifies
+Besides, one can design more complexed arrangement of vertice that enables to modelize multiple set of measure grid's bits.  when the firing graph's layer 0 is composed of measure grid's bits, the characteristic polynomiel of each vertex can be represented as a characteristic polynome in the measure grid's space, without consideration of time and delay. Let $G$ be a firing graph with its layer 0 composed of the set of bits $\mathcal{G}$, let $u(I, \vert I \vert)$ and $v(I', 1)$, such that $I \cap I' = \emptyset$, be vertice of layer 1 and $w(\{ u, v \}, 2)$ a vertex of layer 2. Then one can easily see that that characteristic polynome of $w$ verifies
 
 \begin{align*}
 \mathcal{P}_{w} &= \sum_{b \in I'} \mathcal{P}_{I \cup \{ b \}, \vert I \vert + 1}\\
-x_w[t] &= x_{I}^{\vert I \vert}[t - 1] 
+x_w[t] &= \sum_{b \in I'} x_{I \cup \{ b \}}^{\vert I \vert}[t - 1] 
 \end{align*}
-
-
-Finally, if stochastic processus induced by each of the  as for measure grid and factor space polynome, the activation of vertice's characteristic polynomes can be observed through time and induce stochastic processus at each vertex of the graph.  
 
 
 \subsection{Evaluation of measure grid's bits}
@@ -311,26 +330,20 @@ A perfect indicator of the activation of a given factor $f$ can be used as targe
 
 \subsubsection*{Factor's signature}
 
-The activation of factors can be modeled by a polynome in the factor space defined as 
 
-\begin{align*}
-\mathcal{P}_{f} &: F(2)^K \rightarrow F(2)\\
- \mathcal{P}_{f} &=  \mathcal{P}_{\{f\}, 1}
-\end{align*}
-
-Further we could also describe the activity of a factor $f$ by a polynome in the measure grid's space
+One way to describe the activity of a factor $f$ on the measure grid is to associate it to a polynome in the measure grid's space
 
 \begin{align*}
 \mathcal{P}_{\mathcal{G}(f)} &: F(2)^n \rightarrow F(2)\\
  \mathcal{P}_{\mathcal{G}(f)} &=  \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert}
 \end{align*}
 
-The characterististic polynomes of a factor $f \in \mathcal{F}$ verifies $\forall$ $I \subset \mathcal{F}$ and $I' = \bigcup_{f' \in I} \mathcal{G}(f')$ let $x, x' \in F(2)^{K} \times F(2)^{n}$ such that $x \in F_2(\{I\}, \mathcal{F})$ and $x' \in F_2(\{I'\}, \mathcal{G})$
+$\mathcal{P}_{\mathcal{G}(f)}$ is refered as the polynomial signature of $f$ on $\mathcal{G}$. Anytime $f$ is active then  its polynomial signature takes value 1. Yet under certain modelisation of the factor's link to measure grid, the polynomial signature of $f$ can take value 1 while $f$ is not active. More formaly let $f \in \mathcal{F}$,  $\forall I \in S(\mathcal{F})$ such that $x \in F_2(\{I\}, \mathcal{F})$ and $x' \in F_2(\{\cup_{f \in I} \mathcal{G}(f) \}, \mathcal{G})$
 \begin{center}
 $\mathcal{P}_f[x] = 1 \Rightarrow \mathcal{P}_{\mathcal{G}(f)}[x'] = 1$
 \end{center}
 
-Furthermore if $!\exists J \in \mathcal{F} \setminus \{ f \}$ such that $\mathcal{G}(f) \subset \bigcup_{f' \in J} \mathcal{G}(f')$
+Furthermore if $!\exists J \in S(\mathcal{F} \setminus \{ f \})$ such that $\mathcal{G}(f) \subset \bigcup_{f' \in J} \mathcal{G}(f')$ then
 
 \begin{center}
 $\mathcal{P}_f[x] = 1 \Leftrightarrow \mathcal{P}_{\mathcal{G}(f)}[x'] = 1$
@@ -338,83 +351,79 @@ $\mathcal{P}_f[x] = 1 \Leftrightarrow \mathcal{P}_{\mathcal{G}(f)}[x'] = 1$
 
 \subsubsection*{basic metrics}
 
-Let $I \in S(\mathcal{G})$, $l \in \{ 1, \ldots, \vert I \vert \}$, $f \in \mathcal{F}$ and $e$ be respectively some measure grid's bit, some level, some latent factor and the event "factor f is active". Then we define a first metrics, refered as recall coefficient, defined as
+Let $I \in S(\mathcal{G})$, $l \in \{ 1, \ldots, \vert I \vert \}$, $f \in \mathcal{F}$ and $e$ the event "factor $f$ is active". Then we define the recall coefficient of couple $(I, l)$ with respect to $f$ as
 
 \begin{equation*}
-\mu_{I, l, f} = \langle \mathcal{P}^{l}_{I}, \mathcal{P}_{\mathcal{G}(f)} \rangle_{d \vert e} + \langle \mathcal{P}^{l}_{I}, \mathcal{P}_{\mathcal{G}(f)}^{\bot} \rangle_{d \vert e}
+\mu_{I, l, f} = \langle \mathcal{P}^{l}_{I}, \mathcal{P}_{\mathcal{G}(f)} \rangle_{d \vert e} + \langle \mathcal{P}^{l}_{I}, \bar{\mathcal{P}}_{\mathcal{G}(f)} \rangle_{d \vert e}
 \end{equation*}
 
-Where $d \vert e$ is the  distribution over measure grid's bits activation given event $e$ and $\mathcal{P}_{\mathcal{G}(f)}^{\bot}$ is the complement of $\mathcal{P}_{\mathcal{G}(f)}$ in $F(2)$. Furthermore we define the precision coefficient as
+Where $d \vert e$ is the  distribution over measure grid's bits activation given event $e$ and $\bar{\mathcal{P}}_{\mathcal{G}(f)}$ is the complement of $\mathcal{P}_{\mathcal{G}(f)}$ in $F(2)$. Furthermore we define the precision coefficient of couple $(I, l)$ with respect to $f$ as
 
 \begin{equation*}
-\nu_{I, l, f} = \langle \mathcal{P}^{l}_{I}, \mathcal{P}_{\mathcal{G}(f)} \rangle_{d \vert \bar{e}} + \langle \mathcal{P}^{l}_{I}, \mathcal{P}_{\mathcal{G}(f)}^{\bot} \rangle_{d \vert \bar{e}}
+\nu_{I, l, f} = \langle \mathcal{P}^{l}_{I}, \mathcal{P}_{\mathcal{G}(f)} \rangle_{d \vert \bar{e}} + \langle \mathcal{P}^{l}_{I}, \bar{\mathcal{P}}_{\mathcal{G}(f)} \rangle_{d \vert \bar{e}}
 \end{equation*}
 
-Where $d \vert \bar{e}$ is the  distribution over measure grid's bits activation given not event $e$. Finally we define the purity coefficient as 
+Where $d \vert \bar{e}$ is the  distribution over measure grid's bits activation given not event $e$. Finally we define the purity coefficient of couple $(I, l)$ with respect to $f$ as 
 
 \begin{equation*}
 \omega_{I, l, f} = \frac{\nu_{I, l, f}}{\mu_{I, l, f}}
 \end{equation*}
 
 
-The lower $\omega_{I, l, f}$ the more pure is the set $I$ with respect to $f$. Furthermore one can easily see that for any set $I \in S(\mathcal{G})$ we have 
-
-\begin{equation*}
-\omega_{I,l, f} \geq \omega_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert, f}
-\end{equation*}
-
-Finally the recall, precision and purity coefficient can be defined for any vertex $v$ of a firing graph where vertex of layer 0 are composed by measure grid's bit and are denoted respectively $\mu_{v, f}$, $\nu_{v, f}$ and $\omega_{v, f}$.
+The lower $\omega_{I, l, f}$ the more pure is the couple ($I$, $l$) with respect to $f$. The recall, precision and purity coefficient can be defined for any vertex $v$ of a firing graph where vertex of layer 0 are composed by measure grid's bit and are denoted respectively $\mu_{v, f}$, $\nu_{v, f}$ and $\omega_{v, f}$. The latter are computed by using the representation of $\mathcal{P}_v$ as a characteristic polynomial in the measure grid's space.
 
 \subsubsection*{advanced metrics}
 
  
-Let $I \in S(\mathcal{G})$, $l \in \{ 1, \ldots, \vert I \vert \}$, $f \in \mathcal{F}$ and $e$ be respectively some measure grid's bit, some integer, some latent factor and the event "factor f is active". Then we define the precision of the set $I$ with respect to factor $f$ at level $l_0$ as
+Let $I \in S(\mathcal{G})$, $l \in \{ 1, \ldots, \vert I \vert \}$, $f \in \mathcal{F}$ and $e$ the event "factor $f$ is active". We define the precision of the couple $(I, l)$ with respect to factor $f$ as
 
 \begin{equation*}
 \phi_{I, l, f} = \frac{\Vert \mathcal{P}^{l}_I \Vert_{d, e}}{\Vert \mathcal{P}^{l}_I \Vert_{d}}
 \end{equation*}
 
-We also define the recall of the set $I$ with respect to factor $f$ at level $l_0$ as
+We also define the recall of the couple $(I, l)$ with respect to factor $f$ as
 
 \begin{equation*}
 \psi_{I, l, f} = \frac{\Vert \mathcal{P}^{l}_I \Vert_{d, e}}{\Vert \mathcal{P}_{\mathcal{G}(f)} \Vert_{d, e}}
 \end{equation*}
 
-Where $d, e$ is a well defined distribution over combination of activation of measure grid's bits that intetersect with event $e$. Finally the precision and the metrics can be defined for any vertex $v$ of a firing graph where vertex of layer 0 are composed by measure grid's bit and are denoted respectively $\phi_{v, f}$ and $\psi_{v, f}$.
+Where $d, e$ is a well defined distribution over combination of activation of measure grid's bits that intetersect with event $e$. The precision and the recall are defined for any vertex $v$ of a firing graph where vertex of layer 0 are composed by measure grid's bit and are denoted respectively $\phi_{v, f}$ and $\psi_{v, f}$. Again, The latter are computed by using the representation of $\mathcal{P}_v$ as a characteristic polynomial in the measure grid's space.
 
 \subsubsection*{Advanced stochastic process induced by vertex}
 
-Given that the layer 0 of the firing graph is compose of measure grid's bits, the propagation of activation through the firing graph induces multiple stochastic processus in each of its vertex. Given a vertex $v$ at layer $k \geq 0$, its  characteristic polynome $\mathcal{P}_{v}$, a factor $f$ and its characteristic polynome in the measure grid space $\mathcal{P}_f$ the activity of the node is described by
+Given that the layer 0 of the firing graph is compose of measure grid's bits, we have seen that the propagation of activation through the firing graph induces multiple stochastic processus in each of its vertex. Given a vertex $v$ at layer $k \geq 0$, its  characteristic polynome $\mathcal{P}_{v}$, a factor $f \in \mathcal{F}$ and e the event "factor $f$ is active" we define
  
 \begin{itemize}
 \item The reward process with respect to factor $f$, $r_{v, f} \left[ t \right]$, $t \in \mathbb{N}$\\
 
-$r_{v, f} \left[ t \right] = r_{v, f} \left[ t - \tau \right] + r_{v, t, f}$, with $\lbrace r_{v, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable that takes value 1 if vertex $v$ activate at instant $t$ and the event "factor $f$ activate" was true at time $t - k \times \tau$. That is,  $\forall$ $t  < k \times \tau $, $r_{v, t, f} = 0$ and $\forall$ $t  \geq k \times \tau $\\ 
+$r_{v, f} \left[ t \right] = r_{v, f} \left[ t - 1 \right] + r_{v, t, f}$, with $\lbrace r_{v, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable that takes value 1 if vertex $v$ activate at instant $t$ and the event e was true at time $t - k$. That is,  $\forall$ $t  < k $, $r_{v, t, f} = 0$ and $\forall$ $t  \geq k  $\\ 
 \begin{center}
 $r_{v, t, f} = \begin{cases} 1, & \text{with probability } q_r = \Vert \mathcal{P}_{v} \Vert_{d, e} \\  0, & \text{with probability } 1 - q_r  \end{cases}$
 \end{center}
 
-where $d, e$ is the distribution over the combination of activation of vertex of layer 0 that intersect with the event e: "factor $f$ is active".
+where $d, e$ is the distribution over measure grid's activation that intersect with the event e.
 
 \item The penalty process with respect to factor $f$, $p_{v, f}\left[ t \right]$, $t \in \mathbb{N}$\\
 
-$p_{v, f}\left[ t \right] = p_{v, f}\left[ t - \tau\right] + p_{v, t, f}$, with $\lbrace p_{v,t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable that takes value 1 if vertex $v$ activate at instant $t$ and the event "factor $f$ activate" was false at time $t - k \times \tau$. That is, $\forall$ $t  < k \times \tau $, $p_{v, t, f} = 0$ and $\forall$ $t  \geq k \times \tau $\\ 
+$p_{v, f}\left[ t \right] = p_{v, f}\left[ t - 1\right] + p_{v, t, f}$, with $\lbrace p_{v,t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable that takes value 1 if vertex $v$ activate at instant $t$ and the event e was false at time $t - k $. That is, $\forall$ $t  < k $, $p_{v, t, f} = 0$ and $\forall$ $t  \geq k $\\ 
 
 \begin{center}
-$p_{v, t, f} = \begin{cases} 1, & \text{with probability } q_p = q_n - q_r \\ 0, & \text{with probability } 1 - q_p \end{cases}$
+$p_{v, t, f} = \begin{cases} 1, & \text{with probability } q_p = \Vert \mathcal{P}_v \Vert_{d} - q_r \\ 0, & \text{with probability } 1 - q_p \end{cases}$
 \end{center}
+
+where $d$ is the distribution over measure grid's activation.
 
 
 \item The score process with respect to factor $f$, $s_{v, f}\left[N, T, \rho \right]$, $N, T, \rho \in \mathbb{N}^3$ \\
 
-$s_{v,f}\left[N, T, \rho \right] = N + \sum_{t=1}^{T} s_{v, \rho, t, f}$, with $\lbrace s_{v, \rho, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable. $s_{v, \rho, t, f}$ takes value 1 if the event "factor $f$ activate" was true at time $t - k \times \tau$ and value $-\rho$ if the event was false, given that $v$ activate at $t$. That is, $\forall$ $t  < k \times \tau $, $p_{v, t, f} = 0$ and $\forall$ $t  \geq k \times \tau $\\ 
+$s_{v,f}\left[N, T, \rho \right] = N + \sum_{t=1}^{T} s_{v, \rho, t, f}$, with $\lbrace s_{v, \rho, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable. $s_{v, \rho, t, f}$ takes value 1 if the event e was true at time $t - k $ and value $-\rho$ if it was false, given that $v$ activate at $t$. That is, $\forall$ $t  < k $, $p_{v, t, f} = 0$ and $\forall$ $t  \geq k$\\ 
 
 \begin{center}
 $s_{v, \rho, t, f} = \begin{cases} 1, & \text{with probability } q_s = \frac{q_r}{q_r + q_p}  \\ -\rho, & \text{with probability } 1 - q_s \end{cases}$
 \end{center}
 \end{itemize}
 
-The stochastic processus of each vertex is a convenient way to estimate the evaluation metrics of sets of measure grids bit's whose behaviour is caught be a vertex of the firing graph.
+Those stochastic processus are convenient to evaluate joint activity of measure grids bit's, caught by vertex of the firing graph, with respect to a target factor $f$'s activity.
 
 \subsection{Properties}
 
@@ -458,7 +467,7 @@ In particular if $l_u = \vert I \vert$ and $l_v = 1$ , then for any vertex of la
 
 \subsubsection*{Metrics}
 
-Throughout this section, we consider $G$ to be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be denoted  $d$ and $d'$ and the event "factor $f$ is active" will be denoted by $e$. \\
+Throughout this section, we consider $G$ to be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be respectively denoted $d$ and $d'$ and e is the event "factor $f$ is active". \\
 
 \underline{Precision of vertex}\\
 
@@ -466,7 +475,7 @@ Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l 
 
 \begin{equation}
 \label{prop:precision1}
-\phi_{v, f} = \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{v, f}}
+\phi_{v, f} = \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{I, l, f}}
 \end{equation}
 
 Furthermore, if $\mu_{v, f} = 1$ we have
@@ -482,7 +491,7 @@ Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l 
 
 \begin{equation}
 \label{prop:recall1}
-\psi_{v, f} = \mu_{v, f}
+\psi_{v, f} = \mu_{I, l, f}
 \end{equation}
 
 Furthermore, 
@@ -497,68 +506,68 @@ Where right equality is reached whenever $v$ is connected to a set of measure gr
 
 \subsubsection*{stochastic processus}
 
-Again, throughout this section, we consider a firing graph $G$ where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \mathcal{F}$ denote some factor. Finally we use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". \\
+Again, throughout this section, we consider a firing graph $G$ where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \in \mathcal{F}$ denote some factor. Finally we use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". \\
 
 \underline{vertex's reward process}\\
 
-If denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, then
+If $r_{v, f}[t]$ denotes penalty process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2, then
 
 \begin{equation}
 \label{prop:reward_mean}
-\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{v, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
+\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
 \end{equation}
 
 \underline{vertex's penalty process}\\
 
-if $p_{v, f}[t]$ denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, then
+if $p_{v, f}[t]$ denotes penalty process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2, then
 
 \begin{equation}
 \label{prop:penalty_mean}
-\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
+\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, l, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
 \end{equation}
 
 \underline{vertex's score process}\\
 
-If $s_{v, f}[N, T, \rho]$ denotes the score process of $v$ with respect to $f$ as defined in section 1.2.2 with some $N, T, \rho \in \mathbb{N}^3$, then
+If $s_{v, f}[N, T, \rho]$ denotes the score process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2 with some $N, T, \rho \in \mathbb{N}^3$, then
 
 \begin{equation}
 \label{prop:score_mean}
-\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{v, f} \times (\rho + 1) - \rho)
+\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{I, l f} \times (\rho + 1) - \rho)
 \end{equation}
 
 Furthermore,
 
 \begin{equation}
 \label{prop:score_var}
-\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
+\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{I, l, f} \times (1 - \phi_{I, l, f})
 \end{equation}
 
 \section{Identification of Latent Factor}
-In this section, we presents the a couple of operations that can be used for the identification of a latent factor:
+In this section, we present a procedure to identify a latent factor's activation. The procedure is consists in two steps:
 
 \begin{itemize}
-\item Sampling: Sampling the measure grid and build a firing graph
-\item Draining: Draining vertex of the firing graph keeping only low purity coefficient's vertex
+\item Sampling: Sample the measure grid and build a firing graph.
+\item Draining: Drain the firing graph to exclude high purity coefficient's vertices.
 \end{itemize}
 
-At this stage both processus will be described and the efficiency of the draining algorithm quantified.
+Both processus will be described and the efficiency of the draining algorithm quantified.
 
 \subsection{Sampling}
 
 
-The sampling of the measure grid is a specific procedure followed in order to select some bits of the grid. This procedure is usually designed to be the most efficient in the fullfilment of specific quantitative objective. First we assume that given a target factor $f$ we have access to a determinist exact indicator of $f$'s activation. Then given target $f$, the objective of our sampling is to maximize the probability that we sample a bit $b$ whose purity coefficient with respect to $f$ is higher or equal to some positive constant $\omega$. That is, if we denote by $s$ the random variable of the outcome of a single sampling, then the objective is to maximize
+Sampling the measure grid consists in following a procedure to select some bits of it. This procedure is usually designed to be the most efficient in the fullfilment of specific quantitative objective. First we assume that given a target factor $f$ we have access to a determinist exact indicator of $f$'s activation. Then given target $f$, the objective of our sampling is to maximize the probability that we sample a bit $b$ whose purity coefficient with respect to $f$ is lower or equal to some positive constant $\omega$. That is, if we denote by $s$ the random variable of the outcome of a single sampling, then the objective is to maximize
 
 \begin{center}
-$\mathbb{P}( \omega_{\{s\}, 1, f} \geq \omega)$
+$\mathbb{P}( \omega_{\{s\}, 1, f} \leq \omega)$
 \end{center}  
 
-Again if we have a set of $I \subset \mathcal{G}$ bits, a target factor $f$, then the objective of sampling is to maximize the probability of sampling a bit $b$ for which the purity of set $I \cup \{b \}$ is higher or equal to a given positive constant $\omega$. That is, if we denote by $s$ the random variable of the outcome of a single sampling, then the objective is to maximize
+Again if we have a set of $I \subset \mathcal{G}$ bits, a target factor $f$, then the objective of sampling is to maximize the probability of sampling a bit $b$ for which the purity of set $I \cup \{b \}$ at level $\vert I \vert + 1$ is lower or equal to a given positive constant $\omega$. That is, if we denote by $s$ the random variable of the outcome of a single sampling, then the objective is to maximize
 
 \begin{center}
-$\mathbb{P}( \omega_{I \cup \{ s\}, \vert I \vert, f} \geq \nu)$
+$\mathbb{P}( \omega_{I \cup \{ s\}, \vert I \vert, f} \leq \omega)$
 \end{center} 
 
-We propose a very intuitive sampling method based on the indicator of activation of target factor. Given parameters $p_s \in [0, 1]$ and $S_p$ respectively the probability of picking a bit and a set of preselected measure grid's bits, the sampling proceudre writes
+We propose a very intuitive sampling method based on the indicator of activation of target factor $f$. Given parameters $p_s \in [0, 1]$ and $S_p$ respectively the probability of picking a bit and a set of preselected measure grid's bits, the sampling proceudre writes
 
 \begin{algorithm}[H]
 \caption{Sampling}
@@ -566,10 +575,10 @@ We propose a very intuitive sampling method based on the indicator of activation
 \textbf{Output:} $S$
 \begin{algorithmic}
 \State $S \gets \{ \}$, $x_f \gets nextFactorState()$, $X_{\mathcal{G}} \gets nextGridState()$
-\While{$ S == \{ \}$}
- \If {$x_f == 1$ and $\forall b \in S_p \textit{ } x_b == 1$}
-  \ForAll{$b \in \mathcal{G}\setminus S$}
-   \If {$X_{\mathcal{G}}[b] == 1$}
+\While{$ S \textit{ is empty}$}
+ \If {$x_f = 1$ and $\forall b \in S_p \textit{ } X_{\mathcal{G}}[b] = 1$}
+  \ForAll{$b \in \mathcal{G}\setminus S \cup S_p$}
+   \If {$X_{\mathcal{G}}[b] = 1$}
     \State $S \gets S \cup \{ b \} \textit{ with probability } p_s$
    \EndIf	
   \EndFor	
@@ -580,7 +589,7 @@ We propose a very intuitive sampling method based on the indicator of activation
 \end{algorithmic}
 \end{algorithm}
 
-Where $x_f$ and $X_{\mathcal{G}}$ are respectively a scalar that take value 1 when factor $f$ is active, 0 otherwise and a mapping with measure grid's bits as keys and their state as value (0 or 1). The second mean of the sampling procedure is to build a firing graph from which the evaluation of the purity coefficient of samples can be estimated through the observation of edge's score processus. The construction of the firing graph requires to set a parameter $N$ that corresponds to the initial weigths of edges that will be drained. In addition we add mask matrix $G_{mask} \in \{0, 1\}^{\vert V \vert}$ that controls wich edges is candidate for draining. We classify firing graph into two classes
+Where $x_f$ and $X_{\mathcal{G}}$ are respectively a scalar that take value 1 when factor $f$ is active, 0 otherwise and a mapping with measure grid's bits as keys and their state as value (0 or 1). The second mean of the sampling procedure is to build a firing graph from which the evaluation of the purity coefficient of samples can be estimated through the variation of edge's weights. The construction of the firing graph requires to set a parameter $N$ that corresponds to the initial weigths of edges that will be drained. In addition we add mask matrix $G_{mask} \in \{0, 1\}^{\vert V \vert}$ that controls wich vertex is allowed to have their outcoming edges impacted by draining. As for sampling, we consider two kind of firing graph.
 
  \begin{figure}[H]
   \caption{Single sampled firing graph}
@@ -596,11 +605,11 @@ In this first case sampled bits $\{b_1, \ldots, b_{n_s}\}$ are used as vertex of
    \includegraphics[scale=0.35]{figures/firing_graph_drainer_2.png}
 \end{figure}
 
-In this second case sampled bits $\{b_1, \ldots, b_{n_s}\}$ and the pre-selected bits $\{b_1^{*}, \ldots, b_i^{*} \}$ for some $i \in \mathbb{N}^{*}$ compound the layer 0. Then the vertices $v(\{b_1, \ldots, b_{n_s}\}, 1)$ and $u(\{b_1, \ldots, b_{n_s}\}, k)$ are added to layer 1 of $G$ with outcoming edge's weights set to $\infty$ . Finally, the vertex $w(\{u, v\}, 2)$ is added at layer 2 of $G$. In this case with set $G_{mask}$ so that only $b_1, \ldots, b_{n_s}$'s outcoming edges are candidate for draining.
+In this second case sampled bits $\{b_1, \ldots, b_{n_s}\}$ and the pre-selected bits $\{b_1^{*}, \ldots, b_i^{*} \}$ for some $i \in \mathbb{N}^{*}$ compound the layer 0 of the firing graph $G$. Then vertices $v(\{b_1, \ldots, b_{n_s}\}, 1)$ and $u(\{b_1, \ldots, b_{n_s}\}, k)$ are added to layer 1 of $G$. Finally, the vertex $w(\{u, v\}, 2)$ is added at layer 2 of $G$. In this case with set $G_{mask}$ so that only $b_1, \ldots, b_{n_s}$'s outcoming edges are candidate for draining.
 
 \subsection{Draining}
 
-Draining the firing graph built during the sampling pass consists in iterating a forward propagation of bit's activation through firing graph and backward propagation of feedback generated by factor's activation. Feedback are meant to increment or decrement the weight of an edge. Given that an edge with a null or negative weigth vanishhes, at the end of the routine, the topology of the graph differentiate between the purity of each vertex. To ease understanding of the algorithm we split the vertices of the firing graph into input and core vertices which are respectively vertices of layer 0 and vertices of layer $> 0$. Furthermore we introduce a new type of vertices that can only have incoming edges from core vertices. We refer to those nodes as output vertices. 
+Draining the firing graph consists in iterating a forward propagation of bit's activation and a backward propagation of feedback generated by factor's activation through the firing graph. Feedback are meant to increment or decrement the weight of unmasked vertex's outcoming edges. Given that an edge with a null or negative weigth vanishhes, at the end of the routine, the topology of the graph differentiate between the purity of each vertex. To ease understanding of the algorithm we split the vertices of the firing graph into input and core vertices which are respectively vertices of layer 0 and vertices of layer $> 0$. Furthermore we introduce a new type of vertices that can only have incoming edges from core vertices. We refer to those nodes as output vertices. 
 
 \begin{figure}[H]
 \caption{Draining diagram}
@@ -608,7 +617,7 @@ Draining the firing graph built during the sampling pass consists in iterating a
    \includegraphics[scale=0.30]{figures/firing_graph_drainer.png}
 \end{figure}
 
-We use $n_i$, $n_c$ and $n_o$ to refer to the number of respectively input, core and output vertices. Furthermore we define $I\in \mathbb{N}^{n_i \times n_c}$, $C\in \mathbb{N}^{n_c \times n_c}$ and $O\in \mathbb{N}^{n_c \times n_o}$ that respectively corresponds to the weighted direct link matrices respectively from input toward core vertices, core toward core vertices and core toward output vertices. As we have seen in previous section, the activation of grid's bits can be observed as stochatic processus that takes value $\{ 0, 1\}$ that propagates through graph and induced core vertice's stochastic processus. Thus we define the following stochastics vectors
+We use $n_i$, $n_c$ and $n_o$ to refer to the number of respectively input, core and output vertices. Furthermore we define $I\in \mathbb{N}^{n_i \times n_c}$, $C\in \mathbb{N}^{n_c \times n_c}$ and $O\in \mathbb{N}^{n_c \times n_o}$ that respectively corresponds to the weighted direct link matrices respectively from input toward core vertices, core toward core vertices and core toward output vertices. In order to represent in a more convenient way stochastic processus induced by measure grid's bots activation we define the following stochastics vectors
 
 \begin{itemize}
 \item $x_i^{(t)} \in \{0, 1\}^{1 \times n_i}$ the vector of activation of input vertices at instant $t$
@@ -640,13 +649,13 @@ The propagation of activation through the firing graph can be represented with t
 \end{minipage}\vspace{20px}
 
 
-Where $\cdot$ is the usual dot product, $(i, j) \in \{1, \ldots n_c\} \times \{1, \ldots n_o\}$ and $l_i$ is the level of the $i^{th}$ core vertex. An output vertex of the firing graph is feeded with the activation of a targeted factors decayed in time that is usually chosen to be the number of layer - 1. For single and joint sampled firing graph the decay is respectively set to 1 and 2. The factor activation enables to generate a feedback to the output that is back propagated through the firing graph. Supposing that we set the factor's decay to $d \geq 1$, the feedback is defined as 
+Where $\cdot$ is the usual dot product, $(i, j) \in \{1, \ldots n_c\} \times \{1, \ldots n_o\}$ and $l_i$ is the level of the $i^{th}$ core vertex. An output vertex of the firing graph is feeded with the activation of a targeted factors decayed in time by the number of layer - 1. That is, for single and joint sampled firing graph the decay is respectively set to 1 and 2. Factor's activations enable to generate a feedback to the output that is back propagated through the firing graph. Supposing that we set the factor's decay to $d \geq 1$, the feedback is defined as 
 
 \begin{equation*}
 x_{b,o}^{(t)} = x_o^{(t)} \circ \left( (\rho + 1) \times x_f^{(t-d)} - \rho \right)
 \end{equation*}
 
-Where $\circ$ denotes the usual Hadamard product and $x_f^{(t-d)}$ is the vector of states of factors at instant $t-d$. Backpropagating $x_{b,o}^{(t)}$ correctly up to the input vertices is made possible by using time synchronisation and topology of the firing graph. In order to describe the process we introduce the notion of depths of a vertex. A vertex depths correspond to the set of its distances, in terms of vertex, from any output vertices. We denote by $V_i$, $i\in \mathbb{N}$ the set of vertices that has a depth of $i$. Let $G$ be a firing graph with $k \in \mathbb{N}^{*}$ layers augmented with a layer of ouptut vertices. Let $V_o$ the set of output vertices, $\forall v, o \in V_0 \times V_o$,  $v$ is elligible to $o$'s feedback at instant $t$ if and only if 
+Where $\circ$ denotes the usual Hadamard product and $x_f^{(t-d)}$ is the vector of states of factors at instant $t-d$. A correct backpropagation of $x_{b,o}^{(t)}$ up to the input vertices is made possible by using time synchronisation and topology of the firing graph. We denote by $V_i$, $i\in \mathbb{N}$ the set of vertices that has a path composed of $i$ vertex toward an output vertex. Let $G$ be a firing graph with $k \in \mathbb{N}^{*}$ layers augmented with a layer of ouptut vertices. Let $V_o$ the set of output vertices, $\forall v, o \in V_0 \times V_o$,  $v$ is elligible to $o$'s feedback at instant $t$ if and only if 
 
 \begin{itemize}
 \item $v$ was active at instant $t-1$
@@ -692,7 +701,7 @@ O &= I \circ (X_{b, c}^{(t-1)} \cdot X_{m, i}^{(t)})^{T}
 
 
  
-Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\end{bmatrix}^{T}$ and $X_{m, i}^{(t)} =\begin{bmatrix} x_i^{(t)} & \ldots & x_i^{(t- d_{max})}\end{bmatrix}^{T}$, $X_{c, b}^{(t)} \in  \{0, 1, - \rho \}^{n_c \times d_{max}}$ for $t \in \mathbb{N}^{*}$ and $X_{c, b}^{(0)} = \textbf{0}_{n_c \times d_{max}}$. Furthermore $d_{max} \geq (l -1) \times 2 + 1$ where $l$ is the number of layer of the firing graph. Finally we provide a parameter $T$ to the draining algorithm. It controls the targeted number of feedback that an edge should received before disabling its update. Maintaining update's permissions for each edges requires an operation similar to structure update. Iterating throught the transmit and process operation until either $G$ is composed of two distinct connexe component or no structure update is enabled. At the convergence of the draining algorithm the value of drained edges $e$ is the value of score process $s_{e,f}[N, T, \rho]$. 
+Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\end{bmatrix}^{T}$ and $X_{m, i}^{(t)} =\begin{bmatrix} x_i^{(t)} & \ldots & x_i^{(t- d_{max})}\end{bmatrix}^{T}$, $X_{c, b}^{(t)} \in  \{0, 1, - \rho \}^{n_c \times d_{max}}$ for $t \in \mathbb{N}^{*}$ and $X_{c, b}^{(0)} = \textbf{0}_{n_c \times d_{max}}$. Furthermore $d_{max} \geq (l -1) \times 2 + 1$ where $l$ is the number of layer of the firing graph. Finally we provide a parameter $T$ to the draining algorithm. It controls the targeted number of feedback that an edge should received before disabling its update. Maintaining update's permissions for each edges requires an operation similar to structure update. Finally, the draining algorithm iterates forward and backward pass until either $G$ is composed of two distinct connexe component or no structure update is enabled. 
 
 \begin{algorithm}[H]
 \caption{Draining}
@@ -720,7 +729,7 @@ Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\e
 \end{algorithmic}
 \end{algorithm}
 
-Clearly, the complexity of the algorithm is dominated by the backward transmit and structure update operations. A standard worst case analysis of those operations gives $\mathcal{O}(n^{4} \times d_{max}^2)$. Yet this analysis relies on standard complexity time for dense matrix operations, and doesn't take into account sparsity of signals and direct link matrices or the randomness of inputs. In practice we have found that the forward and backward propagation of the bits and factors activation is time consuming, especially when both $N$ and $T$ are large numbers. As a consequence, batch\_size successive bits and factor's state are forward and backward propagated through the graph at each iteration. The decrease in time complexity of this practical trick is impressive and worth the slight gain in space comlexity of the algorithm even though it does not stick to the expectation of theoretical worst case analysis. Finally this trick requires to dynamically change the batch\_size so that treshold for the number of updates at each edges is respected.
+Clearly, the complexity of the algorithm is dominated by the backward transmit and structure update operations. A standard worst case analysis of those operations gives $\mathcal{O}(n^{4} \times d_{max}^2)$, where $n$ is the total number of vertice in the firing graph. Yet this analysis relies on standard complexity time for dense matrice operations, and doesn't take into account neither the sparsity of signals and direct link matrices or the distribution of activation of input vertices. In practice we have found that the forward and backward propagation of the bits and factors activation is time consuming, especially when both $N$ and $T$ are large numbers. Thus, to reduce running time, batch\_size successive bits and factor's state are forward and backward propagated through the graph at each iteration. The decrease in time complexity of this practical trick is impressive and worth the gain in space comlexity of the algorithm even though it does not stick to the expectation of theoretical worst case analysis. Finally this trick requires to dynamically change the batch\_size so that treshold for the number of updates at each edges is respected.
 
 \subsection{Analysis of the algorithm}
 
@@ -732,27 +741,27 @@ Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ld
 \mathbb{P} \left( E \right) \leq \sum_{j = 0}^{\vert S \vert} p^j \times \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, \vert I \vert + 1, f } < \omega \rbrace \vert = j \right) 
 \end{equation*}
 
-Where $p = \mathbb{P} \left( s_{v, f}(N, T, \rho) < 0 \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega_i \right)$, with $\{b_1^{*}, \ldots, b_{i}^{*}, s \}$ compose the layer 0 and $v(I \cup \{ s \}, i+1)$ the layer 1 of a firing graph of 2 layers, Furthermore
+Where $p = \mathbb{P} \left( s_{v, f}(N, T, \rho) < 0 \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega_i \right)$. For any $s \in S$, with $\{b_1^{*}, \ldots, b_{i}^{*}, s \}$ compose the layer 0 and $v(I \cup \{ s \}, i+1)$ the layer 1 of a firing graph of 2 layers, Furthermore
 
 \begin{equation*}
-\mathbb{P} \left( s_{v, f}(N, T, \rho < 0) \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega \right) \leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta^{+}\delta_{i,f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta^{+}\delta_{i,f}c \right) \right)
+\mathbb{P} \left( s_{v, f}(N, T, \rho < 0) \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega \right) \leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta^{+}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta^{+}\delta_{f}c \right) \right)
 \end{equation*}
 
-With $\delta_{i, f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $\Var[s_{v, \rho, t}] = \sigma^2$. 
+With $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $f$. $\Var[s_{v, \rho, f, t}] = \sigma^2$. 
 
 \end{theorem}
 
 \begin{leftbar}
-\textbf{Proof.} As a reminder, in the core of this proof we refer to $d$ and $d'$ respectively to the distribution over bit's grid activation and factor's activation. Given the arrangement of vertex of graph $G$ built with sampling and using (\ref{prop:2layer-2}), the characteritic polynomial of any of the  vertex $s$ composing layer 0 of $G$ that correspond to bits sampled write as
+\textbf{Proof.} As a reminder, in the core of this proof we refer to $d$ and $d'$ respectively to the distribution over bit's grid activation and factor's activation. Given the arrangement of vertex of graph $G$ and the forward equation of the draining algorithm, the activation of any vertice $b \in S$ that will be propagated toward an output vertex, is modelized by the following characcteristic polynomial
 
 \begin{equation*}
-\mathcal{P}_{s}= \mathcal{P}_{\{b^{*}_1, \ldots, b^{*}_i, s \}, i+1}
+\mathcal{P}_{\{b\}, 1} \cdot \mathcal{P}_{\{u, v\}, 2}
 \end{equation*}
 
-As a consequence, the score process of each vertex sampled $s$ in $G$ is equal to the score process of a vertex $v(\{b^{*}_1, \ldots b^{*}_i, s \}, i+1)$ at layer 1 of a graph of two layers where $ \{b^{*}_1, \ldots b^{*}_i, s \}$ composes its layer 0. Then, the first inequality is trivial, since it consists in a naive development. Indeed 
+Where $v(S, 1)$ and $u(\{b_1^{*}, \ldots, b_i^{*}\}, i)$. Thus, using (\ref{prop:2layer-2}), the activity of $b$ that is propagated to the ouptut vertex is the same than the activity of a vertex $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furtermore, given the time and space consistency of the backpropagation of the feedback from the output vertex, the weight of the edge at the convergence of the draining algorithm is either $0$ or equal to the score process of vertex $v$ of $G'$, $s_{v, f}[N, T, \rho]$. Then, the first inequality is obtained by developping
 
 \begin{align*}
-\mathbb{P} \left( E \right)&= \sum_{j=0}^{\vert S \vert} p^j \times q^{\vert S \vert -j} \times\mathbb{P}_{\mathcal{S}_i} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right) \\
+\mathbb{P} \left( E \right)&= \sum_{j=0}^{\vert S \vert} p^j \times q^{\vert S \vert -j} \times\mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right) \\
 &\leq \sum_{j=0}^{\vert S \vert} p^j \times \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right)
 \end{align*}  
 
@@ -763,7 +772,7 @@ Where
 \item $q = \mathbb{P} \left( s_{v, f}(N, T, \rho) < 0 \vert \omega_{I\cup\{s \}, i + 1, f} \geq \omega \right)$
 \end{itemize}
 
-Then, we choose the value of the postive real $\omega$ such that there exists a bit $b^{+}$ that verifies
+Then, we choose the value of the postive real $\omega$ such that there exists a measure grid's bit $b^{+}$ that verifies
 
 \begin{align*}
 b^{+} = &\argmin_{b \in \mathcal{G}} \vert \omega - \omega_{I \cup \{ b \}, i +1, f} \vert \\
@@ -801,24 +810,24 @@ Yet using equation (\ref{prop:score_mean}) one have
 Furthermore using $T = t$ and $N = t \times \left(\phi (\rho + 1) - \rho \right)$ and the definition of $\phi$ one have
 
 \begin{equation*}
--N -  T \times \mathbb{E}\left[s_{v, \rho, 1, f}\right] = -t \times \delta \times \underbrace{(\rho +1) \times \phi \times \phi_{v, f} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}}_{\tilde{\delta}_{i, f}}
+-N -  T \times \mathbb{E}\left[s_{v, \rho, 1, f}\right] = -t \times \delta \times \underbrace{(\rho +1) \times \phi \times \phi_{v, f} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}}_{\delta_{v, f}}
 \end{equation*}
 
 Thus
 
 \begin{align*}
-\mathbb{P} \left( s_{v,f}[N, T, \rho] < 0 \right) &= \mathbb{P}\left( \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] < -t \times \delta \times \tilde{\delta_{i, f}} \right)\\
-&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho,t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta \times \tilde{\delta_{i, f}} \right)\\
-&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta^{+} \times \delta_{i, f} \right)
+\mathbb{P} \left( s_{v,f}[N, T, \rho] < 0 \right) &= \mathbb{P}\left( \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] < -t \times \delta \times \delta_{v, f} \right)\\
+&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho,t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta \times \delta_{v, f} \right)\\
+&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta^{+} \times \delta_{f} \right)
 \end{align*}
 
-With $\delta_{i, f} = (\rho_i +1) \times \phi_i^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. \\
+With $\delta_{f} = (\rho +1) \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. \\
 
-At this point we have to notice that $\lbrace s_{v, \rho, t, f} \rbrace_{t=1, \ldots, T - 1}$ is a sequence of i.i.d random variables with mean $\mu$ and variance $\sigma^2$ that verifies $\vert s_{v, \rho, t, f} \vert \leq \rho$. Thus one can apply the Chernoff inequality as formulated in \cite{TAO-1}. In particular, taking $\lambda = \sigma^{-1} \delta^{+} \delta_{i,f}$ we obtain
+At this point we have to notice that $\lbrace s_{v, \rho, t, f} \rbrace_{t=1, \ldots, T - 1}$ is a sequence of i.i.d random variables with mean $\mu$ and variance $\sigma^2$ that verifies $\vert s_{v, \rho, t, f} \vert \leq \rho$. Thus one can apply the Chernoff inequality as formulated in \cite{TAO-1}. In particular, taking $\lambda = \sigma^{-1} \delta^{+} \delta_{f}$ we obtain
 
 \begin{align*}
 \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, tn f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \delta^{+} \delta_{i,f} \right) &= \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t} - \mathbb{E}\left[s_{v, \rho, t}\right] \vert > \lambda\sigma \sqrt{t} \right)\\
-&\leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{+}\delta_{i,f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{+}\delta_{i,f}c \right) \right)
+&\leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{+}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{+}\delta_{f}c \right) \right)
 \end{align*}
 
 
@@ -831,20 +840,21 @@ With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E
 Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ldots, b_{i}^{*}\}$ a target factor $f$ and $G$ the firing graph built after sampling algorithm with parameter $N$. There exists a sequence of 4-tuple $(\omega, N, T, \rho)$ such that for each remaining input vertex $v$ of the drained firing graph verifies 
 
 \begin{equation}
-\mathbb{P} \left( \omega_{v, f} > \omega \right) \leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{-}\delta_{i,f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{-}\delta_{i,f}c \right) \right)
+\mathbb{P} \left( \omega_{v, f} > \omega \right) \leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{-}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{-}\delta_{f}c \right) \right)
 \end{equation}
 
-With $\delta_{i, f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $\Var[s_{v, \rho, t}] = \sigma^2$.  
+with, for any $s \in S$, $\{b_1^{*}, \ldots, b_{i}^{*}, s \}$ compose the layer 0 and $v(I \cup \{ s \}, i+1)$ the layer 1 of a firing graph of 2 layers and $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $\Var[s_{v, \rho, f, t}] = \sigma^2$.  
 \end{theorem}
 
 \begin{leftbar}
-\textbf{Proof.} First recalling the topology of the firing graph $G$ built at sampling step, again, using a similar argument (\ref{prop:2layer-2}) than in the previous proof, for each sampled bits $s\in S$ and each input vertex $v(\{ s\}, 1)$ of $G$ $\omega_{v, f} = \omega_{I \cup  \{s\}, i+1, f}$. Furthermore 
+\textbf{Proof.} 
+As in the proof of the previous theorem, using the arrangement of vertex of graph $G$, the property (\ref{prop:2layer-2}), the forward and backward equation of the draining algorithm, one can show that the weight of the outcoming edge of any vertices $b \in S$ of $G$ is either equal to 0 or to the score process $s_{v, f}[N, T, \rho]$ where $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ is a vertex at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furthermore 
 
 \begin{equation*}
-\mathbb{P} \left( \omega_{v, f} >  \omega \right) = \mathbb{P}_{\mathcal{S}} \left( \omega_{I \cup \{s\}, i + 1, f } < \omega \right) \times \mathbb{P} \left( s_{v, f}(N, T, \rho) > 0 \vert \omega_{I \cup \{ s \}, i + 1, f} > \omega \right)
+\mathbb{P} \left( \omega_{v, f} >  \omega \right) = \mathbb{P}_{\mathcal{S}} \left( \omega_{I \cup \{b\}, i + 1, f } < \omega \right) \times \mathbb{P} \left( s_{v, f}(N, T, \rho) > 0 \vert \omega_{I \cup \{ b \}, i + 1, f} > \omega \right)
 \end{equation*}
 
-Where $s \in S$ and $v(I \cup \{s\}, i+1)$ a vertex of layer 1 of a firing graph with layer 0 composed of $I \cup \{s\}$. Then, we choose the value of the postive real $\omega$ such that there exists a bit $b^{-}$ that verifies
+Then, we choose the value of the postive real $\omega$ such that there exists a bit $b^{-}$ that verifies
 
 \begin{align*}
 b^{-} = &\argmin_{b \in \mathcal{G}} \vert \omega - \omega_{I \cup \{ b \}, f} \vert \\
@@ -868,14 +878,14 @@ T &= t
 for any $t \in \mathbb{N}^{*}$. Now considering $v$ with $\omega_{v,f}  > \omega$, reproducing the same development as it was done in the proof of previous Theorem, one can derive a convenient form to easily apply the Chenoff inequality.
 
 \begin{equation*}
-\mathbb{P} \left( s_{v, f}(N, T, \rho_i) > 0 \vert \omega_{v, f} > \omega \right) \leq \mathbb{P}\left(\vert \sum_{t=0}^{T_i - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta^{-} \delta_{i,f} \right)
+\mathbb{P} \left( s_{v, f}(N, T, \rho_i) > 0 \vert \omega_{v, f} > \omega \right) \leq \mathbb{P}\left(\vert \sum_{t=0}^{T_i - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta^{-} \delta_{f} \right)
 \end{equation*}
 
-With $\delta_{i, f} = (\rho +1) \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. Then using the Chernoff inequality as written in \cite{TAO-1} using $\lambda = \sigma^{-1} \delta^{+} \delta_{i,f}$ we obtain
+With $\delta_{f} = (\rho +1) \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. Then using the Chernoff inequality as written in \cite{TAO-1} using $\lambda = \sigma^{-1} \delta^{+} \delta_{f}$ we obtain
 
 
 \begin{align*}
-\mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > T \times \mu_{v, f}\delta^{-} \rho \right) \leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{-}\delta_{i,f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{-}\delta_{i,f}c \right) \right)
+\mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > T \times \mu_{v, f}\delta^{-} \rho \right) \leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{-}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{-}\delta_{f}c \right) \right)
 \end{align*}
 
 With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E.D
@@ -884,19 +894,19 @@ With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E
 
 \subsection{Limit of the generic case}
 
-The combination of Theorems shows that, the association of sampling and draining with the right choice of 4-tuple $(\omega, N, T, \rho)$ gives a convenient tool to identify measure grid'sbit with purity coefficient larger or equal to $\omega$. Furthermore when $t \rightarrow +\infty$ the identification is almost certain, which highlights the trade-off between efficiency and complexity of the algorithm embedded in the choice of $\omega$ and $t$, on which depends $N$ and $T$.
+The combination of Theorems shows that, the association of sampling and draining with the right choice of 4-tuple $(\omega, N, T, \rho)$ gives a convenient tool to select measure grid's bits with purity coefficient lower or equal to $\omega$. Furthermore when $t \rightarrow +\infty$ the identification is almost certain, which highlights the trade-off between efficiency and complexity of the algorithm embedded in the choice of $\omega$ and $t$, on which depends $N$ and $T$.
 This generic case and its analysis deliver a strong framework that ease the derivation of more specific result that may be obtained under specific distribution of latent factors activation and link to measure grid. Nevertheless it leaves two fundamental points clueless 
 
 \begin{itemize}
 \item No possibility to quantify further the effectivenes of the sampling strategy 
-\item Is there any good procedure or heuristic to choose positive real value $\omega$ ?
+\item No specific procedure or heuristic to choose positive real value $\omega$
 \end{itemize}
 
-In the rest of this paper, we present two different specific cases of factor's and measure grid's modelisation that enable a more specific of both the quantification of the sampling strategy and choice of $\omega$. 
+In the rest of this paper, we present two different specific cases of factor's and measure grid's modelisation that enable a better quantification of the sampling strategy and stronger heuristic for the choice of $\omega$. 
 
 \section{Case of signal plus noise}
 
-This particular case is designed to be easy to analyze. We first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and args a choice for the sequence 4-tuple $(\omega, T, N, \rho)$. Finally we present simulations and provide discussion of the result obtained with this special case.
+This particular case is designed to be easy to analyze. We first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and arg a choice for the 4-tuple $(\omega, T, N, \rho)$. Finally we present simulations and provide discussion of the result obtained with this special case.
 
 \subsection{Statistical modelisation}
 
@@ -943,7 +953,7 @@ In this particular case we follow the generic sampling procedure $\mathcal{S}$ w
 \mathbb{P}\left(\vert S \vert = s\right) = \begin{cases} \begin{pmatrix} n - k \\ s - k  \end{pmatrix} \times p_N^{s - k } \times (1 - p_N)^{n-k-s} \times p_{\mathcal{S}} , & \text{if }\ s \geq k \\ 0, & \text{otherwise} \end{cases}
 \end{align*}
 
-Thus its expected size is $\mathbb{E}\left[ \vert S \vert \right] = k + (n - k) \times p_N \times p_{\mathcal{S}} $. Furthermore if $I= \{b_1^{*}, \ldots, b_i^{*} \}\in S(\mathcal{f})$ a set of pre-selected bits and $S$ is a set of bits sampled using $\mathcal{S}$, then, there exists a positive real $\omega_i$ such that
+Thus its expected size is $\mathbb{E}\left[ \vert S \vert \right] = k + (n - k) \times p_N \times p_{\mathcal{S}} $. Furthermore if $I= \{b_1^{*}, \ldots, b_i^{*} \}\in S(\mathcal{G})$ a set of pre-selected bits and $S$ is a set of bits sampled using $\mathcal{S}$, then, there exists a positive real $\omega_i$ such that
 
 \begin{align*}
 \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, \vert I \vert + 1, f } < \omega_i \rbrace \vert = j \right)  &= \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus s\in \mathcal{G}(f) \vert = j \right)\\
@@ -952,7 +962,7 @@ Thus its expected size is $\mathbb{E}\left[ \vert S \vert \right] = k + (n - k) 
 
 \subsection{Identification of factors}
 
-First, in the case of a single sampled firing w, one can see that bit's purity coefficients can take only two values with respect to $f$
+First, in the case of a single sampled firing graph, one can see that bit's purity coefficients can take only two values with respect to $f$
 
 \begin{align*}
 \omega_{\{b\}, 1, f} = \begin{cases} p_N , & \text{if }\ b \in \mathcal{G}(f) \\ 1, & \text{otherwise} \end{cases}
@@ -1000,7 +1010,7 @@ Where $t \in \mathbb{N}$ and $\phi_i = \frac{p_{f}}{p_{f} + \omega_i \times (1 -
 
 \subsection{Simulation}
 
-The signal plus noise model is implemented in python and mainly use standard numpy module to generate random signal that fit its probabilistic framework, more details about the implementation can be found in appendix B. The simulation of this signal plus noise requires the implementation of random signals that respect probabilistic properties of the model. In our case we generate $n=1000$ bits that randomly activate with probbility $p_N$ and we choose randomly $\vert  \mathcal{G}(f)\vert = 50$ bits that are linked to a latent factor that activate with probability $p_f=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
+The signal plus noise model is implemented in python and mainly use standard numpy module to generate random signal that fit its probabilistic framework, more details about the implementation can be found in appendix B. We generate $n=1000$ bits that randomly activate with probbility $p_N$ and we choose randomly $\vert  \mathcal{G}(f)\vert = 50$ bits that are linked to a latent factor that activate with probability $p_f=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
 \subfloat[$p_f = 0.3$, $p_N = 0.3$]{\includegraphics[scale=0.165]{figures/signalplusnoise_111.png}} 
@@ -1011,9 +1021,9 @@ The signal plus noise model is implemented in python and mainly use standard num
 \label{signal_noise_SNR}
 \end{figure}
 
-In every experiement, following the procedure described in the previous section we end with $\rho=1$. Furthermore, each of the figure above shows the values of the score process through the tracking of the weight of edges of a single sampled firing graph. Blue lines show the weight of edges outcoming from input vertices whose activation corresponds to activation of some bits $b\in \mathcal{G}(f)$. Red lines correspond to the weight of edges outcoming from input vertices whose activation corresponds to noisy activation. Finally the black horizontal line represents the theoretical mean value of of the score process, with respect to $f$, with parameter $N, T, \rho$ chosen as described previously, of an edge outcoming from a input vertex that activates as a bits of the grids linked to $f$. As theoretical modelisation suggests we have a clear separation between the two kind of bits and a convergence toward theoretical mean for process corresponding to factors activation. Yet the higher is the noisy activation probability the more difficult it is to separate the tow category of bits sampled. In order to highlight it we run a new simulation with $n=1000$, $\vert \mathcal{G}(f)\vert = 50$, $p_f=0.3$, $T=200$ and $p_{\mathcal{S}}$. Yet at the end of the draining we choose all the input vertices of the firing graph that stil have outcoming edges, and use their combined activation as estimator of the factor's activation measuring their precision and recall over $100$ repetion for each SNR ratio
+In every experiement, following the procedure described in the previous section we end with $\rho=1$. Furthermore, each of the figure above shows the weight of outcoming edges of sampled vertices. Blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. Finally the black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, \rho]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b\}, 1}$, with $b \in \mathcal{G}(f)$. As theoretical modelisation suggests we have a clear separation between the two kind of bits and a convergence around theoretical mean for process corresponding to factors activation. The higher is the noisy activation probability the more difficult it is to separate the tow category of bits sampled. For the second simulation we use $n=1000$, $\vert \mathcal{G}(f)\vert = 50$, $p_f=0.3$, $T=200$ and $p_{\mathcal{S}}= 0.5$. Yet at the end of the draining we choose all the input vertices of the firing graph that still have an outcoming edge and use their combined activation as an estimator of the factor's activation. We then measure their precision and recall over $100$ repetion for each SNR ratio
 
-\begin{table}[]
+\begin{table}[H]
 \caption{Evaluation of naive factor's activation estimation, $T=200$, $100$ repetitions}
 \begin{tabular}{|l|l|l|l|l|l|}
 \hline
@@ -1025,7 +1035,7 @@ $P_N$ & Mean $\phi$ & Standard deviation $\phi$ & Mean $\psi$ & Standard deviati
 \end{tabular}
 \end{table}
 
-The table above show quality indicator of the estimator for different SNR ratio. the two first columns gives respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any remaining input vertex, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveal that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally we run the same experiment in the settings of joint sampled firing graph using again a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to to target factor $f$ that activate with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
+The table shows quality indicator of the estimator for different SNR ratio. the two first columns gives respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any remaining input vertex, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveal that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally, as the last simultation, we simulate the signal plus noise model in the settings of joint sampled firing graph. We use a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to to target factor $f$ that activate with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
 \caption{Observation of the score process in a joint sampled firing graph with $T=500$}
@@ -1033,11 +1043,11 @@ The table above show quality indicator of the estimator for different SNR ratio.
    \includegraphics[scale=0.30]{figures/signalplusnoise_2.png}
 \end{figure}
 
-In this case, following the procedure described previously we end with $N=7$, $\rho=7$ and $\omega_5 \simeq 0.062$, those value of $\rho$ the gain in variance of score process that we observe. In this case we are more likely to drain vertex that activate corrrectly with factors and we are more likely to have noisy vertex remaining after the draining.
+In this case, following the procedure described previously we end with $N=7$, $\rho=7$ and $\omega_5 \simeq 0.062$, the high value of $\rho$ explain the larger variance of score process that we observe. As for the first experiment, blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. The black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, \rho]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b_1, \ldots, b_5, b\}, 5}$, with $\{b_1, \ldots, b_5\}$ the set of pre selected bits and $b \in \mathcal{G}(f)$.
 
 \section{Case of sparse measure grid}
 
-This particular case is a bit more complex since we assume randomness of linked between latent factor and measure grid's bits. Again, for this particular case, we first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and args a choice for the sequence 4-tuple $(\omega, T, N, \rho)$. Finally we present simulations and provide discussion of the result obtained with this sparse case.
+This particular case is a more complex than the previous one. Again, for this particular case, we first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and arg a choice for the sequence 4-tuple $(\omega, T, N, \rho)$. Finally we present simulations and provide discussion of the result obtained with this sparse case.
 
 \subsection{Statistical modelisation}
 
@@ -1047,7 +1057,7 @@ This particular case is a bit more complex since we assume randomness of linked 
 We assume that activation of each of the $K$ latent factors is identical and independant. We denote by $p_f$ the probability of a latent factor's activation. As a consequence, for any $I \in S(\mathcal{F})$, if we define $x$ such that $x \in F_2 (\{I\}, \mathcal{F})$ then we can define the distribution of factor's activation as 
 
 \begin{equation*}
-d'_x = \times p_f^{\vert I \vert} \times (1-p_f)^{K-\vert I \vert} 
+d'_x = \begin{pmatrix} \vert I \vert \\ K \end{pmatrix} \times p_f^{\vert I \vert} \times (1-p_f)^{K-\vert I \vert} 
 \end{equation*}
 
 
@@ -1060,7 +1070,7 @@ We assume two major properties of activation of measure grid's bits.
 \item For each factor $f \in \mathcal{F}$, for each couple $b_1, b_2 \in \mathcal{G}^2$, events "$b_1 \in \mathcal{G}(f)$" and "$b_2 \in \mathcal{G}(f)$"  are independent.
 \end{itemize}   
 
-As a consequence the probability for a bit $b$ to activate, given that every factor of some set $\{f_1, \ldots, f_k\} \subset \mathcal{F}$ is active write
+As a consequence the probability for a bit $b$ to activate, given that every factor of some set $\{f_1, \ldots, f_k\} \subset \mathcal{F}$ is active, writes
 
 \begin{align*}
 \mathbb{P}\left(\textit{b active } \vert f_1, \ldots, f_k \textit{ active}\right) &= \sum_{i=1}^{k} \begin{pmatrix} k \\ i \end{pmatrix} \times p^i_g \times (1 - p_g)^{k - i}\\
@@ -1080,7 +1090,7 @@ With $i = \vert I \vert$ and $p_{g \vert k} = \mathbb{P}\left(\textit{b active }
 Let $G$ be a firing graph whose layer 0 is composed of measure grid's bits, given a target factor $f$, the precision with respect to $f$ of a vertex $v(\{ b \}, 1)$ of the layer 1 of $G$ depends on $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert$. Indeed if $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert = l $, $l \in \{1, \ldots, K\}$, it will be said to have a purity rank of $l$ and its precision with respect to $f$ writes
 
 \begin{equation*}
-\phi_{v, f} = \frac{p_f}{p_f + (1 - p_f)\times \omega_{v, f}}
+\phi_{v, f} = \frac{p_f}{p_f + (1 - p_f)\times \omega_{l}}
 \end{equation*}
 
 where $\omega_l = 1 - (1-p_f)^{l-1}$. If $b' \notin \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b') \vert = l$ then $v'(\{ b' \}, 1)$ verifies $\mu_{v', f} = \nu_{v', f} = (1 - (1-p_f)^{l})$. Thus its precision with respect to $f$ writes
@@ -1110,7 +1120,7 @@ Again here we follow the generic sampling procedure $\mathcal{S}$ with parameter
  
 \subsection{Identification of factors}
 
-First, in the case of a single sampled firing, for any grid's bits linked to factor $f$ can have $K$ different purity coefficients related to their purity rank described previously. Thus we may set $\omega_0$ to $\omega_l$, using $l$  reasonably small so to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega_i$ is not trivial and cannot be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the preselected set of bits we set $\omega_i = \omega_{I, \vert I \vert, f} + \delta$ with smaller $\delta$  with larger $i$, so that the draining discriminate between set of bits whose joint purity coefficient is above.vFinally we choose the sequence of 4-tuple $\lbrace (\omega_i, N_i, T_i, \rho_i) \rbrace_{i=1, \ldots}$ as 
+First, in the case of a single sampled firing, for any grid's bits linked to factor $f$ there is only $K$ different purity coefficients possible that depends the purity rank described previously. Thus we may set $\omega_0$ to $\omega_l$, using $l$  reasonably small so to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the preselected set of bits we set $\omega = \omega_{I, \vert I \vert, f} + \delta$ so that the draining algorithm discriminate between set of bits whose joint purity coefficient is below. Finally we choose the 4-tuple $\lbrace (\omega_i, N_i, T_i, \rho_i) \rbrace_{i=1, \ldots}$ as 
 
 \begin{align*}
 \rho_i &= \textit{min } \rho \in \mathbb{N} \textit{ such that } \phi_i \times (\rho+1) - \rho < 0\\
@@ -1122,7 +1132,7 @@ For some $t \in \mathbb{N}$ and  $\phi_i = \frac{p_f}{p_f + \omega_i \times (1-p
 
 \subsection{Simulation}
 
-Here again, the sparse measure grid model is implemented using python and the standard numpy.random module to generate random signal that fit its probabilistic framework. In our case we generate $n=1000$ bits. Then for each of the $K=10$ latent factor we link measure grid's bits independently with probabiity $p_g=0.3$. Furthermore each latent factor has the same probability $p_f=0.3$ to activate. Finally we built the single sampled firing graph running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$ and we set $\omega= \omega_{10}$ the lowest purity coefficient for a bits that is linked to the target factor.
+Here again, the sparse measure grid model is implemented using python and the standard python numpy module to generate random signal that fit its probabilistic framework. In our case we generate $n=1000$ bits with $K=10$ latent factor that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probabiity $p_g=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$ and we set $\omega= \omega_{10}$ the lowest purity coefficient for a bits that is linked to the target factor.
 
 \begin{figure}[H]
 \caption{Observation of the score process in a sing sampled firing graph with $T=1000$}
@@ -1130,7 +1140,7 @@ Here again, the sparse measure grid model is implemented using python and the st
    \includegraphics[scale=0.33]{figures/sparse_1.png}
 \end{figure}
 
-We clearly see a rapid differentiation of score process according to their purity rank. We can also observe that the lower the coefficient the closer are the score process of corresponding edges. Finally the behaviour of score processus validate the efficiency of the draining algorithm to rank bits of the measure grids blindly in a attempt to identify latent factor.\\
+We clearly see a rapid differentiation of score process according to their purity rank. We can also observe that the higher the coefficient the closer are the score process of corresponding edges. Finally the behaviour of score processus validate the efficiency of the draining algorithm to rank bits of the measure grids blindly in a attempt to identify latent factor.\\
 
 MAY BE ADD A FUCKING JOINT SAMPLED FIRING GRAPH DRAINING
 
@@ -1240,7 +1250,7 @@ Result (\ref{prop:2layer-1}) is a particular case of result (\ref{prop:2layer-2}
 Let $G$ be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be denoted  $d$ and $d'$ and the event "factor $f$ is active" will be denoted by $e$. Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l \in \{1, \ldots, \vert I \vert \} $ and let $f \in \mathcal{F}$ be some factor. The  result (\ref{prop:precision1}) stands that the precision of $v$ with respect to $f$ writes
 
 \begin{equation*}
-\phi_{v, f} = \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{v, f}}
+\phi_{v, f} = \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (1 - \Vert \mathcal{P}_{f} \Vert_{d'}) \times \omega_{I, l, f}}
 \end{equation*}
 
 Furthermore, the result (\ref{prop:precision2}) stands that if $\mu_{v, f} = 1$ we have
@@ -1272,6 +1282,9 @@ Finally by identification of term
 \begin{equation*}
 \phi_{v, f} = \frac{\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'} }{\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'} + \nu_{I, l, f} \times \left( 1 -  \Vert \mathcal{P}_{f} \Vert_{d'} \right)}
 \end{equation*}
+
+Which gives the expected result.
+
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
 \end{center}
@@ -1327,7 +1340,7 @@ Since $\langle  \mathcal{P}_{I}^{l_0}, \bar{\mathcal{P}}_{*}\rangle_{d \vert \ba
 Let $G$ be a firing graph with layer 0 composed by measure grid's bits $\mathcal{G}$ and $f \in \mathcal{F}$ denote some target factor that is linked to some bit of the measure grid. The distribution of activation of latent factors and measure grid's bits will be denoted  $d$ and $d'$ and the event "factor $f$ is active" will be denoted by $e$. Let $v$ be a vertex connected to a set $I$ of measure grid's bits with level $l \in \{1, \ldots, \vert I \vert \} $ and let $f \in \mathcal{F}$ be some factor. The result (\ref{prop:recall1}) stands that the recall of $v$ with respect to $f$ is
 
 \begin{equation*}
-\psi_{v, f} = \mu_{v, f}
+\psi_{v, f} = \mu_{I, l, f}
 \end{equation*}
 
 Furthermore, the result (\ref{prop:recall2}) stands that 
@@ -1354,7 +1367,7 @@ Thus using $\mathcal{P}_{*} = \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f) 
 Yet $\langle \mathcal{P}^{l}_I, \bar{\mathcal{P}}_{*} \rangle_{d, e} = 0$, thus 
  
 \begin{align*}
-\psi_{v f} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d, e}}{\Vert \mathcal{P}_{f} \Vert_{d'}} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d \vert e} \times \Vert \mathcal{P}_f \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}} = \mu_{v, f} 
+\psi_{v f} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d, e}}{\Vert \mathcal{P}_{f} \Vert_{d'}} = \frac{\langle \mathcal{P}^{l}_I, \mathcal{P}_{*} \rangle_{d \vert e} \times \Vert \mathcal{P}_f \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}} = \mu_{I, l, f} 
 \end{align*}
 
 Finally the result (\ref{prop:recall2}) directly comes with the definition.
@@ -1365,10 +1378,10 @@ Finally the result (\ref{prop:recall2}) directly comes with the definition.
 \underline{vertex's reward process}\\
 
 
-Let $G$ be a firing graph where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \in \mathcal{F}$ denote some target latent factor. We also use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". If $r_{v, f}[t]$ denote reward process of $v$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:reward_mean}) stands that
+Let $G$ be a firing graph where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \in \mathcal{F}$ denote some target latent factor. We also use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". If $r_{v, f}[t]$ denote reward process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:reward_mean}) stands that
 
 \begin{equation*}
-\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{v, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
+\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
 \end{equation*}
 
 \textbf{Proof.} From the definition of the reward process we have 
@@ -1386,7 +1399,7 @@ with $\lbrace r_{v, f, i} \rbrace_{i=1, \ldots, t}$ a sequence of i.i.d bernouil
 &= t \times \langle \mathcal{P}_v, \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f)\vert}\rangle_{d \vert e}\times \Vert \mathcal{P}_f \Vert_{d'}
 \end{align*}
 
-the proof come with identification of terms.
+the proof come with identification of terms and the fact that $\mathcal{P}_v = \mathcal{P}_{I}^{l}$ by definition.
  
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
@@ -1398,10 +1411,10 @@ the proof come with identification of terms.
 In the same context, if $p_{v, f}[t]$ denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:penalty_mean}) stands that
 
 \begin{equation*}
-\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
+\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, l, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
 \end{equation*}
 
-\textbf{Proof.} From the definition of the reward process we have 
+\textbf{Proof.} From the definition of the penalty process we have 
 
 \begin{align*}
 p_{v, f}[t] &= p_{v, f}[t-1] + p_{v, f, t}\\
@@ -1415,10 +1428,10 @@ with $\lbrace p_{v, f, i} \rbrace_{i=1, \ldots, t}$ a sequence of i.i.d bernouil
 &= t \times \left( \Vert \mathcal{P}_v \Vert_{d} - \Vert \mathcal{P}_v \Vert_{d, e} \right) \\
 &= t \times \left( \Vert \mathcal{P}_v \Vert_{d,e} +  \Vert \mathcal{P}_v \Vert_{d,\bar{e}} - \Vert \mathcal{P}_v \Vert_{d, e} \right) \\
 &= t \times \Vert \mathcal{P}_v \Vert_{d,\bar{e}} \\
-&= t \times \Vert \mathcal{P}_v \Vert_{d \vert \bar{e}} \times \Vert \vert_{d'}
+&= t \times \Vert \mathcal{P}_v \Vert_{d \vert \bar{e}} \times (1 - \Vert \mathcal{P}_f \vert_{d'}
 \end{align*}
 
-the proof come with identification of terms.
+the proof come with identification of terms and the fact that $\mathcal{P}_v = \mathcal{P}_I^l$  by definition.
 
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
@@ -1429,7 +1442,7 @@ the proof come with identification of terms.
 Finally, in the same context, if $s_{v, f}[N, T, \rho]$ denotes the score process of $v$ with respect to $f$ as defined in section 1.2.2 with some $N, T, \rho \in \mathbb{N}^3$, the result (\ref{prop:score_mean}) stands that
 
 \begin{equation*}
-\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{v, f} \times (\rho + 1) - \rho)
+\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{I, l, f} \times (\rho + 1) - \rho)
 \end{equation*}
 
 
@@ -1460,7 +1473,7 @@ Yet $q_s = \frac{q_r}{q_r + q_p}$, with $q_r = \Vert \mathcal{P}_v \Vert_{d, e}$
 q_s = \frac{\Vert \mathcal{P}_v \Vert_{d, e}}{\Vert \mathcal{P}_v \Vert_{d, e} + \Vert \mathcal{P}_v \Vert_{d,\bar{e}}} = \frac{\Vert \mathcal{P}_v \Vert_{d, e}}{\Vert \mathcal{P}_v \Vert_{d}}
 \end{equation*}
 
-Which is the definition of $\phi_{v, f}$.
+Which is the definition of $\phi_{v, f} = \phi_{I,l, f}$ by definition.
 
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
@@ -1469,7 +1482,7 @@ Which is the definition of $\phi_{v, f}$.
 Furthermore the result (\ref{prop:score_var}) stands that,
 
 \begin{equation*}
-\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
+\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{I,, l, f} \times (1 - \phi_{I, l, f})
 \end{equation*}
 
 \textbf{Proof.} Using the result of previous proof we first compute $\mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right]$
@@ -1491,6 +1504,7 @@ Finally
 \Var \left[ s_{v,\rho, t, f}  \right] = \mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right] - \mathbb{E}\left[  s_{v,\rho, t, f}\right]^{2} = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
 \end{equation*}
 
+Which gives the expected result since $\phi_{v, f} = \phi_{I, l, f}$ by definition.
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
 \end{center}
