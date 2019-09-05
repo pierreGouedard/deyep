@@ -7,3 +7,4 @@ settings/local_settings.yml
 *.aux
 *.log
 *.blg
+*.synctex.gz

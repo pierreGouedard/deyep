@@ -15,10 +15,12 @@
 \usepackage{url,graphicx,tabularx,array,geometry}
 \usepackage{epstopdf}
 \usepackage{mathrsfs}
+\usepackage{hyperref}
 \usepackage{cite}
 \usepackage[utf8]{inputenc}
 \usepackage[]{algpseudocode}
 \usepackage[]{algorithm}
+\usepackage[toc]{appendix}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{corollary}{Corollary}[theorem]
 \newtheorem{lemma}[theorem]{Lemma}
@@ -78,13 +80,13 @@ Pierre Gouedard\\
 \setlength{\parindent}{0pt}
 
 \begin{abstract}
-Consider a set of latent factors whose observable effect of activation is caught on a measure space that take the form of a grid of bits tacking value in $\{0, 1 \}$. This paper intend to deliver a theoretical and practical answer to the question: Given that we have a perfect indicator of the activation of latent factor, can we imagine tools and procedure that could achieve an identification of factor's activation ?
+Consider a set of latent factors whose observable effect of activation is caught on a measure space that take the form of a grid of bits tacking value in $\{0, 1 \}$. This paper intend to deliver a theoretical and practical answer to the question: Given that we have access to a perfect indicator of the activation of latent factor that label a finite dataset of grid's activity, can we imagine a procedure to build a generic identificator of factor's activation from measure grid's activity ?
 \end{abstract}
 
 
-\section{Notations}
+\section{Introduction}
 
-In order to make the core subject of this report more consistent, we introduce the following notations:
+This paper starts by introducing a mathematical framework for our solution. Then it describes a procedure to build the generic factor's activation identificator. Finally it presents the result of the procedure for two particular statistical modelisations of the measure grid's activity. This paper has been influenced by modern machine learning techniques, reviewed in \cite{PCML-1}, especially algorithm that perform automated feature engineering such as neural network and deep learning  \cite{PCML-2} as well as tree learning techniques \cite{PCML-3} and improvements \cite{PCML-4} and \cite{PCML-5}. Finally modern signal processing techniques, that I have been taught at the Ecole Polytechnique F\'ed\'erale De Lausanne, reviewed in \cite{SP-1}, and recent work in statistics in large dimension, to which I have been introduced during my stay in the Laboratoire d'Informatique Gaspard Monge, reviewed in \cite{TAO-1}, has been more than determinant for the conception of this paper. First, in order to make the core subject of this report more consistent, we introduce the following notations:
 
  \begin{figure}[h]
  \caption{Measure grid model}
@@ -106,6 +108,7 @@ In order to make the core subject of this report more consistent, we introduce t
 \item $\mathcal{G}^{-1}(b)$  the set of factors that activate grid's bit $b$, $\mathcal{G}^{-1}(b) \in S(\mathcal{F})$ and $b \in \mathcal{G}$.
 \end{itemize}
 
+  
 \section{Definitions And Properties}
 
 \subsection{Statistical definitions}
@@ -751,7 +754,6 @@ With $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends o
 
 \end{theorem}
 
-\begin{leftbar}
 \textbf{Proof.} As a reminder, in the core of this proof we refer to $d$ and $d'$ respectively to the distribution over bit's grid activation and factor's activation. Given the arrangement of vertex of graph $G$ and the forward equation of the draining algorithm, the activation of any vertice $b \in S$ that will be propagated toward an output vertex, is modelized by the following characcteristic polynomial
 
 \begin{equation*}
@@ -833,7 +835,9 @@ At this point we have to notice that $\lbrace s_{v, \rho, t, f} \rbrace_{t=1, \l
 
 With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E.D.
 
-\end{leftbar}
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
 
 \begin{theorem}
 \label{th_precision}
@@ -846,7 +850,6 @@ Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ld
 with, for any $s \in S$, $\{b_1^{*}, \ldots, b_{i}^{*}, s \}$ compose the layer 0 and $v(I \cup \{ s \}, i+1)$ the layer 1 of a firing graph of 2 layers and $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $\Var[s_{v, \rho, f, t}] = \sigma^2$.  
 \end{theorem}
 
-\begin{leftbar}
 \textbf{Proof.} 
 As in the proof of the previous theorem, using the arrangement of vertex of graph $G$, the property (\ref{prop:2layer-2}), the forward and backward equation of the draining algorithm, one can show that the weight of the outcoming edge of any vertices $b \in S$ of $G$ is either equal to 0 or to the score process $s_{v, f}[N, T, \rho]$ where $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ is a vertex at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furthermore 
 
@@ -890,7 +893,9 @@ With $\delta_{f} = (\rho +1) \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_
 
 With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E.D
 
-\end{leftbar}
+\begin{center}
+\rule[0pt]{100pt}{1pt} 
+\end{center}
 
 \subsection{Limit of the generic case}
 
@@ -1144,9 +1149,15 @@ We clearly see a rapid differentiation of score process according to their purit
 
 MAY BE ADD A FUCKING JOINT SAMPLED FIRING GRAPH DRAINING
 
-\section{Discussion and future work}
+\section{Discussion}
+
+This paper has presented an algorithm that consists in a generic optimisation of a firing graph in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative improvement optimisation method associated with the diversity and flexibility of the architecture of a firing graph open doors to further applcations, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in the field of supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the target is a combination of latent factor activation and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedure could turn our solution into a supervised classificator. The specificity of such a learner would give it an intresting position in the supervised learning landscape. Indeed its incremental optimisation and flexible architecture could make it a an adaptative learning algorithm with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more propice to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype accorded to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be comon sense to orient this piece of research to this field.     
 
 
+\newpage
+\begin{center}
+\LARGE \textbf{Appendices}
+\end{center}
 \appendix
 
 \section{Properties}
@@ -1512,9 +1523,21 @@ Which gives the expected result since $\phi_{v, f} = \phi_{I, l, f}$ by definiti
 
 \section{Implementation}
 
+The code that has been used to obtain result of simulation can be found on github \href{https://github.com/pierreGouedard/deyep}{here} under the branch \textit{publi}. The code is exclusively written in python, is compatible with interpreter python2.7 and python3 and requires python modules numpy and scipy. Code for simulation can be found under
+
+\begin{itemize}
+\item tests/signal\_plus\_noise\_1.py
+\item tests/signal\_plus\_noise\_2.py
+\item tests/signal\_plus\_noise\_3.py
+\item tests/sparse\_identification.py
+\end{itemize}
+
+where the list below are relative to the root directory of the project. 
+
+
 \newpage
 \bibliography{mybib}{}
-\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 
 \end{document}
 
