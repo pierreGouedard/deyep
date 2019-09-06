@@ -1125,7 +1125,7 @@ Again here we follow the generic sampling procedure $\mathcal{S}$ with parameter
  
 \subsection{Identification of factors}
 
-First, in the case of a single sampled firing, for any grid's bits linked to factor $f$ there is only $K$ different purity coefficients possible that depends the purity rank described previously. Thus we may set $\omega_0$ to $\omega_l$, using $l$  reasonably small so to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the preselected set of bits we set $\omega = \omega_{I, \vert I \vert, f} + \delta$ so that the draining algorithm discriminate between set of bits whose joint purity coefficient is below. Finally we choose the 4-tuple $\lbrace (\omega_i, N_i, T_i, \rho_i) \rbrace_{i=1, \ldots}$ as 
+First, in the case of a single sampled firing, for any grid's bits linked to factor $f$ there is only $K$ different purity coefficients possible that depends the purity rank described previously. Thus we may set $\omega_0$ to $\omega_l$, using $l$  reasonably small so to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the preselected set of bits we set $\omega = \omega_{I, \vert I \vert, f} - \delta$ so that the draining algorithm discriminate between set of bits whose joint purity coefficient is below. Finally we choose the 4-tuple $\lbrace (\omega_i, N_i, T_i, \rho_i) \rbrace_{i=1, \ldots}$ as 
 
 \begin{align*}
 \rho_i &= \textit{min } \rho \in \mathbb{N} \textit{ such that } \phi_i \times (\rho+1) - \rho < 0\\
@@ -1137,7 +1137,7 @@ For some $t \in \mathbb{N}$ and  $\phi_i = \frac{p_f}{p_f + \omega_i \times (1-p
 
 \subsection{Simulation}
 
-Here again, the sparse measure grid model is implemented using python and the standard python numpy module to generate random signal that fit its probabilistic framework. In our case we generate $n=1000$ bits with $K=10$ latent factor that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probabiity $p_g=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$ and we set $\omega= \omega_{10}$ the lowest purity coefficient for a bits that is linked to the target factor.
+The sparse measure grid model is implemented using python and the standard python numpy module to generate random signal that fit its probabilistic framework. In our case we generate $n=1000$ bits with $K=10$ latent factor that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probabiity $p_g=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$ and we set $\omega= \omega_{10}$ the lowest purity coefficient for a bits that is linked to the target factor $f$.
 
 \begin{figure}[H]
 \caption{Observation of the score process in a sing sampled firing graph with $T=1000$}
@@ -1145,9 +1145,19 @@ Here again, the sparse measure grid model is implemented using python and the st
    \includegraphics[scale=0.33]{figures/sparse_1.png}
 \end{figure}
 
-We clearly see a rapid differentiation of score process according to their purity rank. We can also observe that the higher the coefficient the closer are the score process of corresponding edges. Finally the behaviour of score processus validate the efficiency of the draining algorithm to rank bits of the measure grids blindly in a attempt to identify latent factor.\\
+We clearly see a rapid differentiation of score process according to their purity rank. We can also observe that the higher the coefficient the closer are the score process of corresponding edges. Finally the behaviour of score processus validate the efficiency of the draining algorithm to rank bits of the measure grids blindly in a attempt to identify latent factor. The second experiment with the sparse measure grid model aim to give intuition on the choice of $\delta$ for draining a joint sampled firing graph. As for the previous simulation, we generate $n=1000$ bits with $K=10$ latent factor that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probabiity $p_g=0.3$. Then we choose randomly $i=5$ bits with purity rank $4$ with respect to the target factor $f$ that we denote by $I=\{b_1^{*}, \ldots, b_i^{*}\}$. Finally we sampled and built the joint sampled firing graph using $p_{\mathcal{S}} = 1$ and the set of pre-selected bits $I$. The procedure described in the previous section to choose the target purity coefficient consists in estimating the purity coefficient $\hat{\omega}_{I, \vert I \vert, f}$ and to set $\delta$ so that $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$.\\
 
-MAY BE ADD A FUCKING JOINT SAMPLED FIRING GRAPH DRAINING
+\begin{figure}[H]
+\subfloat[$\delta = 0.$]{\includegraphics[scale=0.165]{figures/sparse_211.png}} 
+\subfloat[$\delta = 10^{-2}$]{\includegraphics[scale=0.165]{figures/sparse_212.png}}\\
+\subfloat[$\delta = 5 \times 10^{-2}$]{\includegraphics[scale=0.165]{figures/sparse_221.png}}
+\subfloat[$\delta = 10^{-1}$]{\includegraphics[scale=0.165]{figures/sparse_222.png}} 
+\caption{Observation of sampled bit's score processus in a joint sample firing graph $i=5$, $T=500$}
+\label{sparse_joint}
+\end{figure}
+
+
+As for the first experiment, the different colored lines in each subfigure show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ that have different purity rank with respect to $f$. In each simulation $\hat{\omega}_{I, \vert I \vert, f}$ has been estimated using $1000$ samples and we use $T=500$. Furthermore, each figure correspond to a different value of $\delta$. As expected we  can see that the higher the $\delta$ the more discriminative the draining procedure is.  If $\delta$ is set to 0, then every sampled bit's will remain connected in the firing graph after draining, which is not of great interest. Yet if delta is set too high the chance that we end with two connexe components is high. 
 
 \section{Discussion}
 
@@ -1523,7 +1533,7 @@ Which gives the expected result since $\phi_{v, f} = \phi_{I, l, f}$ by definiti
 
 \section{Implementation}
 
-The code that has been used to obtain result of simulation can be found on github \href{https://github.com/pierreGouedard/deyep}{here} under the branch \textit{publi}. The code is exclusively written in python, is compatible with interpreter python2.7 and python3 and requires python modules numpy and scipy. Code for simulation can be found under
+The code that has been used to obtain result of simulation can be found on github \href{https://github.com/pierreGouedard/deyep}{here} under the branch \textit{publi\_1}. The code is exclusively written in python, is compatible with interpreter python2.7 and python3 and requires python modules numpy and scipy. Code for simulation can be found under
 
 \begin{itemize}
 \item tests/signal\_plus\_noise\_1.py
@@ -1532,7 +1542,7 @@ The code that has been used to obtain result of simulation can be found on githu
 \item tests/sparse\_identification.py
 \end{itemize}
 
-where the list below are relative to the root directory of the project. 
+where the list below are relative to the root directory of the project. The code in the branch \textit{publi\_1} has not changed since the submision of this paper, however, the code in other branch, notably master, may have been optimised, augmented or refactored. 
 
 
 \newpage

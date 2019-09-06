@@ -35,11 +35,11 @@ class TestSignal(object):
     def get_tuple(self, i, t):
         return self.omega(i), self.rho(i), t, self.N(t, i)
 
-    def generate_io_sequence(self, n):
+    def generate_io_sequence(self, n, mask_target=None):
         raise NotImplementedError
 
-    def stream_io_sequence(self, n, return_dirs=True):
-        sax_in, sax_out = self.generate_io_sequence(n)
+    def stream_io_sequence(self, n, mask_target=None, return_dirs=True):
+        sax_in, sax_out = self.generate_io_sequence(n, mask_target=mask_target)
 
         if return_dirs:
             self.imputer, tmpdiri, tmpdiro = self.create_imputer(sax_in, sax_out, return_dirs=return_dirs)
@@ -113,7 +113,7 @@ class SignalPlusNoise(TestSignal):
     def N(self, t, i):
         return - int(t * (self.phi(self.omega(i)) * (self.rho(i) + 1) - self.rho(i)))
 
-    def generate_io_sequence(self, n):
+    def generate_io_sequence(self, n, mask_target=None):
 
         ax_inoise, ax_onoise = self.generate_noise_sequence(n)
         ax_itarget, ax_otarget = self.generate_target_sequence(n)
@@ -151,13 +151,14 @@ class SignalPlusNoise(TestSignal):
 
 class SparseActivation(TestSignal):
 
-    def __init__(self, p_targets, p_bits, n_targets, n_bits, purity_rank=2):
+    def __init__(self, p_targets, p_bits, n_targets, n_bits, purity_rank=2, delta=0):
 
         # Size of the simulation
         self.n_bits, self.n_targets = n_bits, n_targets
 
         # Base param of simulation
-        self.p_targets, self.p_bits, self.purity_rank = p_targets, p_bits, purity_rank
+        self.p_targets, self.p_bits, self.purity_rank, self.delta = p_targets, p_bits, purity_rank, delta
+        self._omega = 0
 
         # Init mapping targets to bits
         self.map_targets_bits = {'target_{}'.format(j): [] for j in range(self.n_targets)}
@@ -172,13 +173,14 @@ class SparseActivation(TestSignal):
                int(t * (self.phi(self.omega(i, purity=purity)) * (self.rho(i) + 1) - self.rho(i)))
 
     def omega(self, i, purity=None):
-        if i > 0:
-            raise NotImplemented
 
         if purity is None:
             purity = self.purity_rank
 
         assert purity >= 1
+
+        if i > 0:
+            return self._omega - self.delta
 
         return 1 - pow(1 - self.p_targets, purity - 1)
 
@@ -206,10 +208,25 @@ class SparseActivation(TestSignal):
 
         return d_score
 
-    def generate_io_sequence(self, n):
+    def estimate_omega(self, l_bits, target, n_sample):
+
+        sax_inputs, sax_outputs = self.generate_io_sequence(n_sample)
+
+        # Get input and output of interest
+        ax_output = sax_outputs.toarray()[:, target]
+        ax_input = (sax_inputs[:, l_bits].toarray().sum(axis=1) >= len(l_bits)).astype(int)
+
+        # Get precision and omega
+        phi = float(ax_input.dot(ax_output)) / ax_input.sum()
+        self._omega = self.p_targets * (1 - phi) / ((1 - self.p_targets) * phi)
+
+    def generate_io_sequence(self, n, mask_target=None):
 
         ax_outputs = np.random.binomial(1, self.p_targets, (n, self.n_targets))
         ax_inputs = self.generate_bit_sequences(ax_outputs)
+
+        if mask_target is not None:
+            return csc_matrix(ax_inputs, dtype=bool), csc_matrix(ax_outputs[:, [mask_target]], dtype=bool)
 
         return csc_matrix(ax_inputs, dtype=bool), csc_matrix(ax_outputs, dtype=bool)
 

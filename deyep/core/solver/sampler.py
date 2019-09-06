@@ -88,7 +88,8 @@ class Sampler(object):
 
                     # Remove already selected bits
                     if len(self.selected_bits) > 0:
-                        self.preselect_bits[i] = self.preselect_bits[i].difference(set(self.selected_bits[i]))
+                        self.preselect_bits[i] = self.preselect_bits[i]\
+                            .difference(set(self.selected_bits.get(i, {})))
 
                     ax_selected[i] = True
 
@@ -148,7 +149,6 @@ class Sampler(object):
             # Update levels
             d_levels.update({n_core: 1, n_core + 1: len(self.selected_bits[i]), n_core + 2: 2})
             self.core_vertices.update({i: ['core_{}'.format(n_core + j) for j in range(3)]})
-
             n_core += 3
 
         else:
