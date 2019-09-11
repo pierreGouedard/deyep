@@ -6,7 +6,7 @@ from tests.utils import test_signal as ts
 from deyep.core.solver import sampler, drainer
 
 
-def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i, resolution=10, verbose=0):
+def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i, p_sample=1., resolution=10, verbose=0):
     """
 
     :param t:
@@ -29,7 +29,7 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
 
     # Sample and drain
     smp = sampler.Sampler(
-        [simu.n_sim * simu.n_bits, simu.n_sim], simu.N(t, i), imputer, selected_bits=target_bits
+        [simu.n_sim * simu.n_bits, simu.n_sim], simu.N(t, i), imputer, p_sample=p_sample, selected_bits=target_bits,
     ).sample().build_graph_multiple_output()
 
     # Drain
@@ -73,7 +73,8 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
     return ax_noisy_bits, ax_target_bits, simu
 
 
-def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits, purity_rank, d_cmap, target=0):
+def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits, purity_rank, d_cmap, target=0,
+                          delta=0):
     """
 
     :param t:
@@ -85,24 +86,26 @@ def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits
     :return:
     """
     # Create simulation abd generate I/O
-    simu = ts.SparseActivation(p_targets, p_bits, n_targets, n_bits, purity_rank=purity_rank) \
+    simu = ts.SparseActivation(p_targets, p_bits, n_targets, n_bits, purity_rank=purity_rank, delta=delta) \
         .build_map_targets_bits()
-    imputer, dirin, dirout = simu.stream_io_sequence(10000, return_dirs=True)
+    imputer, dirin, dirout = simu.stream_io_sequence(10000, mask_target=target, return_dirs=True)
 
     if i > 0:
-        target_bits = {0: np.random.choice(simu.map_targets_bits[target], i, replace=False)}
+        d_rank = simu.get_ranks(target)
+        target_bits = {0: np.random.choice([k for k, v in d_rank.items() if v == purity_rank], i, replace=False)}
+        simu.estimate_omega(target_bits[target], 0, 5000)
     else:
-        target_bits = None
+        target_bits = {}
 
     # Sample and drain
-    smp = sampler.Sampler([simu.n_bits, simu.n_targets], simu.N(t, i), imputer, selected_bits=target_bits) \
+    smp = sampler.Sampler([simu.n_bits, 1], simu.N(t, i), imputer, selected_bits=target_bits) \
         .sample() \
         .build_graph_multiple_output()
 
     # Get targets bits and compute their rank
     l_bits = list(smp.preselect_bits[target])
     ax_bits = np.zeros((len(l_bits), 1))
-    d_rank = simu.get_ranks(target)
+    d_rank = {k: v for k, v in simu.get_ranks(target).items() if k not in target_bits.get(target, {})}
 
     # Drain
     drn = drainer.FiringGraphDrainer(t, simu.rho(i), resolution, smp.firing_graph.copy(), imputer)

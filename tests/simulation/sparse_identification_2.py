@@ -15,17 +15,17 @@ run the simulation of the 'Signal plus Noise' model.
 np.random.seed(1234)
 
 # Core params of the simulation
-p_targets, p_bits, n_targets, n_bits, purity_rank = 0.3, 0.3, 10, 1000, 10
+p_targets, p_bits, n_targets, n_bits, purity_rank = 0.3, 0.3, 10, 1000, 4
 
-# drainer params
-t, i, resolution = 1000, 0, 10
+# drainer params range of delta [0.0, 1e-2, 5e-2, 1.5e-1]
+t, i, resolution, delta = 500, 5, 10, 0
 
 # Color map rank
 d_cmap = {1: "#006600", 2: "#006644", 3: "#004466", 4: "#000066", 5: "#CC6600", 6: "#994C00", 7: "#CC0000", 8: "#990000"}
 
 
 d_colored_series, d_rank_color = u.run_sparse_simulation(
-    t, i, resolution, p_targets, p_bits, n_targets, n_bits, purity_rank, d_cmap
+    t, i, resolution, p_targets, p_bits, n_targets, n_bits, purity_rank, d_cmap, delta=delta
 )
 
 ip.multi_line_plot_colored(

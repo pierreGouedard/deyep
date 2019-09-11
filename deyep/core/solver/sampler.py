@@ -14,11 +14,12 @@ class Sampler(object):
     # Firing Graph of depth 3
     depth_core = 3
 
-    def __init__(self, size, w, imputer, selected_bits=None, preselected_bits=None, cores=None, supervised=True, verbose=0):
+    def __init__(self, size, w, imputer, p_sample=1, selected_bits=None, preselected_bits=None, cores=None, supervised=True, verbose=0):
         """
 
         :param size: list [#input, #output]
         :param w: int weights of edges of firing graph
+        :param p_sample: float probability of sampling
         :param imputer: deyep.core.imputer.comon.Imputer
         :param selected_bits: dict of set of inputs index already sampled in previous iteration (key = output index)
         :param preselected_bits: dict of set of inputs index from which we want to draw next sample (key = output index)
@@ -28,6 +29,7 @@ class Sampler(object):
         # Core params
         self.ni, self.no = size[0], size[1]
         self.w = w
+        self.p_sample = p_sample
         self.firing_graph = None
         self.verbose = verbose
         self.supervised = supervised
@@ -76,11 +78,18 @@ class Sampler(object):
 
             for i in sax_got.nonzero()[1]:
                 if not ax_selected[i]:
-                    self.preselect_bits[i] = set(sax_si.nonzero()[1])
+                    if self.p_sample < 1.:
+                        ax_indices = np.array(sax_si.nonzero()[1])
+                        ax_mask = np.random.binomial(1, self.p_sample, len(ax_indices))
+                        self.preselect_bits[i] = set(ax_indices[ax_mask > 0])
+
+                    else:
+                        self.preselect_bits[i] = set(sax_si.nonzero()[1])
 
                     # Remove already selected bits
                     if len(self.selected_bits) > 0:
-                        self.preselect_bits[i] = self.preselect_bits[i].difference(set(self.selected_bits[i]))
+                        self.preselect_bits[i] = self.preselect_bits[i]\
+                            .difference(set(self.selected_bits.get(i, {})))
 
                     ax_selected[i] = True
 
@@ -140,7 +149,6 @@ class Sampler(object):
             # Update levels
             d_levels.update({n_core: 1, n_core + 1: len(self.selected_bits[i]), n_core + 2: 2})
             self.core_vertices.update({i: ['core_{}'.format(n_core + j) for j in range(3)]})
-
             n_core += 3
 
         else:
