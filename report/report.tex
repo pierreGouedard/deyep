@@ -80,7 +80,7 @@ Pierre Gouedard\\
 \setlength{\parindent}{0pt}
 
 \begin{abstract}
-Consider a set of latent factors whose observable effect of activation is caught on a measure space that take the form of a grid of bits tacking value in $\{0, 1 \}$. This paper intend to deliver a theoretical and practical answer to the question: Given that we have access to a perfect indicator of the activation of latent factors that label a finite dataset of grid's activity, can we imagine a procedure to build a generic identificator of factor's activation ?
+Consider a set of latent factors whose observable effect of activation is caught on a measure space that take the form of a grid of bits tacking value in $\{0, 1 \}$. This paper intend to deliver a theoretical and practical answer to the question: Given that we have access to a perfect indicator of the activation of latent factors that label a finite dataset of grid's activity, can we imagine a procedure to build a generic identificator of factor's activations ?
 \end{abstract}
 
 
@@ -1193,7 +1193,7 @@ Let $v_1(I, l_0)$, $v_2(J, 0)$ and $v_3(K, 0)$, be three vertice at the layer 1 
 \mathcal{P}_{I,l} \left[ x \right] = \sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] 
 \end{equation*} 
 
-$\forall$ $l\in \{l_0, \ldots, \vert I\vert\}$, now we propose a simple proof by contradiction, there exist a $l\in \{l_O, \ldots, \vert I\vert\}$ such that there exist $X \in S(\mathcal{G})$, $x \in F_2(\{X\}, \mathcal{G})$ and 
+$\forall$ $l\in \{l_0, \ldots, \vert I\vert\}$, now we propose a simple proof by contradiction. Let $l\in \{l_0, \ldots, \vert I\vert\}$, $X \in S(\mathcal{G})$ and $x \in F_2(\{X\}, \mathcal{G})$ such that
 
 \begin{align*}
 \mathcal{P}_{I,l} \left[ x \right] &= 1\\
@@ -1214,7 +1214,7 @@ Thus for $x \in  F_2(\{ X \}, \mathcal{G})$
 \mathcal{P}_{J, j^{*}}\left[ x \right] \cdot \mathcal{P}_{K, k^{*}}\left[ x \right] = 1\\
 \end{align*}
 
-which contradicts our first assumption. Now assuming $l \in \{l_O, \ldots, \vert I \vert\}$ exists such that $X \in S(\mathcal{G})$, $x \in F_2(\{X\}, \mathcal{G})$
+which contradicts our first assumption. Let $l \in \{l_O, \ldots, \vert I \vert\}$, $X \in S(\mathcal{G})$ and $x \in F_2(\{X\}, \mathcal{G})$ such that
 
 \begin{align*}
 \mathcal{P}_{I,l} \left[ x \right] &= 0\\
@@ -1224,7 +1224,7 @@ which contradicts our first assumption. Now assuming $l \in \{l_O, \ldots, \vert
 Thus above statement implies that $j^{*} \in \{0, \ldots, min(l, \vert J \vert)\}$ exists such that  
 
 \begin{equation*}
-\mathcal{P}_{J, j^{*}}\left[ x \right]  \cdot \mathcal{P}_{K, l - ^{*}}\left[ x \right] = 1
+\mathcal{P}_{J, j^{*}}\left[ x \right]  \cdot \mathcal{P}_{K, l - j^{*}}\left[ x \right] = 1
 \end{equation*}
 
 Thus $\vert X \cap J \vert = j^{*}$ and $\vert X \cap K \vert = l - j^{*}$. Since $J$ and $K$ is a partion of $I$ we must have
@@ -1252,15 +1252,15 @@ Let $G$ be a firing graph with layer 0 composed of $\mathcal{G}$. Let $u(I, l_u)
 
 \begin{align*}
 \mathcal{P}_{\{u, v\}, 2} \left[ x' \right] &= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l} \left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert} \mathcal{P}_{I', l}\left[ x \right] \right) \\
-&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \sum_{k=0}^{\vert K \vert} \mathcal{P}_{K, k}\left[ x \right] \cdot \mathcal{P}_{I \setminus K , l-k}\left[ x \right] \right) \\
+&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \sum_{k=0}^{\vert K \vert} \mathcal{P}_{K, k}\left[ x \right] \cdot \mathcal{P}_{I' \setminus K , l-k}\left[ x \right] \right) \\
 \end{align*}
 
 Thus 
 
 \begin{align*}
-\mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2} \left[ x' \right] &= \mathcal{P}_{K, \vert K \vert} \left[ x \right] \cdot \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l} \left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \sum_{k=0}^{\vert K \vert} \mathcal{P}_{K, k} \left[ x \right] \cdot \mathcal{P}_{I \setminus K , l-k} \left[ x \right] \right) \\
-&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{I \setminus K , l- \vert K \vert} \left[ x \right] \right)\\
-&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \cdot \mathcal{P}_{K, \vert K \vert}\left[ x \right] \right) \cdot \underbrace{ \sum_{l=0}^{\vert I' \vert - \vert K \vert} \mathcal{P}_{I \setminus K , l}\left[ x \right]}_{=1}\\
+\mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2} \left[ x' \right] &= \mathcal{P}_{K, \vert K \vert} \left[ x \right] \cdot \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l} \left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \sum_{k=0}^{\vert K \vert} \mathcal{P}_{K, k} \left[ x \right] \cdot \mathcal{P}_{I' \setminus K , l-k} \left[ x \right] \right) \\
+&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \right) \cdot \left( \sum_{l=l_v}^{\vert I' \vert}  \mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{I' \setminus K , l- \vert K \vert} \left[ x \right] \right)\\
+&= \left( \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \cdot \mathcal{P}_{K, \vert K \vert}\left[ x \right] \right) \cdot \underbrace{ \sum_{l=0}^{\vert I' \vert - \vert K \vert} \mathcal{P}_{I' \setminus K , l}\left[ x \right]}_{=1}\\
 &= \sum_{l=l_u}^{\vert I \vert} \mathcal{P}_{I, l}\left[ x \right] \cdot \mathcal{P}_{K, \vert K \vert}\left[ x \right]
 \end{align*}
 
@@ -1541,7 +1541,7 @@ The code that has been used to obtain result of simulation can be found on githu
 \item tests/signal\_plus\_noise\_2.py
 \item tests/signal\_plus\_noise\_3.py
 \item tests/sparse\_identification.py
-\item tests/sparse\_identification_2.py
+\item tests/sparse\_identification\_2.py
 \end{itemize}
 
 where the list below are relative to the root directory of the project. The code in the branch \textit{publi\_1} has not changed since the submision of this paper, however, the code in other branch, notably master, may have been optimised, augmented or refactored. 
