@@ -8,3 +8,6 @@ settings/local_settings.yml
 *.log
 *.blg
 *.synctex.gz
+*.odg
+*.png
+*.out
