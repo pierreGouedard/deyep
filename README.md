@@ -1,4 +1,4 @@
-# deyep publication realease
+# deyep publication release
 
 
 
