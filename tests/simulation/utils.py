@@ -21,6 +21,7 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
     # Create simulation and get imputer
     simu = ts.SignalPlusNoise(1, n_bits, p_target, n_targets, p_noise)
     imputer, dirin, dirout = simu.stream_io_sequence(10000, return_dirs=True)
+    simu.set_score_params(i)
 
     if i > 0:
         target_bits = {0: np.random.choice(simu.target_bits[0], i, replace=False)}
@@ -33,7 +34,7 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
     ).sample().build_graph_multiple_output()
 
     # Drain
-    drn = drainer.FiringGraphDrainer(t, simu.rho(i), resolution, smp.firing_graph.copy(), imputer, verbose=1)
+    drn = drainer.FiringGraphDrainer(t, simu.p, simu.q, resolution, smp.firing_graph.copy(), imputer, verbose=1)
 
     # init tracking of simulation
     l_ps_bits, l_target_bits = list(smp.preselect_bits[0]), list(simu.target_bits[0])
@@ -89,6 +90,7 @@ def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits
     simu = ts.SparseActivation(p_targets, p_bits, n_targets, n_bits, purity_rank=purity_rank, delta=delta) \
         .build_map_targets_bits()
     imputer, dirin, dirout = simu.stream_io_sequence(10000, mask_target=target, return_dirs=True)
+    simu.set_score_params(i)
 
     if i > 0:
         d_rank = simu.get_ranks(target)
@@ -108,7 +110,7 @@ def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits
     d_rank = {k: v for k, v in simu.get_ranks(target).items() if k not in target_bits.get(target, {})}
 
     # Drain
-    drn = drainer.FiringGraphDrainer(t, simu.rho(i), resolution, smp.firing_graph.copy(), imputer)
+    drn = drainer.FiringGraphDrainer(t, simu.p, simu.q, resolution, smp.firing_graph.copy(), imputer)
     stop, j = False, 0
     while not stop:
         for _ in range(int(resolution / drn.bs)):

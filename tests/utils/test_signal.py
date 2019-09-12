@@ -26,14 +26,8 @@ class TestSignal(object):
     def mu(self, i):
         raise NotImplementedError
 
-    def rho(self, i):
-        raise NotImplementedError
-
     def N(self, t, i):
         raise NotImplementedError
-
-    def get_tuple(self, i, t):
-        return self.omega(i), self.rho(i), t, self.N(t, i)
 
     def generate_io_sequence(self, n, mask_target=None):
         raise NotImplementedError
@@ -84,8 +78,10 @@ class SignalPlusNoise(TestSignal):
 
         # Base param of simulation
         self.p_target, self.p_noise = p_target, p_noise
-
         self.target_bits = [np.random.choice(range(self.n_bits), n_targets, replace=False) for _ in range(self.n_sim)]
+
+        # Set base values of p and q, used in score process
+        self.p, self.q = 1, 1
 
         TestSignal.__init__(self, 'SignalPlusNoise')
 
@@ -96,10 +92,10 @@ class SignalPlusNoise(TestSignal):
         return pow(self.p_noise, j)
 
     def mean_score_signal(self, t, i):
-        return self.N(t, i) + int(t * (self.phi(self.omega(i) - self.delta(i)) * (self.rho(i) + 1) - self.rho(i)))
+        return self.N(t, i) + int(t * (self.phi(self.omega(i) - self.delta(i)) * (self.p + self.q) - self.p))
 
     def mean_score_noise(self, t, i):
-        return self.N(t, i) + int(t * (self.phi(self.omega(i) + self.delta(i)) * (self.rho(i) + 1) - self.rho(i)))
+        return self.N(t, i) + int(t * (self.phi(self.omega(i) + self.delta(i)) * (self.p + self.q) - self.p))
 
     def omega(self, i):
         return (1 + self.p_noise) * pow(self.p_noise, i) / 2.
@@ -107,11 +103,20 @@ class SignalPlusNoise(TestSignal):
     def delta(self, i):
         return (1 - self.p_noise) * pow(self.p_noise, i) / 2
 
-    def rho(self, i):
-        return np.ceil(self.phi(self.omega(i)) / (1 - self.phi(self.omega(i))))
-
     def N(self, t, i):
-        return - int(t * (self.phi(self.omega(i)) * (self.rho(i) + 1) - self.rho(i)))
+        return - int(t * (self.phi(self.omega(i)) * (self.p + self.q) - self.p))
+
+    def set_score_params(self, i):
+        for q in range(1000):
+            p = np.ceil(q * self.phi(self.omega(i)) / (1 - self.phi(self.omega(i))))
+
+            score = (self.phi(self.omega(i) - self.delta(i)) * (p + q)) - p
+
+            if score > 0.:
+                self.p, self.q = p, q
+                break
+
+        return self
 
     def generate_io_sequence(self, n, mask_target=None):
 
@@ -159,6 +164,7 @@ class SparseActivation(TestSignal):
         # Base param of simulation
         self.p_targets, self.p_bits, self.purity_rank, self.delta = p_targets, p_bits, purity_rank, delta
         self._omega = 0
+        self.p, self.q = 1, 1
 
         # Init mapping targets to bits
         self.map_targets_bits = {'target_{}'.format(j): [] for j in range(self.n_targets)}
@@ -170,7 +176,7 @@ class SparseActivation(TestSignal):
 
     def mean_score(self, t, i, purity=None):
         return self.N(t, i) + \
-               int(t * (self.phi(self.omega(i, purity=purity)) * (self.rho(i) + 1) - self.rho(i)))
+               int(t * (self.phi(self.omega(i, purity=purity)) * (self.p + self.q) - self.p))
 
     def omega(self, i, purity=None):
 
@@ -184,17 +190,18 @@ class SparseActivation(TestSignal):
 
         return 1 - pow(1 - self.p_targets, purity - 1)
 
-    def rho(self, i):
-        return np.ceil(self.phi(self.omega(i)) / (1 - self.phi(self.omega(i))))
-
     def N(self, t, i):
-        return - int(t * (self.phi(self.omega(i)) * (self.rho(i) + 1) - self.rho(i)))
+        return - int(t * (self.phi(self.omega(i)) * (self.p + self.q) - self.p))
 
     def build_map_targets_bits(self,):
         for k in self.map_targets_bits.keys():
             ax_mask = np.random.binomial(1, self.p_bits, self.n_bits).astype(bool)
             self.map_targets_bits[k] = np.arange(self.n_bits)[ax_mask]
 
+        return self
+
+    def set_score_params(self, i):
+        self.p = np.ceil(self.phi(self.omega(i)) / (1 - self.phi(self.omega(i))))
         return self
 
     def get_ranks(self, key):

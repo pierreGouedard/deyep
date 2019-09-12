@@ -396,39 +396,19 @@ Where $d, e$, the distribution over combination of activation of measure grid's 
 
 \subsubsection*{Advanced stochastic process induced by vertex}
 
-Given a firing graph with layer 0 composed of measure grid's bits, we have seen that the propagation of activations induces a stochastic process at each vertex that described its state. Here we introduce some more complex stochastic processus at each vertex of $G$. Given a vertex $v$ at layer $k \geq 0$, its  characteristic polynome $\mathcal{P}_{v}$, a factor $f \in \mathcal{F}$ and e the event "factor $f$ is active" we define
- 
-\begin{itemize}
-\item The reward process with respect to factor $f$, $r_{v, f} \left[ t \right]$, $t \in \mathbb{N}$\\
+Given a firing graph with layer 0 composed of measure grid's bits, we have seen that the propagation of activations induces a stochastic process at each vertex that described its state. Here we introduce some more complex stochastic processus at each vertex of $G$. Given a vertex $v$ at layer $k \geq 0$, its  characteristic polynome $\mathcal{P}_{v}$, a factor $f \in \mathcal{F}$ and e the event "factor $f$ is active" we define the score process with respect to factor $f$ as
 
-$r_{v, f} \left[ t \right] = r_{v, f} \left[ t - 1 \right] + r_{v, t, f}$, with $\lbrace r_{v, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable that takes value 1 if vertex $v$ activate at instant $t$ and the event e was true at time $t - k$. That is,  $\forall$ $t  < k $, $r_{v, t, f} = 0$ and $\forall$ $t  \geq k  $\\ 
-\begin{center}
-$r_{v, t, f} = \begin{cases} 1, & \text{with probability } q_r = \Vert \mathcal{P}_{v} \Vert_{d, e} \\  0, & \text{with probability } 1 - q_r  \end{cases}$
-\end{center}
+\begin{equation*}
+s_{v,f}\left[N, T, p, q \right] = N + \sum_{t=1}^{T} s_{v, p, q, t, f}
+\end{equation*}
 
-where $d, e$ is the distribution over measure grid's activation that intersect with the event e.
+Where $(N, T, p, q) \in \mathbb{N}^4$ and $\lbrace s_{v, p, q, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable. $s_{v, p, q, t, f}$ takes value $q$ if the event e was true at time $t - k $ and value $-p$ if it was false, given that $v$ activate at $t$. That is, $\forall$ $t  < k $, $s_{v, p, q,t, f} = 0$ and $\forall$ $t  \geq k$
 
-\item The penalty process with respect to factor $f$, $p_{v, f}\left[ t \right]$, $t \in \mathbb{N}$\\
+\begin{equation*}
+s_{v, p,q, t, f} = \begin{cases} q, & \text{with probability } q_s  \\ -p, & \text{with probability } 1 - q_s \end{cases}
+\end{equation*}
 
-$p_{v, f}\left[ t \right] = p_{v, f}\left[ t - 1\right] + p_{v, t, f}$, with $\lbrace p_{v,t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable that takes value 1 if vertex $v$ activate at instant $t$ and the event e was false at time $t - k $. That is, $\forall$ $t  < k $, $p_{v, t, f} = 0$ and $\forall$ $t  \geq k $\\ 
-
-\begin{center}
-$p_{v, t, f} = \begin{cases} 1, & \text{with probability } q_p = \Vert \mathcal{P}_v \Vert_{d} - q_r \\ 0, & \text{with probability } 1 - q_p \end{cases}$
-\end{center}
-
-where $d$ is the distribution over measure grid's activation.
-
-
-\item The score process with respect to factor $f$, $s_{v, f}\left[N, T, \rho \right]$, $N, T, \rho \in \mathbb{N}^3$ \\
-
-$s_{v,f}\left[N, T, \rho \right] = N + \sum_{t=1}^{T} s_{v, \rho, t, f}$, with $\lbrace s_{v, \rho, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable. $s_{v, \rho, t, f}$ takes value 1 if the event e was true at time $t - k $ and value $-\rho$ if it was false, given that $v$ activate at $t$. That is, $\forall$ $t  < k $, $p_{v, t, f} = 0$ and $\forall$ $t  \geq k$\\ 
-
-\begin{center}
-$s_{v, \rho, t, f} = \begin{cases} 1, & \text{with probability } q_s = \frac{q_r}{q_r + q_p}  \\ -\rho, & \text{with probability } 1 - q_s \end{cases}$
-\end{center}
-\end{itemize}
-
-Those stochastic processus are convenient to evaluate joint activity of measure grids bit's, caught by vertex of the firing graph, with respect to a target factor $f$'s activity.
+Where $q_r = \Vert \mathcal{P}_v \Vert_{d,e} $, $q_p = \Vert \mathcal{P}_v \Vert_{d} - q_r$ and $q_s = \frac{q_r}{q_r + q_p}$.  $d, e$ is the distribution over measure grid's activation that intersect with the event e
 
 \subsection{Properties}
 
@@ -508,43 +488,20 @@ Furthermore,
 
 Where right equality is reached whenever $v$ is connected to a set of measure grid's bit $I \in \mathcal{G}$, with level $l_0 = \vert I \vert$ such that $I \subset \mathcal{G}(f)$. 
 
-
-\subsubsection*{Stochastic processus}
-
-Again, throughout this section, we consider a firing graph $G$ where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \in \mathcal{F}$ denote some factor. Finally we use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". \\
-
-\underline{vertex's reward process}\\
-
-If $r_{v, f}[t]$ denotes penalty process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2, then
-
-\begin{equation}
-\label{prop:reward_mean}
-\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
-\end{equation}
-
-\underline{vertex's penalty process}\\
-
-if $p_{v, f}[t]$ denotes penalty process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2, then
-
-\begin{equation}
-\label{prop:penalty_mean}
-\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, l, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
-\end{equation}
-
 \underline{vertex's score process}\\
 
-If $s_{v, f}[N, T, \rho]$ denotes the score process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2 with some $N, T, \rho \in \mathbb{N}^3$, then
+If $s_{v, f}[N, T, p, q]$ denotes the score process of $v(I, l)$ with respect to $f$ with $N, T, p, q \in \mathbb{N}^4$, then
 
 \begin{equation}
 \label{prop:score_mean}
-\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{I, l f} \times (\rho + 1) - \rho)
+\mathbb{E} \left[ s_{v, f}[N, T, p, q]  \right] = N + T \times (q_s\times (p + q) - p) = N + T \times (\phi_{I, l f} \times (p + q) - p)
 \end{equation}
 
 Furthermore,
 
 \begin{equation}
 \label{prop:score_var}
-\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{I, l, f} \times (1 - \phi_{I, l, f})
+\Var \left[ s_{v, p, q, t, f}  \right] = (q + p)^{2} \times \phi_{I, l, f} \times (1 - \phi_{I, l, f})
 \end{equation}
 
 \section{Identification of Latent Factor}
@@ -660,10 +617,10 @@ The propagation of activation through the firing graph can be represented with t
 Where $\cdot$ is the usual dot product, $(i, j) \in \{1, \ldots n_c\} \times \{1, \ldots n_o\}$ and $l_i$ is the level of the $i^{th}$ core vertex. An output vertex of the firing graph is fed with the activation of a targeted factors decayed in time by the number of layer - 1. That is, for single and joint sampled firing graphs the decay is respectively set to 1 and 2. Factor's activations enable to generate a feedback to the output that is back propagated through the firing graph. Supposing that we set the factor's decay to $d \geq 1$, the feedback is defined as 
 
 \begin{equation*}
-x_{b,o}^{(t)} = x_o^{(t)} \circ \left( (\rho + 1) \times x_f^{(t-d)} - \rho \right)
+x_{b,o}^{(t)} = x_o^{(t)} \circ \left( (p + q) \times x_f^{(t-d)} - p \right)
 \end{equation*}
 
-Where $\circ$ denotes the usual Hadamard product and $x_f^{(t-d)}$ is the vector of states of factors at instant $t-d$. A correct backpropagation of $x_{b,o}^{(t)}$ up to the input vertices is made possible by using time synchronisation and topology of the firing graph. We denote by $V_i$, $i\in \mathbb{N}$ the set of vertices that has a path composed of $i$ vertex toward an output vertex. Let $G$ be a firing graph with $k \in \mathbb{N}^{*}$ layers augmented with a layer of ouptut vertices. Let $V_o$ the set of output vertices, $\forall v, o \in V_0 \times V_o$,  $v$ is elligible to $o$'s feedback at instant $t$ if and only if 
+Where $\circ$ denotes the usual Hadamard product, $x_f^{(t-d)}$ is the vector of states of factors at instant $t-d$ and $p, q$ are predifined positive integer. A correct backpropagation of $x_{b,o}^{(t)}$ up to the input vertices is made possible by using time synchronisation and topology of the firing graph. We denote by $V_i$, $i\in \mathbb{N}$ the set of vertices that has a path composed of $i$ vertex toward an output vertex. Let $G$ be a firing graph with $k \in \mathbb{N}^{*}$ layers augmented with a layer of ouptut vertices. Let $V_o$ the set of output vertices, $\forall v, o \in V_0 \times V_o$,  $v$ is elligible to $o$'s feedback at instant $t$ if and only if 
 
 \begin{itemize}
 \item $v$ was active at instant $t-1$
@@ -709,11 +666,11 @@ I &= I + I \circ (X_{b, c}^{(t-1)} \cdot X_{m, i}^{(t)})^{T}
 
 
  
-Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\end{bmatrix}^{T}$ and $X_{m, i}^{(t)} =\begin{bmatrix} x_i^{(t)} & \ldots & x_i^{(t- d_{max})}\end{bmatrix}^{T}$, $X_{c, b}^{(t)} \in  \{0, 1, - \rho \}^{n_c \times d_{max}}$ for $t \in \mathbb{N}^{*}$ and $X_{c, b}^{(0)} = \textbf{0}_{n_c \times d_{max}}$. Furthermore $d_{max} \geq (l -1) \times 2 + 1$ where $l$ is the number of layers of the firing graph. Finally we provide a parameter $T$ to the draining algorithm. It controls the targeted number of feedback that an edge should receive before disabling its update. Maintaining update's permissions for each edges requires an operation similar to structure update. Finally, the draining algorithm iterates forward and backward pass until either $G$ is composed of two distinct connexe component or no structure update is enabled. 
+Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\end{bmatrix}^{T}$ and $X_{m, i}^{(t)} =\begin{bmatrix} x_i^{(t)} & \ldots & x_i^{(t- d_{max})}\end{bmatrix}^{T}$, $X_{c, b}^{(t)} \in  \{0, q, - p \}^{n_c \times d_{max}}$ for $t \in \mathbb{N}^{*}$ and $X_{c, b}^{(0)} = \textbf{0}_{n_c \times d_{max}}$. Furthermore $d_{max} \geq (l -1) \times 2 + 1$ where $l$ is the number of layers of the firing graph. Finally we provide a parameter $T$ to the draining algorithm. It controls the targeted number of feedback that an edge should receive before disabling its update. Maintaining update's permissions for each edges requires an operation similar to structure update. Finally, the draining algorithm iterates forward and backward pass until either $G$ is composed of two distinct connexe component or no structure update is enabled. 
 
 \begin{algorithm}[H]
 \caption{Draining}
-\textbf{Input:} $G$, T, $T_{max}$, $\rho$, decay\\
+\textbf{Input:} $G$, T, $T_{max}$, $p$, $q$, decay\\
 \textbf{Output:} $G$ drained
 \begin{algorithmic}
 \State $i \gets 0$\Comment{Initialisation}
@@ -724,7 +681,7 @@ Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\e
  \State $X_{m, c}, X_{m, i}, x_c, x_o \gets \textit{FP}(x_c, x_o)$
  \If {$i \geq decay$}
   \State $x_f \gets nextFactoreState()$
-  \State $X_{b,c}, X_{b, o} \gets \textit{BP}(X_{b, c}, X_{b, o} x_f, \rho)$\Comment{Backward pass}
+  \State $X_{b,c}, X_{b, o} \gets \textit{BP}(X_{b, c}, X_{b, o} x_f, p, q)$\Comment{Backward pass}
   \State $G' \gets \textit{SU}(T, G, X_{b, c}, X_{b, o}, X_{m, c}, X_{m, i})$
   \State $X_{b, c}, X_{b, i} \gets \textit{BT}(G, X_{b, c}, X_{b, o}, X_{m, c}, X_{m, i}, )$
   \State $G \gets G'$
@@ -737,25 +694,25 @@ Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\e
 \end{algorithmic}
 \end{algorithm}
 
-Clearly, the complexity of the algorithm is dominated by the backward transmit and structure update operations. A standard worst case analysis of those operations gives $\mathcal{O}(n^{4} \times d_{max}^2)$, where $n$ is the total number of vertices in the firing graph. Yet this analysis relies on standard complexity time for dense matrice operations, and does not take into account neither the sparsity of signals and direct link matrices nor the distribution of activation of input vertices. In practice we have found that the forward and backward propagation of bit and factor's activations is time consuming, especially when both $N$ and $T$ are large numbers. Thus, to reduce running time, batch\_size successive bit and factor's states are forward and backward propagated through the graph at each iteration. The decrease in time complexity of this practical trick is impressive and worth the gain in space comlexity of the algorithm. Finally this trick requires to dynamically change the batch\_size so that treshold for the number of updates at each edges is respected.
+Clearly, the complexity of the algorithm is dominated by the backward transmit and structure update operations. A standard worst case analysis of those operations gives $\mathcal{O}(n^{4} \times d_{max}^2)$, where $n$ is the total number of vertices in the firing graph. Yet this analysis relies on standard complexity time for dense matrice operations, and does not take into account neither the sparsity of signals and direct link matrices nor the distribution of activation of input vertices. In practice we have found that the forward and backward propagation of bit and factor's activations is time consuming, especially when both $N$ and $T$ are large numbers. Thus, to reduce running time, batch\_size successive bit and factor's states are forward and backward propagated with an efficient vectorization of the equation. The decrease in time complexity of this practical trick is impressive and worth the gain in space comlexity of the algorithm. Finally this trick may requires to dynamically change the batch\_size so that treshold for the number of updates at each edges is respected.
 
 \subsection{Analysis of the algorithm}
 
 \begin{theorem}
 \label{th_stopping}
-Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ldots, b_{i}^{*}\}$ a target factor $f$ and $G$ the firing graph built after sampling algorithm. A 4-tuple $(\omega, N, T, \rho)$ exists such that the probability of event E: "no input vertices of $G$ have outcoming edges at the end of the draining" is upper bounded. More specifically
+Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ldots, b_{i}^{*}\}$ a target factor $f$ and $G$ the firing graph built after sampling algorithm. A 5-tuple $(\omega, N, T, p, q)$ exists such that the probability of event E: "no input vertices of $G$ have outcoming edges at the end of the draining" is upper bounded. More specifically
 
 \begin{equation*}
-\mathbb{P} \left( E \right) \leq \sum_{j = 0}^{\vert S \vert} p^j \times \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, \vert I \vert + 1, f } < \omega \rbrace \vert = j \right) 
+\mathbb{P} \left( E \right) \leq \sum_{j = 0}^{\vert S \vert} p_{-}^j \times \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, \vert I \vert + 1, f } < \omega \rbrace \vert = j \right) 
 \end{equation*}
 
-Where $p = \mathbb{P} \left( s_{v, f}(N, T, \rho) < 0 \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega \right)$. Where $v(I \cup \{ s \}, i+1)$, for any $s \in S$, is a vertex of layer 1 of a firing graph $G$ of 2 layers. Furthermore
+Where $p_{-} = \mathbb{P} \left( s_{v, f}[N, T, p,q] < 0 \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega \right)$. Where $v(I \cup \{ s \}, i+1)$, for any $s \in S$, is a vertex of layer 1 of a firing graph $G$ of 2 layers. Furthermore
 
 \begin{equation*}
-\mathbb{P} \left( s_{v, f}(N, T, \rho < 0) \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega \right) \leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta^{+}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta^{+}\delta_{f}c \right) \right)
+\mathbb{P} \left( s_{v, f}[N, T, p, q]< 0 \vert \omega_{I \cup \{ s \}, i + 1, f} < \omega \right) \leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta_{f}c \right) \right)
 \end{equation*}
 
-With $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $f$. $\Var[s_{v, \rho, f, t}] = \sigma^2$. 
+With $\delta_{f}$, $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $f$. $\Var[s_{v, p, q, f, t}] = \sigma^2$. 
 
 \end{theorem}
 
@@ -765,18 +722,18 @@ With $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends o
 \mathcal{P}_{\{b\}, 1} \cdot \mathcal{P}_{\{u, v\}, 2}
 \end{equation*}
 
-With $v(S, 1)$ and $u(\{b_1^{*}, \ldots, b_i^{*}\}, i)$. Thus, using (\ref{prop:2layer-2}), the activity of $b$ that is propagated to the ouptut vertex is the same than the activity of a vertex $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furtermore, given the time and space consistency of the backpropagation of the feedback from the output vertex, the weight of the edge at the convergence of the draining algorithm is either $0$ or equal to the score process of vertex $v$ of $G'$, $s_{v, f}[N, T, \rho]$. Then, the first inequality is obtained by developping
+With $v(S, 1)$ and $u(\{b_1^{*}, \ldots, b_i^{*}\}, i)$. Thus, using (\ref{prop:2layer-2}), the activity of $b$ that is propagated to the ouptut vertex is the same than the activity of a vertex $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furtermore, given the time and space consistency of the backpropagation of the feedback from the output vertex, the weight of the edge at the convergence of the draining algorithm is either $0$ or equal to the score process of vertex $v$ of $G'$, $s_{v, f}[N, T, p, q]$. Then, the first inequality is obtained by developping
 
 \begin{align*}
-\mathbb{P} \left( E \right)&= \sum_{j=0}^{\vert S \vert} p^j \times q^{\vert S \vert -j} \times\mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right) \\
-&\leq \sum_{j=0}^{\vert S \vert} p^j \times \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right)
+\mathbb{P} \left( E \right)&= \sum_{j=0}^{\vert S \vert} p_{-}^j \times p_{+}^{\vert S \vert -j} \times\mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right) \\
+&\leq \sum_{j=0}^{\vert S \vert} p_{-}^j \times \mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right)
 \end{align*}  
 
 Where 
 \begin{itemize}
 \item $I =\{b_{1}^{*}, \ldots, b_{i}^{*}\}$
-\item $p = \mathbb{P} \left( s_{v, f}(N, T, \rho) < 0 \vert \omega_{I\cup\{s \}, i + 1, f} < \omega \right)$
-\item $q = \mathbb{P} \left( s_{v, f}(N, T, \rho) < 0 \vert \omega_{I\cup\{s \}, i + 1, f} \geq \omega \right)$
+\item $p_{-} = \mathbb{P} \left( s_{v, f}(N, T, p, q) < 0 \vert \omega_{I\cup\{s \}, i + 1, f} < \omega \right)$
+\item $p_{+} = \mathbb{P} \left( s_{v, f}(N, T, p, q) < 0 \vert \omega_{I\cup\{s \}, i + 1, f} \geq \omega \right)$
 \end{itemize}
 
 Then, we choose the value of the postive real $\omega$ such that a measure grid's bit $b^{+}$ verifies
@@ -792,53 +749,59 @@ And we define the vertex $v^{+}(I \cup \{b^{+}\}, i+1)$ and $\delta^{+} = \vert 
 \underbrace{\frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (\omega - \delta) \times (1 - \Vert \mathcal{P}_{f} \Vert_{d'})}}_{\phi_{v, f}} \geq \underbrace{\frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (\omega - \delta^{+}) \times (1 - \Vert \mathcal{P}_{f} \Vert_{d'})}}_{\phi_{v^{+}, f}} \geq \underbrace{\frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + \omega  \times (1 - \Vert \mathcal{P}_{f} \Vert_{d'})}}_{\phi}
 \end{equation*}
 
-For some real $\delta > \delta^{+} > 0$. Then, We choose the 3-tuple $(N, T, \rho)$ as follow:
+For some real $\delta > \delta^{+} > 0$. Then, We choose the 4-tuple $(N, T, p, q)$ as follow:
 
 \begin{align*}
-\rho &= \textit{min } \rho \in \mathbb{N} \textit{ such that } \phi \times (\rho+1) - \rho < 0\\
-N &= -t \times (\phi \times (\rho+1) - \rho )\\
-T &= t
+(p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi \times (p + q) - p < 0\\
+N &= -T \times (\phi \times (p+q) - p)\\
+T &\in \mathbb{N} \textit{ such that } N \textit{ large enough}
 \end{align*}
 
-for any $t \in \mathbb{N}^{*}$. Now considering $v$ with $\omega_{v,f}  < \omega$ one can write
+Now, let $v$ such that $\omega_{v,f}  < \omega$ one can write
 
 \begin{align*}
-\mathbb{P} \left( s_{v,f}[N, T, \rho] < 0 \right) &= \mathbb{P} \left( N_i + \sum_{t=1}^{T} s_{v, \rho, T, f} < 0 \right) \\
-&= \mathbb{P}\left( \sum_{t=1}^{T} s_{v, \rho, t, f} - T \times \mathbb{E}\left[s_{v, \rho, 1, f}\right] < -N -  T \times \mathbb{E}\left[s_{v, \rho, 1, f}\right]\right)
+\mathbb{P} \left( s_{v,f}[N, T, p, q] < 0 \right) &= \mathbb{P} \left( N_i + \sum_{t=1}^{T} s_{v, p, q, T, f} < 0 \right) \\
+&= \mathbb{P}\left( \sum_{t=1}^{T} s_{v, p, q, t, f} - T \times \mathbb{E}\left[s_{v, p, q, 1, f}\right] < -N -  T \times \mathbb{E}\left[s_{v, p, q, 1, f}\right]\right)
 \end{align*}
+
+Furthermore from the definition of $\phi$ and $\phi_{v, f}$ we have
+
+\begin{equation*}
+\phi_{v, f} =\phi +  \underbrace{\delta \times \phi \times \phi_{v, f} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}}_{\delta_{v, f}}
+\end{equation*}
 
 Yet using equation (\ref{prop:score_mean}) one have
 
 \begin{align*}
-\mathbb{E}\left[s_{v, \rho, 1, f}\right] &= \phi_{v, f} \times (\rho + 1) - \rho_i\\
-&= \frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (\omega - \delta)  \times (1 - \Vert \mathcal{P}_{f} \Vert_{d'})} \times (\rho + 1) - \rho
+\mathbb{E}\left[s_{v, p, q, 1, f}\right] &= \phi_{v, f} \times (p + q) - p\\
+&= (\phi + \delta_{v, f}) \times (p + q) - p\\
 \end{align*}
 
-Furthermore using $T = t$ and $N = t \times \left(\phi (\rho + 1) - \rho \right)$ and the definition of $\phi$ one have
+Using $N = - T \times \left(\phi \times (p + q) - p \right)$ and the definition of $\phi$ one have
 
 \begin{equation*}
--N -  T \times \mathbb{E}\left[s_{v, \rho, 1, f}\right] = -t \times \delta \times \underbrace{(\rho +1) \times \phi \times \phi_{v, f} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}}_{\delta_{v, f}}
+-N -  T \times \mathbb{E}\left[s_{v, p, q, 1, f}\right] = -T \times (p + q) \times \delta_{v, f} 
 \end{equation*}
 
 Thus
 
 \begin{align*}
-\mathbb{P} \left( s_{v,f}[N, T, \rho] < 0 \right) &= \mathbb{P}\left( \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] < -t \times \delta \times \delta_{v, f} \right)\\
-&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho,t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta \times \delta_{v, f} \right)\\
-&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta^{+} \times \delta_{f} \right)
+\mathbb{P} \left( s_{v,f}[N, T, p, q] < 0 \right) &= \mathbb{P}\left( \sum_{t=0}^{T - 1} s_{v, p, q, t, f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] < -T \times (p + q) \times  \delta_{v, f} \right)\\
+&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, p, q,t, f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] \vert > T \times (p + q) \times  \delta_{v, f} \right)\\
+&\leq \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, p, q, t, f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] \vert > T \times \delta_{f} \right)
 \end{align*}
 
-With $\delta_{f} = (\rho +1) \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. \\
+With $\delta_{f} = (p + q) \times \delta^{+} \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. \\
 
-At this point we have to notice that $\lbrace s_{v, \rho, t, f} \rbrace_{t=1, \ldots, T - 1}$ is a sequence of i.i.d random variables with mean $\mu$ and variance $\sigma^2$ that verifies $\vert s_{v, \rho, t, f} \vert \leq \rho$. Thus one can apply the Chernoff inequality as formulated in \cite{TAO-1}. In particular, taking $\lambda = \sigma^{-1} \delta^{+} \delta_{f}$ we obtain
+At this point we have to notice that $\lbrace s_{v, p, q, t, f} \rbrace_{t=1, \ldots, T - 1}$ is a sequence of i.i.d random variables with mean $\mu$ and variance $\sigma^2$ that verifies $\vert s_{v, p, q, t, f} \vert \leq max(p, q)$. Thus one can apply the Chernoff inequality as formulated in \cite{TAO-1}. In particular, taking $\lambda = \sigma^{-1}\delta_{f}$ we obtain
 
 \begin{align*}
-\mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, tn f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \delta^{+} \delta_{i,f} \right) &= \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t} - \mathbb{E}\left[s_{v, \rho, t}\right] \vert > \lambda\sigma \sqrt{t} \right)\\
-&\leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{+}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{+}\delta_{f}c \right) \right)
+\mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, p, q, tn f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] \vert > T \delta_{f} \right) &= \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, p, q, t} - \mathbb{E}\left[s_{v, p, q, t}\right] \vert > \lambda\sigma \sqrt{T} \right)\\
+&\leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta_{f}c \right) \right)
 \end{align*}
 
 
-With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E.D.
+With $C, c$ some positive constant and $\Var[s_{v, p, q, t, f}] = \sigma^2$ for $t \in \{0, \ldots, T-1 \}$. Q.E.D.
 
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
@@ -846,20 +809,20 @@ With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E
 
 \begin{theorem}
 \label{th_precision}
-Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ldots, b_{i}^{*}\}$ a target factor $f$ and $G$ the firing graph built after sampling algorithm. A sequence of 4-tuple $(\omega, N, T, \rho)$ exists such that for each remaining input vertex $v$ of the drained firing graph verifies 
+Given a set of sampled bits $S$, a set of pre-selected bits $I =\{b_{1}^{*}, \ldots, b_{i}^{*}\}$ a target factor $f$ and $G$ the firing graph built after sampling algorithm. A sequence of 5-tuple $(\omega, N, T, p, q)$ exists such that for each remaining input vertex $v$ of the drained firing graph verifies 
 
 \begin{equation}
-\mathbb{P} \left( \omega_{v, f} > \omega \right) \leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{-}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{-}\delta_{f}c \right) \right)
+\mathbb{P} \left( \omega_{v, f} > \omega \right) \leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta_{f}c \right) \right)
 \end{equation}
 
-Where $v(I \cup \{ s \}, i+1)$, for any $s \in S$, is a vertex of layer 1 of a firing graph $G$ of 2 layers and $\delta_{f}$, $\delta^+$ $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $\Var[s_{v, \rho, f, t}] = \sigma^2$.  
+Where $v(I \cup \{ s \}, i+1)$, for any $s \in S$, is a vertex of layer 1 of a firing graph $G$ of 2 layers and $\delta_{f}$, $C$ and $c$ are postitive constants that depends on $\omega$ and $i$ and $\Var[s_{v, p, q, f, t}] = \sigma^2$. 
 \end{theorem}
 
 \textbf{Proof.} 
-As in the proof of the previous theorem, using the arrangement of vertex of graph $G$, the property (\ref{prop:2layer-2}) and the forward and backward equation of the draining algorithm, one can show that the weight of the outcoming edge of any vertices $b \in S$ of $G$ is either equal to 0 or to the score process $s_{v, f}[N, T, \rho]$ where $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ is a vertex at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furthermore 
+As in the proof of the previous theorem, using the arrangement of vertex of graph $G$, the property (\ref{prop:2layer-2}) and the forward and backward equation of the draining algorithm, one can show that the weight of the outcoming edge of any vertices $b \in S$ of $G$ is either equal to 0 or to the score process $s_{v, f}[N, T, p, q]$ where $v(\{b_1^{*}, \ldots, b_i^{*}, b\})$ is a vertex at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furthermore 
 
 \begin{equation*}
-\mathbb{P} \left( \omega_{v, f} >  \omega \right) = \mathbb{P}_{\mathcal{S}} \left( \omega_{I \cup \{b\}, i + 1, f } < \omega \right) \times \mathbb{P} \left( s_{v, f}(N, T, \rho) > 0 \vert \omega_{I \cup \{ b \}, i + 1, f} > \omega \right)
+\mathbb{P} \left( \omega_{v, f} >  \omega \right) = \mathbb{P}_{\mathcal{S}} \left( \omega_{I \cup \{b\}, i + 1, f } < \omega \right) \times \mathbb{P} \left( s_{v, f}(N, T, p, q) > 0 \vert \omega_{I \cup \{ b \}, i + 1, f} > \omega \right)
 \end{equation*}
 
 Then, we choose the value of the postive real $\omega$ such that a bit $b^{-}$ verifies
@@ -875,28 +838,30 @@ And we define the vertex $v^{-}(I \cup \{b^{-}\}, i+1)$ and $\delta^{-} = \vert 
 \underbrace{\frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (\omega + \delta) \times (1-\Vert \mathcal{P}_{f} \Vert_{d'})}}_{\phi_{v, f}} \leq \underbrace{\frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + (\omega + \delta^{-}) \times (1 - \Vert \mathcal{P}_{f} \Vert_{d'})}}_{\phi_{v^{-}, f}} \leq \underbrace{\frac{\Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'} + \omega \times (1 - \Vert \mathcal{P}_{f} \Vert_{d'})}}_{\phi}
 \end{equation*}
 
-for some $\delta \geq \delta^{-} > 0$. Then defining the 3-tuple $(N, T, \rho)$ as
+for some $\delta \geq \delta^{-} > 0$. Then defining the 4-tuple $(N, T, p, q)$ as
+
 
 \begin{align*}
-\rho &= \textit{min } \rho \in \mathbb{N} \textit{ such that } \phi \times (\rho+1) - \rho < 0\\
-N &= -t \times (\phi \times (\rho +1) - \rho ) \times \mu_{v, f} \\
-T &= t 
+(p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi \times (p + q) - p < 0\\
+N &= -T \times (\phi \times (p+q) - p)\\
+T &\in \mathbb{N} \textit{ such that } N \textit{ large enough}
 \end{align*}
 
-for any $t \in \mathbb{N}^{*}$. Now considering $v$ with $\omega_{v,f}  > \omega$, reproducing the same development as it was done in the proof of previous theorem, one can derive a convenient form to easily apply the Chenoff inequality.
+Now, let $v$ such that $\omega_{v,f}  > \omega$, reproducing the same development as it was done in the proof of previous theorem, one can derive a convenient form to easily apply the Chernoff inequality.
 
 \begin{equation*}
-\mathbb{P} \left( s_{v, f}(N, T, \rho_i) > 0 \vert \omega_{v, f} > \omega \right) \leq \mathbb{P}\left(\vert \sum_{t=0}^{T_i - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > t \times \delta^{-} \delta_{f} \right)
+\mathbb{P} \left( s_{v, f}(N, T, p, q) > 0 \vert \omega_{v, f} > \omega \right) \leq \mathbb{P}\left(\vert \sum_{t=0}^{T_i - 1} s_{v, p, q, t, f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] \vert > T \times \delta_{f} \right)
 \end{equation*}
 
-With $\delta_{f} = (\rho +1) \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. Then using the Chernoff inequality as written in \cite{TAO-1} using $\lambda = \sigma^{-1} \delta^{+} \delta_{f}$ we obtain
+With $\delta_{f} = (p + q) \times \delta^{-} \times \phi^{2} \times \frac{1 - \Vert \mathcal{P}_{f} \Vert_{d'}}{\Vert \mathcal{P}_{f} \Vert_{d'}}$. Then using the Chernoff inequality as written in \cite{TAO-1} using $\lambda = \sigma^{-1} \delta_{f}$ we obtain
 
 
 \begin{align*}
-\mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, \rho, t, f} - \mathbb{E}\left[s_{v, \rho, t, f}\right] \vert > T \times \mu_{v, f}\delta^{-} \rho \right) \leq C \times \max \left( \exp\left(- t \times \left(\frac{\delta^{-}\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- t \times \delta^{-}\delta_{f}c \right) \right)
+\mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, p, q, t, f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] \vert > T \times \delta_{f} \right) &= \mathbb{P}\left(\vert \sum_{t=0}^{T - 1} s_{v, p, q, t, f} - \mathbb{E}\left[s_{v, p, q, t, f}\right] \vert > \lambda \sigma \sqrt{T} \right) \\
+&\leq C \times \max \left( \exp\left(- T \times \left(\frac{\delta_{f} c}{\sigma}\right)^2 \right), \exp\left(- T \times \delta_{f}c \right) \right)
 \end{align*}
 
-With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E.D
+With $C, c$ some positive constant and $\Var[s_{v, p, q, t, f}] = \sigma^2$. Q.E.D
 
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
@@ -904,7 +869,7 @@ With $C, c$ some positive constant and $\Var[s_{v, \rho, t, f}] = \sigma^2$. Q.E
 
 \subsection{Limit of the generic case}
 
-The combination of theorems shows that the association of sampling and draining with the right choice of 4-tuple $(\omega, N, T, \rho)$ gives a convenient tool to select measure grid's bits with purity coefficient lower or equal to $\omega$. Furthermore when $t \rightarrow +\infty$ the identification is almost certain, which highlights the trade-off between efficiency and complexity of the algorithm embedded in the choice of $\omega$ and $T$, on which depends $N$ and $\rho$.
+The combination of theorems shows that the association of sampling and draining with the right choice of 5-tuple $(\omega, N, T, p, q)$ gives a convenient tool to select measure grid's bits with purity coefficient lower or equal to $\omega$. Furthermore when $t \rightarrow +\infty$ the identification is almost certain, which highlights the trade-off between efficiency and complexity of the algorithm embedded in the choice of $\omega$ and $T$, on which depends $N, p$ and $q$.
 This generic procedure and its analysis deliver a strong framework that eases the derivation of more specific results that may be obtained under specific distribution of latent factor's activations and measure grid signature. Nevertheless it leaves two fundamental points clueless 
 
 \begin{itemize}
@@ -916,7 +881,7 @@ In the rest of this paper, we present two particular cases of factor's and measu
 
 \section{Case of signal plus noise}
 
-This particular case is designed to be easy to analyze. We first define the statistical signature of factor and bit's activations. Then we quantify the sampling strategy and justify a choice for the 4-tuple $(\omega, T, N, \rho)$. Finally we present simulations and provide discussion of the results obtained with this special case.
+This particular case is designed to be easy to analyze. We first define the statistical signature of factor and bit's activations. Then we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally we present simulations and provide discussion of the results obtained with this special case.
 
 \subsection{Statistical modelling}
 
@@ -971,6 +936,7 @@ Thus its expected size is $\mathbb{E}\left[ \vert S \vert \right] = k + (n - k) 
 \end{align*}
 
 \subsection{Identification of factors}
+ARG CHOICE OF (p,q)
 
 First, in the case of a single sampled firing graph, one can see that bit's purity coefficients take only two values with respect to $f$
 
@@ -987,7 +953,7 @@ Thus if we choose
 It maximizes the purity margin defined as
  
 \begin{align*}
-\delta &=  \frac{(\omega_0 - \omega_{\{ b \}, 1, f}) + (\omega_{\{ b' \}, 1, f} - \omega_0)}{2} = \frac{(1-p_N)}{2}
+\delta_0 &=  \frac{(\omega_0 - \omega_{\{ b \}, 1, f}) + (\omega_{\{ b' \}, 1, f} - \omega_0)}{2} = \frac{(1-p_N)}{2}
 \end{align*}
 
 Where $b \in \mathcal{G}(f)$ and $b' \notin \mathcal{G}(f)$. In the case of a joint sampled firing graph in which a set $I = \{b_1^{*}, \ldots,  b_i^{*}\}$ of $i \in \mathbb{N}^{*}$ pre-selected bits that verify $\forall b \in I$, $b \in \mathcal{G}(f)$ remaining bit's purity coefficients with respect to $f$ can take again two values
@@ -1005,33 +971,33 @@ Thus if we choose
 it maximizes the purity margin defined as
  
 \begin{align*}
-\delta &=  \frac{(\omega_i - \omega_{I \cup \{ b \}, i+1, f}) + (\omega_{I \cup \{ b' \}, i+1, f} - \omega_i)}{2} = \frac{(1-p_N) \times p_N^{i}}{2}
+\delta_i &=  \frac{(\omega_i - \omega_{I \cup \{ b \}, i+1, f}) + (\omega_{I \cup \{ b' \}, i+1, f} - \omega_i)}{2} = \frac{(1-p_N) \times p_N^{i}}{2}
 \end{align*}
 
-Where $b \in \mathcal{G}(f)$ and $b \notin \mathcal{G}(f)$. Finally we define the 4-tuple $(N_i, T_i, \rho_i)$ as 
+Where $b \in \mathcal{G}(f)$ and $b \notin \mathcal{G}(f)$. Finally we define the 5-tuple $(N_i, T_i, p, q)$ as 
 
 \begin{align*}
-\rho_i &= \textit{min } \rho \in \mathbb{N} \textit{ such that } \phi_i \times (\rho+1) - \rho < 0\\
-N_{i} &= -t \times (\phi_i \times (\rho_i+1) - \rho_i )  \\
-T_i &= t 
+(p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi_i \times (p + q) - p < 0 \textit{ and } \phi_i' \times (p + q) - p < 0 \\
+N &= -T \times (\phi \times (p+q) - p)\\
+T &\in \mathbb{N} \textit{ such that } N \textit{ large enough}
 \end{align*}
 
-Where $t \in \mathbb{N}$ and $\phi_i = \frac{p_{f}}{p_{f} + \omega_i \times (1 - p_f)}$.
+Where $t \in \mathbb{N}$, $\phi_i = \frac{p_{f}}{p_{f} + \omega_i \times (1 - p_f)}$ and $\phi_i' = \frac{p_{f}}{p_{f} + (\omega_i - \delta_i) \times (1 - p_f)}$.
 
 \subsection{Simulation}
 
 The signal plus noise model is implemented in python and mainly uses standard numpy module to generate random signal that fits its probabilistic model. More details about the implementation can be found in appendix B. We generate $n=1000$ bits that randomly activate with probbility $p_N$ and we choose randomly $\vert  \mathcal{G}(f)\vert = 50$ bits that are linked to a latent factor that activates with probability $p_f=0.3$. Finally we build the single sampled firing graph using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
-\subfloat[$p_f = 0.3$, $p_N = 0.3$]{\includegraphics[scale=0.165]{figures/signalplusnoise_111.png}} 
-\subfloat[$p_f = 0.3$, $p_N = 0.5$]{\includegraphics[scale=0.165]{figures/signalplusnoise_112.png}}\\
-\subfloat[$p_f = 0.3$, $p_N = 0.7$]{\includegraphics[scale=0.165]{figures/signalplusnoise_121.png}}
-\subfloat[$p_f = 0.3$, $p_N = 0.9$]{\includegraphics[scale=0.165]{figures/signalplusnoise_122.png}} 
+\subfloat[$p_N = 0.3$, $(p,q)=(1,1)$]{\includegraphics[scale=0.165]{figures/signalplusnoise_111.png}} 
+\subfloat[$p_N = 0.5$, $(p,q)=(2,3)$]{\includegraphics[scale=0.165]{figures/signalplusnoise_112.png}}\\
+\subfloat[$p_N = 0.7$, $(p,q)=(3, 5)$]{\includegraphics[scale=0.165]{figures/signalplusnoise_121.png}}
+\subfloat[$p_N = 0.9$, $(p,q)=(5,11)$]{\includegraphics[scale=0.165]{figures/signalplusnoise_122.png}} 
 \caption{Observation of the score process for different SNR models $T=500$}
 \label{fig:sim_spn_1}
 \end{figure}
 
-In every experiments, $\rho=1$ when following the procedure described in the previous section. Furthermore, each subplot shows the weight of outcoming edges of sampled vertices. Blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. Finally the black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, \rho]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b\}, 1}$, with $b \in \mathcal{G}(f)$. As theory suggests, we we can see two distinct phenomenon, blues lines converge around theoretical mean for process of bits linked to the target factors and red lines, converge to 0. However, the higher is $p_N$,  the less noticeable is the distinction between each process. This is explained by the fact the the higher is $p_N$ the closer are the precision of bits linked to target factor $f$ and the precision of noisy bits. For the second simulation we use $n=1000$, $\vert \mathcal{G}(f)\vert = 50$, $p_f=0.3$, $T=200$ and $p_{\mathcal{S}}= 0.5$. Yet at the end of the draining we choose all the input vertices of the firing graph that still have an outcoming edge and use their combined activation as an estimator of the target factor's activation. We then measure their precision and recall over $100$ repetion for each SNR ratio
+Each subplot of figure~\ref{fig:sim_spn_1} shows the weight of outcoming edges of sampled vertices. Blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. Finally the black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, p, q]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b\}, 1}$, with $b \in \mathcal{G}(f)$. As theory suggests, we we can see two distinct phenomenon, blues lines converge around theoretical mean for process of bits linked to the target factors and red lines, converge to 0. However, the higher is $p_N$,  the less noticeable is the distinction between each process. This is explained by the fact the the higher is $p_N$ the closer are the precision of bits linked to target factor $f$ and the precision of noisy bits. Futhermore the later observation induces a high value of $p+q$ which result is a more volatile score process. For the second simulation we use $n=1000$, $\vert \mathcal{G}(f)\vert = 50$, $p_f=0.3$, $T=200$ and $p_{\mathcal{S}}= 0.5$. Yet at the end of the draining we choose all the input vertices of the firing graph that still have an outcoming edge and use their combined activation as an estimator of the target factor's activation. We then measure their precision and recall over $100$ repetion for each SNR ratio
 
 \begin{table}[H]
 \begin{tabular}{|l|l|l|l|l|l|}
@@ -1051,15 +1017,15 @@ Table~\ref{tab:sim_spn_1} shows quality indicators of the estimator for differen
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.30]{figures/signalplusnoise_2.png}
-\caption{Observation of the score process in a joint sampled firing graph with $T=500$}
+\caption{Observation of the score process in a joint sampled firing graph with $T=500$ and $(p, q) = (7, 1)$}
 \label{fig:sim_spn_2}
 \end{figure}
 
-In this case, we obtain $N=7$, $\rho=7$ and $\omega_5 \simeq 0.062$ when following the procedure described in previous section. As for the first experiment, blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. The black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, \rho]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b_1, \ldots, b_5, b\}, 5}$, with $\{b_1, \ldots, b_5\}$ the set of pre selected bits and $b \in \mathcal{G}(f)$. The simulation validate the expectation from theory and the high value of $\rho$ explains the larger variance of score process.
+In this case, we obtain $N=7$ and $\omega_5 \simeq 0.062$ when following the procedure described in previous section. As for the first experiment, blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. The black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, p, q]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b_1, \ldots, b_5, b\}, 5}$, with $\{b_1, \ldots, b_5\}$ the set of pre selected bits and $b \in \mathcal{G}(f)$. The simulation validate the expectation from theory and the high value of $p+q$ explains the larger variance of score process.
 
 \section{Case of sparse measure grid}
 
-This particular case is a more complex than the previous one. We first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and arg a choice for the 4-tuple $(\omega, T, N, \rho)$. Finally we present simulations and provide discussion of the results obtained with this sparse case.
+This particular case is a more complex than the previous one. We first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and arg a choice for the 4-tuple $(\omega, T, N, p, q)$. Finally we present simulations and provide discussion of the results obtained with this sparse case.
 
 \subsection{Statistical modelling}
 
@@ -1132,15 +1098,16 @@ We follow the generic sampling procedure $\mathcal{S}$ with parameter $p_{\mathc
  
 \subsection{Identification of factors}
 
-First, in the case of a single sampled firing, for any grid's bits linked to factor $f$ there is only $K$ different purity coefficients possible that depend on their purity rank. Thus we may set $\omega$ to $\omega_l$, using $l$  reasonably small to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the preselected set of bits we set $\omega = \omega_{I, \vert I \vert, f} - \delta$ so that the draining algorithm discriminate between set of bits whose joint purity coefficient is below. Finally we choose the 4-tuple $\lbrace (\omega_i, N_i, T_i, \rho_i) \rbrace_{i=1, \ldots}$ as 
+First, in the case of a single sampled firing, for any grid's bits linked to factor $f$ there is only $K$ different purity coefficients possible that depend on their purity rank. Thus we may set $\omega$ to $\omega_l$, using $l$  reasonably small to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the preselected set of bits we set $\omega = \omega_{I, \vert I \vert, f} - \delta$ so that the draining algorithm discriminate between set of bits whose joint purity coefficient is below. Finally we choose the 5-tuple $\lbrace (\omega_i, N_i, T_i, p_i, q_i) \rbrace_{i=1, \ldots}$ as 
 
 \begin{align*}
-\rho_i &= \textit{min } \rho \in \mathbb{N} \textit{ such that } \phi_i \times (\rho+1) - \rho < 0\\
-N_i &= -t \times (\phi_i \times (\rho_i+1) - \rho_i )\\
-T_i &= t 
+(p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi_i \times (p + q) - p < 0 \\
+N &= -T \times (\phi \times (p+q) - p)\\
+T &\in \mathbb{N} \textit{ such that } N \textit{ large enough}
 \end{align*}
 
-For some $t \in \mathbb{N}$ and  $\phi_i = \frac{p_f}{p_f + \omega_i \times (1-p_f)}$. 
+
+Where $\phi_i = \frac{p_f}{p_f + \omega_i \times (1-p_f)}$. 
 
 \subsection{Simulation}
 
@@ -1149,7 +1116,7 @@ The sparse measure grid model is implemented using python and the standard pytho
 \begin{figure}[H]
 \centering
 \includegraphics[scale=0.33]{figures/sparse_1.png}
-\caption{Observation of the score process in a single sampled firing graph with $T=1000$}
+\caption{Observation of the score process in a single sampled firing graph with $T=1000$ and $(p, q) = (1, 1)$}
 \label{fig:sim_si_1}
 \end{figure}
 
@@ -1160,7 +1127,7 @@ We clearly see a rapid differentiation of score processus according to their pur
 \subfloat[$\delta = 10^{-2}$]{\includegraphics[scale=0.165]{figures/sparse_212.png}}\\
 \subfloat[$\delta = 5 \times 10^{-2}$]{\includegraphics[scale=0.165]{figures/sparse_221.png}}
 \subfloat[$\delta = 10^{-1}$]{\includegraphics[scale=0.165]{figures/sparse_222.png}} 
-\caption{Observation of sampled bit's score processus in a joint sample firing graph $i=5$, $T=500$}
+\caption{Observation of sampled bit's score processus in a joint sample firing graph $i=5$, $T=500$ and $(p, q) = (1, 1)$}
 \label{fig:sim_si_2}
 \end{figure}
 
@@ -1168,7 +1135,7 @@ In each simulation $\hat{\omega}_{I, \vert I \vert, f}$ has been estimated using
 
 \section{Discussion}
 
-This paper has presented an algorithm that consists in a generic optimisation of a firing graph in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative improvement optimisation method associated with the diversity and flexibility of the architecture of a firing graph opens doors to further applications, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the target is a combination of latent factor activation and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedure could turn our solution into a supervised classificator. The specificity of such a learner would give it an intresting position in the supervised learning landscape. Indeed its incremental optimisation and flexible architecture could make it an adaptative learner with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more suitable to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype granted to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be common sense to orient this piece of research to this field.     
+This paper has presented an algorithm that consists in a generic optimisation of a firing graph in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative optimisation method associated with the diversity and flexibility of the architecture of a firing graph opens doors to further applications, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the target is a combination of latent factor activation and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedure could turn our solution into a supervised classificator. The specificity of such a learner would give it an intresting position in the supervised learning landscape. Indeed its iterative optimisation and flexible architecture could make it an adaptative learner with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more suitable to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype granted to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be common sense to orient this piece of research to this field.     
 
 
 \newpage
@@ -1397,96 +1364,34 @@ Finally the result (\ref{prop:recall2}) directly comes with the definition.
 \rule[0pt]{100pt}{1pt} 
 \end{center}
 
-\underline{vertex's reward process}\\
-
-
-Let $G$ be a firing graph where the layer 0 is composed by measure grid's bits. $v$ denote some vertex of $G$ and $f \in \mathcal{F}$ denote some target latent factor. We also use  $d$ and $d'$ to respectively denote the distribution over combination of activation of measure grid's bits and factors and $e$ to denote the event "factor $f$ is active". If $r_{v, f}[t]$ denote reward process of $v(I, l)$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:reward_mean}) stands that
-
-\begin{equation*}
-\mathbb{E} \left[ r_{v, f}[t]  \right] = t \times q_r = t \times (\mu_{I, l, f} \times \Vert \mathcal{P}_{f} \Vert_{d'})
-\end{equation*}
-
-\textbf{Proof.} From the definition of the reward process we have 
-
-\begin{align*}
-r_{v, f}[t] &= r_{v, f}[t-1] + r_{v, f, t}\\
-&= \sum_{i=0}^{t-1} r_{v, f, i}
-\end{align*}
-
-with $\lbrace r_{v, f, i} \rbrace_{i=1, \ldots, t}$ a sequence of i.i.d bernouilli trial with parameter $p = q_r = \Vert \mathcal{P}_v \Vert_{d, e}$. Thus
-
-\begin{align*}
-\mathbb{E} \left[ r_{v, f}[t] \right] &= \sum_{i=0}^{t-1} \mathbb{E} \left[r_{v, f, i} \right]\\
-&= t \times \Vert \mathcal{P}_v \Vert_{d, e} \\
-&= t \times \langle \mathcal{P}_v, \mathcal{P}_{\mathcal{G}(f), \vert \mathcal{G}(f)\vert}\rangle_{d \vert e}\times \Vert \mathcal{P}_f \Vert_{d'}
-\end{align*}
-
-the proof come with identification of terms and the fact that $\mathcal{P}_v = \mathcal{P}_{I}^{l}$ by definition.
- 
-\begin{center}
-\rule[0pt]{100pt}{1pt} 
-\end{center}
-
-
-\underline{vertex's penalty process}\\
-
-In the same context, if $p_{v, f}[t]$ denotes penalty process of $v$ with respect to $f$ as defined in section 1.2.2, the result (\ref{prop:penalty_mean}) stands that
-
-\begin{equation*}
-\mathbb{E} \left[ p_{v, f}[t]  \right] =  t \times q_p = t \times ( \nu_{I, l, f} \times (1 -\Vert \mathcal{P}_{f} \Vert_{d'}))
-\end{equation*}
-
-\textbf{Proof.} From the definition of the penalty process we have 
-
-\begin{align*}
-p_{v, f}[t] &= p_{v, f}[t-1] + p_{v, f, t}\\
-&= \sum_{i=0}^{t-1} p_{v, f, i}
-\end{align*}
-
-with $\lbrace p_{v, f, i} \rbrace_{i=1, \ldots, t}$ a sequence of i.i.d bernouilli trial with parameter $p = q_p = \Vert \mathcal{P}_v \Vert_{d} - \Vert \mathcal{P}_v \Vert_{d, e}$. Thus
-
-\begin{align*}
-\mathbb{E} \left[ p_{v, f}[t] \right] &= \sum_{i=0}^{t-1} \mathbb{E} \left[p_{v, f, i} \right]\\
-&= t \times \left( \Vert \mathcal{P}_v \Vert_{d} - \Vert \mathcal{P}_v \Vert_{d, e} \right) \\
-&= t \times \left( \Vert \mathcal{P}_v \Vert_{d,e} +  \Vert \mathcal{P}_v \Vert_{d,\bar{e}} - \Vert \mathcal{P}_v \Vert_{d, e} \right) \\
-&= t \times \Vert \mathcal{P}_v \Vert_{d,\bar{e}} \\
-&= t \times \Vert \mathcal{P}_v \Vert_{d \vert \bar{e}} \times (1 - \Vert \mathcal{P}_f \vert_{d'}
-\end{align*}
-
-the proof come with identification of terms and the fact that $\mathcal{P}_v = \mathcal{P}_I^l$  by definition.
-
-\begin{center}
-\rule[0pt]{100pt}{1pt} 
-\end{center}
-
 \underline{vertex's score process}\\
 
-Finally, in the same context, if $s_{v, f}[N, T, \rho]$ denotes the score process of $v$ with respect to $f$ as defined in section 1.2.2 with some $N, T, \rho \in \mathbb{N}^3$, the result (\ref{prop:score_mean}) stands that
+Finally, in the same context, if $s_{v, f}[N, T, p, q]$ denotes the score process of $v$ with respect to $f$ as defined in section 1.2.2 with some $N, T, p, q \in \mathbb{N}^4$, the result (\ref{prop:score_mean}) stands that
 
 \begin{equation*}
-\mathbb{E} \left[ s_{v, f}[N, T, \rho]  \right] = N + T \times (q_s\times (\rho + 1) - \rho) = N + T \times (\phi_{I, l, f} \times (\rho + 1) - \rho)
+\mathbb{E} \left[ s_{v, f}[N, T, p, q]  \right] = N + T \times (q_s\times (p + q) - p) = N + T \times (\phi_{I, l, f} \times (p + q) - p)
 \end{equation*}
 
 
 \textbf{Proof.} From the definition of the score process we have 
 
 \begin{equation*}
-s_{v, f}[N, T, \rho] = N + \sum_{t=1}^{T} s_{v, \rho, f, t}
+s_{v, f}[N, T, p, q] = N + \sum_{t=1}^{T} s_{v, p, q, f, t}
 \end{equation*}
 
-with $\lbrace s_{v, \rho, f, t} \rbrace_{t=1, \ldots, T}$ a sequence of i.i.d such that
+with $\lbrace s_{v, p, q, f, t} \rbrace_{t=1, \ldots, T}$ a sequence of i.i.d such that
 
 \begin{center}
-$s_{v, \rho, t, f} = \begin{cases} 1, & \text{with probability } q_s = \frac{q_r}{q_r + q_p}  \\ -\rho, & \text{with probability } 1 - q_s \end{cases}$
+$s_{v, p, q, t, f} = \begin{cases} q, & \text{with probability } q_s = \frac{q_r}{q_r + q_p}  \\ -p, & \text{with probability } 1 - q_s \end{cases}$
 \end{center}
 
 Thus we can write
 
 \begin{align*}
-\mathbb{E}\left[ s_{v, f}[N, T, \rho \right] &= N + \sum_{t=1}^{T} \mathbb{E} \left[ s_{v, \rho, t, f}\right]\\
-&= N + \sum_{t=1}^{T} q_s - \rho \times (1 - qs)\\
-&= N + \sum_{t=1}^{T} q_s \times (\rho + 1) - \rho \\
-&= N + T \times \left(q_s \times (\rho + 1) - \rho \right) 
+\mathbb{E}\left[ s_{v, f}[N, T, p, q \right] &= N + \sum_{t=1}^{T} \mathbb{E} \left[ s_{v, p, q, t, f}\right]\\
+&= N + \sum_{t=1}^{T} q \times q_s - p \times (1 - qs)\\
+&= N + \sum_{t=1}^{T} q_s \times (p + q) - p \\
+&= N + T \times \left(q_s \times (p + q) - p \right) 
 \end{align*}
 
 Yet $q_s = \frac{q_r}{q_r + q_p}$, with $q_r = \Vert \mathcal{P}_v \Vert_{d, e}$ and $q_p = \Vert \mathcal{P}_v \Vert_{d,\bar{e}}$, thus
@@ -1495,7 +1400,7 @@ Yet $q_s = \frac{q_r}{q_r + q_p}$, with $q_r = \Vert \mathcal{P}_v \Vert_{d, e}$
 q_s = \frac{\Vert \mathcal{P}_v \Vert_{d, e}}{\Vert \mathcal{P}_v \Vert_{d, e} + \Vert \mathcal{P}_v \Vert_{d,\bar{e}}} = \frac{\Vert \mathcal{P}_v \Vert_{d, e}}{\Vert \mathcal{P}_v \Vert_{d}}
 \end{equation*}
 
-Which is the definition of $\phi_{v, f} = \phi_{I,l, f}$ by definition.
+Which is the definition of $\phi_{v, f}$ that is equal to $\phi_{I,l, f}$ by definition.
 
 \begin{center}
 \rule[0pt]{100pt}{1pt} 
@@ -1504,26 +1409,26 @@ Which is the definition of $\phi_{v, f} = \phi_{I,l, f}$ by definition.
 Furthermore the result (\ref{prop:score_var}) stands that,
 
 \begin{equation*}
-\Var \left[ s_{v,\rho, t, f}  \right] = (1 + \rho)^{2} \times \phi_{I,, l, f} \times (1 - \phi_{I, l, f})
+\Var \left[ s_{v, p, q, t, f}  \right] = (p + q)^{2} \times \phi_{I,, l, f} \times (1 - \phi_{I, l, f})
 \end{equation*}
 
-\textbf{Proof.} Using the result of previous proof we first compute $\mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right]$
+\textbf{Proof.} Using the result of previous proof we first compute $\mathbb{E}\left[  s_{v, p, q, t, f}^{2}\right]$
 
 \begin{align*}
-\mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right] &= q_s + \rho^{2} \times (1 - q_s)\\
-&= \phi_{v, f} + \rho^{2} \times (1 - \phi_{v, f})\\
-&= \phi_{v, f}\times (1 + \rho)\times (1 - \rho) + \rho^{2}
+\mathbb{E}\left[  s_{v, p, q, t, f}^{2}\right] &= q^{2} \times q_s + p^{2} \times (1 - q_s)\\
+&=  q^{2} \times \phi_{v, f} + p^{2} \times (1 - \phi_{v, f})\\
+&= \phi_{v, f}\times (q + p)\times (q - p) + p^{2}
 \end{align*}
 
-Furthermore we have seen previously that $\mathbb{E}\left[  s_{v,\rho, t, f}\right] = \phi_{v, f}\times (1 + \rho) - \rho$, thus
+Furthermore we have seen previously that $\mathbb{E}\left[  s_{v, p, q, t, f}\right] = \phi_{v, f}\times (p + q) - p$, thus
 
 \begin{equation*}
-\mathbb{E}\left[  s_{v,\rho, t, f}\right]^{2} = \phi_{v, f}\times (1 + \rho) \times \left( \phi_{v,f}\times (1 + \rho) - 2\times \rho \right) + \rho^{2}
+\mathbb{E}\left[  s_{v,p, q, t, f}\right]^{2} = \phi_{v, f}\times (p + q) \times \left( \phi_{v,f}\times (p + q) - 2\times p \right) + p^{2}
 \end{equation*}
 
 Finally
 \begin{equation*}
-\Var \left[ s_{v,\rho, t, f}  \right] = \mathbb{E}\left[  s_{v,\rho, t, f}^{2}\right] - \mathbb{E}\left[  s_{v,\rho, t, f}\right]^{2} = (1 + \rho)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
+\Var \left[ s_{v, p, q, t, f}  \right] = \mathbb{E}\left[  s_{v, q, p, t, f}^{2}\right] - \mathbb{E}\left[  s_{v, p, q, t, f}\right]^{2} = (q + p)^{2} \times \phi_{v, f} \times (1 - \phi_{v, f})
 \end{equation*}
 
 Which gives the expected result since $\phi_{v, f} = \phi_{I, l, f}$ by definition.

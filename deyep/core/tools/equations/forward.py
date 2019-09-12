@@ -98,7 +98,7 @@ def fpc(sax_c, sax_cm, ax_levels):
     return sax_c, sax_cm
 
 
-def fpo(sax_o, imputer, batch_size, penalty):
+def fpo(sax_o, imputer, batch_size, p, q):
     """
     Compute feedback from output forward signal and ground of truth of activation
 
@@ -108,7 +108,9 @@ def fpo(sax_o, imputer, batch_size, penalty):
     :type imputer: scipy.sparse.spmatrix
     :param batch_size:
     :type batch_size: int
-    :param penalty:
+    :param p:
+    :type: int
+    :param q:
     :type: int
     :return: Feedback
     :rtype: scipy.sparse.spmatrix
@@ -120,6 +122,6 @@ def fpo(sax_o, imputer, batch_size, penalty):
         sax_got = vstack([sax_got, imputer.stream_next_backward().tocsr()])
 
     # Compute feedback
-    sax_ob = ((penalty + 1) * sax_got.multiply(sax_o > 0)) - (penalty * (sax_o > 0).astype(int))
+    sax_ob = ((p + q) * sax_got.multiply(sax_o > 0)) - (p * (sax_o > 0).astype(int))
 
     return sax_ob.transpose().tocsc()

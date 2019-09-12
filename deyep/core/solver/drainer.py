@@ -9,10 +9,10 @@ from deyep.core.tools.equations.structure import buc, buo, bui
 
 
 class FiringGraphDrainer(object):
-    def __init__(self, t, p, batch_size, firing_graph, imputer, verbose=0):
+    def __init__(self, t, p, q, batch_size, firing_graph, imputer, verbose=0):
 
         # Core params
-        self.p = p
+        self.p, self.q = p, q
         self.t = t
         self.bs = batch_size
         self.firing_graph = firing_graph
@@ -46,12 +46,12 @@ class FiringGraphDrainer(object):
     def reset_backward(self):
         self.sax_cb, self.sax_ob = init_backward_signal(self.firing_graph, self.bs)
 
-    def drain_all(self, max_batch_iteration=10000):
+    def drain_all(self, max_batch_iteration=10000, adapt_bs=False):
 
         stop, j, max_batch_size = False, 0, self.bs
         while not stop:
             for _ in range(int(max_batch_size / self.bs)):
-                # Drain
+                # Drain and reset signals
                 self.drain()
                 self.reset_all()
 
@@ -65,8 +65,9 @@ class FiringGraphDrainer(object):
             j += 1
             print("[Drainer]: {} batch has been completed".format(j * self.bs))
 
-            # Adapt batch size and reset signals
-            self.adapt_batch_size(max_batch_size)
+            # Adapt batch size if specified
+            if adapt_bs:
+                self.adapt_batch_size(max_batch_size)
 
     def drain(self, n=1):
 
@@ -157,7 +158,7 @@ class FiringGraphDrainer(object):
 
         # If decay reached compute feedback
         if self.iter >= self.firing_graph.depth - 1 and load_output:
-            self.sax_ob = fpo(self.sax_o, self.imputer, self.bs, self.p)
+            self.sax_ob = fpo(self.sax_o, self.imputer, self.bs, self.p, self.q)
 
         else:
             self.sax_ob = csc_matrix((self.firing_graph.O.shape[1], self.bs), dtype=int)

@@ -10,7 +10,7 @@ run the simulation of the 'Signal plus Noise' model.
 """
 
 # Global parameter
-t, n_bits, p_noise, p_target, n_targets = 500, 1000, 0.9, 0.3, 50
+t, n_bits, p_noise, p_target, n_targets = 500, 1000, 0.3, 0.3, 50
 
 # Run simulation
 ax_noisy_bits, ax_target_bits, simu = u.run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, 0)
