@@ -620,7 +620,7 @@ Where $\cdot$ is the usual dot product, $(i, j) \in \{1, \ldots n_c\} \times \{1
 x_{b,o}^{(t)} = x_o^{(t)} \circ \left( (p + q) \times x_f^{(t-d)} - p \right)
 \end{equation*}
 
-Where $\circ$ denotes the usual Hadamard product, $x_f^{(t-d)}$ is the vector of states of factors at instant $t-d$ and $p, q$ are predifined positive integer. A correct backpropagation of $x_{b,o}^{(t)}$ up to the input vertices is made possible by using time synchronisation and topology of the firing graph. We denote by $V_i$, $i\in \mathbb{N}$ the set of vertices that has a path composed of $i$ vertex toward an output vertex. Let $G$ be a firing graph with $k \in \mathbb{N}^{*}$ layers augmented with a layer of ouptut vertices. Let $V_o$ the set of output vertices, $\forall v, o \in V_0 \times V_o$,  $v$ is elligible to $o$'s feedback at instant $t$ if and only if 
+Where $\circ$ denotes the usual Hadamard product, $x_f^{(t-d)}$ is the vector of states of factors at instant $t-d$ and $p, q$ are predifined positive integers. A correct backpropagation of $x_{b,o}^{(t)}$ up to the input vertices is made possible by using time synchronisation and topology of the firing graph. We denote by $V_i$, $i\in \mathbb{N}$ the set of vertices that has a path composed of $i$ vertex toward an output vertex. Let $G$ be a firing graph with $k \in \mathbb{N}^{*}$ layers augmented with a layer of ouptut vertices. Let $V_o$ the set of output vertices, $\forall v, o \in V_0 \times V_o$,  $v$ is elligible to $o$'s feedback at instant $t$ if and only if 
 
 \begin{itemize}
 \item $v$ was active at instant $t-1$
