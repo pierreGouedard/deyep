@@ -1010,7 +1010,7 @@ $P_N$ & Mean $\phi$ & Standard deviation $\phi$ & Mean $\psi$ & Standard deviati
 \label{tab:sim_spn_1}
 \end{table}
 
-Table~\ref{tab:sim_spn_1} shows quality indicators of the estimator for different SNR ratio. The two first columns give respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any remaining input vertex, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveals that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally, we simulate the signal plus noise model in the settings of joint sampled firing graph. We use a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to target factor $f$ that activates with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
+Table~\ref{tab:sim_spn_1} shows quality indicators of the estimator for different SNR ratio. The two first columns give respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any input vertices that have a path towards the output, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveals that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally, we simulate the signal plus noise model in the settings of joint sampled firing graph. We use a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to target factor $f$ that activates with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
 \centering
@@ -1019,18 +1019,18 @@ Table~\ref{tab:sim_spn_1} shows quality indicators of the estimator for differen
 \label{fig:sim_spn_2}
 \end{figure}
 
-In this case, we obtain $N=7$ and $\omega_5 \simeq 0.062$ when following the procedure described in previous section. As for the first experiment, blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}$. The black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, p, q]$ of a vertex with characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b_1, \ldots, b_5, b\}, 5}$, with $\{b_1, \ldots, b_5\}$ the set of pre selected bits and $b \in \mathcal{G}(f)$. The simulation validate the expectation from theory and the high value of $p+q$ explains the high volatility of score processus.
+In this case, we obtain $N=7$ and $\omega_5 \simeq 0.062$ when following the procedure described in previous section. As for the first experiment, blue lines show the weight of edges outcoming from sampled bit $b \in \mathcal{G}(f)$ and red lines correspond to the weight of edges outcoming from sampled bit $b \notin \mathcal{G}(f)$. The black horizontal line represents the theoretical mean value of $s_{v, f}[N, T, p, q]$, where $v$ has characteristic polynome $\mathcal{P}_v = \mathcal{P}_{\{b_1, \ldots, b_5, b\}, 5}$, with $\{b_1, \ldots, b_5\}$ the set of pre-selected bits and $b \in \mathcal{G}(f)$. The simulation validate the expectation from theory and the high value of $p+q$ explains the high volatility of score processus.
 
 \section{Case of sparse measure grid}
 
-This particular case is a more complex than the previous one. We first define the statistical signature of factor and bit's activation. Then we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally we present simulations and provide discussion of results obtained with this particular case.
+This particular case is more complex than the previous one. We first define the statistical signature of factors and bits's activations. Then we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally we present simulations and provide discussion of results obtained with this particular case.
 
 \subsection{Statistical modelling}
 
 
 \subsubsection*{Latent factor activation}
 
-We assume that each of the $K$ latent factors activate independantly with probability $p_f$. As a consequence, for any $I \in S(\mathcal{F})$, if we define $x$ such that $x \in F_2 (\{I\}, \mathcal{F})$ then we can define the distribution of factor's activation as 
+We assume that each of the $K$ latent factors activates independantly with probability $p_f$. As a consequence, for any $I \in S(\mathcal{F})$, if we define $x$ such that $x \in F_2 (\{I\}, \mathcal{F})$, we can define the distribution of factor's activation as 
 
 \begin{equation*}
 d'_x = \begin{pmatrix} \vert I \vert \\ K \end{pmatrix} \times p_f^{\vert I \vert} \times (1-p_f)^{K-\vert I \vert} 
@@ -1039,7 +1039,7 @@ d'_x = \begin{pmatrix} \vert I \vert \\ K \end{pmatrix} \times p_f^{\vert I \ver
 
 \subsubsection*{Measure grid activation}
 
-We assume two major properties of activation of measure grid's bits.
+We assume two major properties of activations of measure grid's bits.
 
 \begin{itemize}
 \item For each factor $f \in \mathcal{F}$, each bit $b \in \mathcal{G}$ has equal probability $p_g$ to belong to $\mathcal{G}(f)$.
@@ -1053,7 +1053,7 @@ As a consequence the probability for a bit $b$ to activate, given that every fac
  &= 1 - (1 - p_g)^{ k}
 \end{align*}
 
-The above quantity depends only on the number of active latent factors. Thus, for any $I \in S(\mathcal{G})$, if we define $x$ such that $x \in F_2 (S(\mathcal{G}) , \mathcal{G})$ then we can define the distribution of bits's activation as 
+The above quantity depends only on the number of active latent factors. Thus, for any $I \in S(\mathcal{G})$, if we define $x \in F_2 (S(\mathcal{G}) , \mathcal{G})$, we can define the distribution of bits's activations as 
 
 \begin{equation*}
 d_x = \sum_{k = 1}^{K} \left[ \begin{pmatrix} K \\ k \end{pmatrix} \times p_f^{k} \times (1-p_f)^{K-k}\right] \times \left[ p^i_{g \vert k} \times (1 - p_{g\vert k})^{n - i} \right]
@@ -1063,19 +1063,19 @@ With $i = \vert I \vert$ and $p_{g \vert k} = \mathbb{P}\left(\textit{b active }
 
 \subsection{Evaluation of bits}
 
-Let $G$ be a firing graph whose layer 0 is composed of measure grid's bits. Given a target factor $f$, the precision with respect to $f$ of a vertex $v(\{ b \}, 1)$ of the layer 1 of $G$ depends on wether $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert$. Indeed if $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert = l $, $l \in \{1, \ldots, K\}$, it will be said to have a purity rank of $l$ and its precision with respect to $f$ writes
+Let $G$ be a firing graph whose layer 0 is composed of measure grid's bits. Given a target factor $f$, the precision with respect to $f$ of a vertex $v(\{ b \}, 1)$ of the layer 1 of $G$ depends on wether $b \in \mathcal{G}(f)$ and on $\vert \mathcal{G}^{-1}(b) \vert$. Indeed, if $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert = l $, $l \in \{1, \ldots, K\}$, it will be said to have a purity rank of $l$ and its precision with respect to $f$ writes
 
 \begin{equation*}
 \phi_{v, f} = \frac{p_f}{p_f + (1 - p_f)\times \omega_{l}}
 \end{equation*}
 
-where $\omega_l = 1 - (1-p_f)^{l-1}$. If $b' \notin \mathcal{G}(f)$ the precision of $$v'(\{ b' \}, 1)$$ with respect to $f$ writes
+where $\omega_l = 1 - (1-p_f)^{l-1}$. If $b' \notin \mathcal{G}(f)$ the precision of $v'(\{ b' \}, 1)$ with respect to $f$ writes
 
 \begin{equation*}
 \phi_{v', f} = p_f
 \end{equation*}
 
-Futhermore if we have a vertex $v(I, \vert I \vert)$ such that $\forall b \in I$, $b \in \mathcal{G}(f)$ and $\min_{b \in I} \vert \mathcal{G}^{-1}(b) \vert = l$, then the precision of $v$ with respect to $f$ verifies
+Futhermore, if we have a vertex $v(I, \vert I \vert)$ such that $\forall b \in I$, $b \in \mathcal{G}(f)$ and $\min_{b \in I} \vert \mathcal{G}^{-1}(b) \vert = l$, then the precision of $v$ with respect to $f$ verifies
 
 \begin{equation*}
 \phi_{v, f} \leq \frac{p_f}{p_f + \omega^{-}_l \times (1 - pf)}
@@ -1087,7 +1087,7 @@ With
 \omega^{-}_l = \sum_{k=K-l-1}^{K} \begin{pmatrix} K \\ k \end{pmatrix} p_f^{k} \times (1-p_f)^{K - k}
 \end{equation*}
 
-The minimum purity coefficient one can obtained with bits that verifies $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert = l$. That is the case of a vertex $v(I, \vert I \vert)$ with $I$ composed of every possible $\begin{pmatrix} K \\ l \end{pmatrix}$ such bits.
+The minimum purity coefficient one can obtained with bits that verifies $b \in \mathcal{G}(f)$ and $\vert \mathcal{G}^{-1}(b) \vert = l$. That is, the case of a vertex $v(I, \vert I \vert)$ with $I$ composed of every possible $\begin{pmatrix} K \\ l \end{pmatrix}$ such bits.
 
 
 \subsection{Sampling Strategy}
@@ -1096,7 +1096,7 @@ We follow the generic sampling procedure $\mathcal{S}$ with parameter $p_{\mathc
  
 \subsection{Identification of factors}
 
-First, in the case of a single sampled firing, for any grid's bits linked to factor $f$, there is only $K$ different purity coefficients possible. Thus we may set $\omega$ to $\omega_l$, using $l$  reasonably small to differentiate lower or similar purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the pre-selected set of bits we set $\omega = \omega_{I, \vert I \vert, f} - \delta$ where $\delta \in \mathbb{R}$ should be chosen with caution. Finally we choose the 5-tuple $\lbrace (\omega, N, T, p, q)$ as 
+First, in the case of a single sampled firing graph, for any grid's bits linked to factor $f$, there is only $K$ different purity coefficients possible. Thus we may set $\omega$ to $\omega_l$, using $l$  reasonably small to differentiate lower purity rank from greater purity rank samples. In the case of a joint sampled graph, where a set of $I=\{b_1^{*}, \ldots b_i^{*}\}$ were pre-selected then the choice of $\omega$ is not trivial and is hard to be efficiently and generically derived. Let $\omega_{I, \vert I \vert, f}$ the purity coefficient of the pre-selected set of bits we set $\omega = \omega_{I, \vert I \vert, f} - \delta$ where $\delta \in \mathbb{R}$ should be chosen with caution. Finally we choose the 5-tuple $\lbrace (\omega, N, T, p, q)$ as 
 
 \begin{align*}
 (p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi \times (p + q) - p < 0 \\
@@ -1109,7 +1109,7 @@ Where $\phi = \frac{p_f}{p_f + \omega \times (1-p_f)}$.
 
 \subsection{Simulation}
 
-The sparse measure grid model is implemented using python and the standard python numpy module to generate random signal that fit its probabilistic model. In our case we generate $n=1000$ bits with $K=10$ latent factors that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probability $p_g=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously, using $p_{\mathcal{S}} = 1$. Finally, we set $\omega= \omega_{10}$, the higher purity coefficient for a bits that is linked to the target factor $f$.
+The sparse measure grid model is implemented using python and the standard python numpy and scipy modules to generate random signal that fit its probabilistic model. In our case we generate $n=1000$ bits with $K=10$ latent factors that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probability $p_g=0.3$. Finally we built the single sampled firing graph running the sampling algorithm described previously, using $p_{\mathcal{S}} = 1$. Finally, we set $\omega= \omega_{10}$, the higher purity coefficient for bits linked to the target factor $f$.
 
 \begin{figure}[H]
 \centering
@@ -1118,22 +1118,22 @@ The sparse measure grid model is implemented using python and the standard pytho
 \label{fig:sim_si_1}
 \end{figure}
 
-We clearly see a rapid differentiation of score processus according to their purity rank. We can also observe that, at the end of draining, the higher the coefficient the closer are weights of corresponding edges. Finally the behaviour of score processus validates the efficiency of the draining algorithm to rank bits of the measure grids blindly in an attempt to identify latent factor. The second experiment with the sparse measure grid model aims to give intuition on the choice of $\delta$ for draining a joint sampled firing graph. As for the previous simulation, we generate $n=1000$ bits with $K=10$ latent factors that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probability $p_g=0.3$. Then we choose randomly $i=5$ bits, denoted by $I=\{b_1^{*}, \ldots, b_i^{*}\}$, with purity rank $4$ with respect to the target factor $f$. Finally we sampled and built the joint sampled firing graph using $p_{\mathcal{S}} = 1$ and the set of pre-selected bits $I$. The procedure described in the previous section to choose the target purity coefficient consists in estimating the purity coefficient $\hat{\omega}_{I, \vert I \vert, f}$ and to set $\delta$ so that $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$.\\
+We clearly see a rapid differentiation of score processus according to their purity rank. We can also observe that, at the end of draining, the higher the purity coefficient is, the closer are weights of corresponding edges. Finally the behaviour of score processus validates the efficiency of the draining algorithm to rank bits of the measure grids blindly, in an attempt to identify latent factors. The second experiment with the sparse measure grid model aims to give intuition on the choice of $\delta$ for draining a joint sampled firing graph. As for the previous simulation, we generate $n=1000$, bits with $K=10$ latent factors that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probability $p_g=0.3$. Then we choose randomly $i=5$ bits, denoted by $I=\{b_1^{*}, \ldots, b_i^{*}\}$, with purity rank $4$ with respect to the target factor $f$. Finally we sampled and built the joint sampled firing graph using $p_{\mathcal{S}} = 1$ and the set of pre-selected bits $I$. The procedure described in the previous section to choose the target purity coefficient consists in estimating the purity coefficient $\hat{\omega}_{I, \vert I \vert, f}$ and to set $\delta$ so that $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$.\\
 
 \begin{figure}[H]
 \subfloat[$\delta = 0.$]{\includegraphics[scale=0.165]{figures/sparse_211.png}} 
 \subfloat[$\delta = 10^{-2}$]{\includegraphics[scale=0.165]{figures/sparse_212.png}}\\
 \subfloat[$\delta = 5 \times 10^{-2}$]{\includegraphics[scale=0.165]{figures/sparse_221.png}}
 \subfloat[$\delta = 10^{-1}$]{\includegraphics[scale=0.165]{figures/sparse_222.png}} 
-\caption{Observation of sampled bit's score processus in a joint sample firing graph $i=5$, $T=500$ and $(p, q) = (1, 1)$}
+\caption{Observation of sampled bit's score processus in a joint sampled firing graph $i=5$, $T=500$ and $(p, q) = (1, 1)$}
 \label{fig:sim_si_2}
 \end{figure}
 
-In each simulation $\hat{\omega}_{I, \vert I \vert, f}$ has been estimated using $1000$ samples and we use $T=500$. Furthermore, each figure corresponds to a different value of $\delta$ that induces different values of $\omega$ set as $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$. As for the first experiment, the different colored lines in each subfigure show the weight of edges outcoming from sampled bit $b \in \mathcal{G}$ with different purity ranks. As expected we  can see that the higher the $\delta$ the more discriminative the draining procedure is.  If $\delta$ is set to 0, then every sampled bits will remain connected in the firing graph after draining, which is not of great interest. Yet if $\delta$ is set too high we may end with two connexe components, whis is not desirable neither. Thus, the experiment confirms the difficulties that we may face choosing the right value for $\delta$.
+In each simulation, $\hat{\omega}_{I, \vert I \vert, f}$ has been estimated using $1000$ samples and we use $T=500$. Furthermore, each figure corresponds to a different value of $\delta$ that induces different values of $\omega$, set as $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$. As for the first experiment, the different colored lines in each subfigure show the weight of edges outcoming from sampled bits with different purity ranks. As expected we  can see that the higher $\delta$ is, the more discriminative the draining procedure is.  If $\delta$ is set to 0, then every sampled bits will remain connected in the firing graph after draining, which is not of great interest. Yet, if $\delta$ is set too high we may end with two connexe components, whis is not desirable neither. Thus, the experiment confirms the difficulties that we may face choosing the right value for $\delta$.
 
 \section{Discussion}
 
-This paper has presented an algorithm that consists in a generic optimisation of a firing graph in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative optimisation method associated with the diversity and flexibility of the architecture of a firing graph opens doors to further applications, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the target is a combination of latent factor activation and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedure could turn our solution into a supervised classificator. The specificity of such a learner would give it an intresting position in the supervised learning landscape. Indeed its iterative optimisation and flexible architecture could make it an adaptative learner with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more suitable to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype granted to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be common sense to orient this piece of research to this field.     
+This paper has presented an algorithm that consists in a generic optimisation of a firing graph, in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative optimisation method associated with the diversity and flexibility of the architecture of a firing graph opens doors to further applications, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the target is a combination of latent factor activation and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedures could turn our solution into a supervised classificator. The specificity of such a learner would give it an intresting position in the supervised learning landscape. Indeed its iterative optimisation and flexible architecture could make it an adaptative learner, that scale to large dataset, with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more suitable to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype granted to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be common sense to orient this piece of research to this field.     
 
 
 \newpage
@@ -1438,7 +1438,7 @@ Which gives the expected result since $\phi_{v, f} = \phi_{I, l, f}$ by definiti
 
 \section{Implementation}
 
-The code that has been used to obtain result of simulation can be found on github \href{https://github.com/pierreGouedard/deyep}{here} under the branch \textit{publi\_1}. The code exclusively written in python, is compatible with interpreter python2.7 and python3 and requires python modules numpy and scipy. Code for simulation can be found under
+The code that has been used to obtain results of simulations can be found on github at \href{https://github.com/pierreGouedard/deyep}{\textit{https://github.com/pierreGouedard/deyep}} under the branch \textit{publi\_1}. The code is exclusively written in python, is compatible with interpreter python2.7 and python3 and requires python modules numpy and scipy. Code for simulation can be found under
 
 \begin{itemize}
 \item tests/signal\_plus\_noise\_1.py
