@@ -86,7 +86,7 @@ Consider a set of latent factors whose observable effect of activation is caught
 
 \section{Introduction}
 
-This paper starts by introducing a mathematical framework for our solution. Then it describes a procedure to build the generic factor's activations identificator. Finally it presents the result of the procedure for two particular statistical modelling of the measure grid's activity. This paper has been influenced by modern machine learning techniques, reviewed in \cite{PCML-1}, especially algorithm that perform automated feature engineering such as neural network and deep learning  \cite{PCML-2} as well as tree learning techniques \cite{PCML-3} and improvements \cite{PCML-4} and \cite{PCML-5}. Finally modern signal processing techniques, that I have been taught at the Ecole Polytechnique F\'ed\'erale De Lausanne, reviewed in \cite{SP-1}, and recent work in statistics in large dimensions, to which I have been introduced during my stay in the Laboratoire d'Informatique Gaspard Monge, reviewed in \cite{TAO-1}, has been more than determinant for the conception of this paper. In order to make the core subject of this report more consistent, we introduce the following notations:
+This paper starts by introducing a mathematical framework for our solution. Then it describes a procedure to build the generic factor's activations identificator. Finally it presents the result of the procedure for two particular statistical modelling of the measure grid's activity. This paper has been influenced by modern machine learning techniques, reviewed in \cite{PCML-1}, especially algorithm that perform automated feature engineering such as neural network and deep learning  \cite{PCML-2} as well as tree learning techniques \cite{PCML-3} and improvements \cite{PCML-4} and \cite{PCML-5}. Finally, modern signal processing techniques, that I have been taught at the Ecole Polytechnique F\'ed\'erale De Lausanne, reviewed in \cite{SP-1}, and recent work in statistics in large dimensions, to which I have been introduced during my stay in the Laboratoire d'Informatique Gaspard Monge, reviewed in \cite{TAO-1}, has been more than determinant for the conception of this paper. In order to make the core subject of this report more consistent, we introduce the following notations:
 
  \begin{figure}[h]
  \centering
@@ -98,7 +98,7 @@ This paper starts by introducing a mathematical framework for our solution. Then
 
 \begin{itemize}
 \item $n$ the size of the measure grid. 
-\item $\mathcal{G}$ the measure grid, a set of bits $\mathcal{G} = \lbrace b_1, \ldots b_n \rbrace$.
+\item $\mathcal{G}$ the measure grid, composed of bits, $\mathcal{G} = \lbrace b_1, \ldots b_n \rbrace$.
 \item $S(\mathcal{G})$  the set of all possible permutations of $\mathcal{G}$, $\vert S(\mathcal{G})\vert = 2^{n}$.
 \item $S(\mathcal{G}, l)$  the set of all permutations of $\mathcal{G}$ of size $l$.
 \item $K$ the number of latent factors.
@@ -133,14 +133,14 @@ The statistical signature of a factor on the measure grid describes how the fact
 \sum_{I \in S(\mathcal{G})} \mathbb{P}(\mathcal{G}(f) = I) &=1
 \end{align*}
 
-The latent factor's activation and signature on the measure grid induce a randomness of activation of measure grid's bits. We  refer to this distribution as $d$, and define it as
+Latent factors's activations and signatures on the measure grid induce activations of measure grid's bits. We refer to this distribution over all possible combinations of activations of bits as $d$, and define it as
 
 \begin{align*}
 d &: F(2)^{n} \rightarrow [0,1]\\
 d_x &= \mathbb{P}\left(b_1 = x_1, \ldots, b_n = x_n \right)
 \end{align*}
 
-Finally, we can also modelize the connection between factors and measure grid's bits as a signature of grid's bits on factor space. That is, for $I \in S(\mathcal{F})$, there is a well defined probability measure so that 
+Finally, we can also modelize the connection between factors and a measure grid's bit as a signature of the grid's bit on factor space. That is, for $I \in S(\mathcal{F})$, there is a well defined probability measure so that 
 
 \begin{align*}
 \mathbb{P}(\mathcal{G}^{-1}(b) = I) &\in [0, 1]\\
@@ -166,7 +166,7 @@ and
 \end{align*}
 
 
-Where $S(I, l)$ and $S(I', l)$ are the set of all permutations of size $l$ of element of respectively $I$ and $I'$, $\textbf{x} = [x_{f_1}, \ldots, x_{f_K}]$ and $\textbf{x}' = [x_{b_1}, \ldots, x_{b_n}]$. Furthermore we define the characteristic polynomial of a set $I \in S(\mathcal{F})$ and $I' \in S(\mathcal{G})$ at level $l_0 \in \{0, \ldots, \vert I \vert \}$ and $l'_0 \in \{0, \ldots, \vert I' \vert \}$  as 
+Where $S(I, l)$ and $S(I', l)$ are the set of all permutations of size $l$ of respectively $I$ and $I'$, $\textbf{x} = [x_{f_1}, \ldots, x_{f_K}]$ and $\textbf{x}' = [x_{b_1}, \ldots, x_{b_n}]$. Furthermore we define the characteristic polynomial of a set $I \in S(\mathcal{F})$ and $I' \in S(\mathcal{G})$ at level $l_0 \in \{0, \ldots, \vert I \vert \}$ and $l'_0 \in \{0, \ldots, \vert I' \vert \}$  as 
 
 \vspace{10px}\noindent\begin{minipage}{.5\linewidth}
 \begin{align*}
@@ -195,7 +195,7 @@ In order to qualify a set of factors and grid's bits, we define some basic opera
 F_2(I_{\mathcal{G}}, \mathcal{G})  : S(\mathcal{G}) \rightarrow  F(2)^{\vert \mathcal{G} \vert \times \vert I_{\mathcal{G}} \vert} 
 \end{equation*}
 
-For each of the vector $X \in F_2(\{I\}, \mathcal{G})$ such that $I\in I_{\mathcal{G}}$, an entry takes value $1$ if the associated index belongs to $I$, 0 otherwise. This operator is convenient to evaluate the characteristic polynome. As an example, let $(I, I') \in S(\mathcal{G})^{2}$ and $l_0 \in \{ 1, \ldots \vert I \vert \}$ then 
+For each vector $X \in F_2(\{I\}, \mathcal{G})$ such that $I\in I_{\mathcal{G}}$, an entry takes value $1$ if the associated index belongs to $I$, 0 otherwise. This operator is convenient to evaluate the characteristic polynome. As an example, let $(I, I') \in S(\mathcal{G})^{2}$ and $l_0 \in \{ 1, \ldots \vert I \vert \}$ then 
 
 \begin{align*}
 \sum_{x \in F_2(\lbrace I' \rbrace, \mathcal{G})} \mathcal{P}_I^{l_0} \left[ x \right]  &= \begin{cases} 1, & \text{if }\ \vert I'\cap I \vert \geq l_0 \\ 0, & \text{otherwise} \end{cases}
@@ -209,26 +209,26 @@ Furthermore, given the distribution over measure grid's bits activation $d$, we 
 \end{align*}
 
 
-Where $\mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})}$ the space of all polynomials with domain $F_2(S(\mathcal{G}), \mathcal{G})$ and $\times$ is the simple multiplication in $\mathbb{R}$. Finally, keeping previous notations, let $\lbrace \mathcal{P}_{I_{i}}^{l_i} \rbrace_{i=1, ..., k}$ a set of characteristic polynome for some integer $k \geq 2$, we define the product operator with respect to d as 
+Where $\mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})}$ the space of all polynomials with domain $F_2(S(\mathcal{G}), \mathcal{G})$ and $\times$ is the simple multiplication in $\mathbb{R}$. Finally, keeping previous notations, let $\lbrace \mathcal{P}_{I_{i}}^{l_i} \rbrace_{i=1, ..., k}$ a set of characteristic polynome for some integer $k \geq 2$, we define the product operator with respect to $d$ as 
 
 \begin{align*}
 \langle ., \ldots, . \rangle_{d} &: \mathcal{P}_{F_2(S(\mathcal{G}), \mathcal{G})}^{k} \rightarrow \left[ 0, 1\right] \\
 \langle \mathcal{P}^{l_1}_{I_1}, \ldots,  \mathcal{P}^{l_k}_{I_k} \rangle_{d} &= \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})} \left( \mathcal{P}^{l_1}_{I_1} \left[ x \right] \cdot \ldots \cdot \mathcal{P}^{l_k}_{I_k} \left[ x \right] \right) \times d_x
 \end{align*}
 
-Where $\cdot$ denotes the usual multiplication in $F(2)$ and $\times$ is the simple multiplication in $\mathbb{R}$. Finally each operator specified above can also be defined in the factor space, using the characteristic polynomial in factor space and the distribution over factor's activation $d'$.
+Where $\cdot$ denotes the usual multiplication in $F(2)$ and $\times$ is the simple multiplication in $\mathbb{R}$. Finally, each operator specified above can also be defined in the factor space, using the characteristic polynomial in factor space and the distribution over factors's activations $d'$.
 
 
 \subsubsection*{Stochastic processus induced by factor's activation}
 
-The activation of factors is observed as a strictly stationnary stochastic processus. That is for a couple $(I, l) \in \mathcal{F} \times \{1, \ldots, \vert I \vert\}$,  we associate a stochastic process $x_I^l[t]$ defined as 
+Factors's activations are observed as a strictly stationnary stochastic processus. That is for a couple $(I, l) \in \mathcal{F} \times \{1, \ldots, \vert I \vert\}$,  we associate a stochastic process $x_I^l[t]$ defined as 
 
 
 \begin{equation*}
 x_I^l[t] = \begin{cases} 1, & \text{with probability }\ \Vert \mathcal{P}_I^l \Vert_{d'}\\ 0, & \text{Otherwise} \end{cases}
 \end{equation*}
 
-with $\{ x_I^l[t] \}_{t\in \mathbb{N}}$ 2-by-2 independant. The factor's measure grid signatures and their activations lead to bit's activations that are also observed as striclty stationary stochastic processus. Again for a couple $(I, l) \in \mathcal{G} \times \{1, \ldots, \vert I \vert\}$,  we associate a stochastic process $x_I^l[t]$ defined as 
+with $\{ x_I^l[t] \}_{t\in \mathbb{N}}$ 2-by-2 independant. Factors's signatures and their activations lead to bits's activations that are also observed as striclty stationary stochastic processus. Again for a couple $(I, l) \in \mathcal{G} \times \{1, \ldots, \vert I \vert\}$,  we associate a stochastic process $x_I^l[t]$ defined as 
 
 
 \begin{equation*}
@@ -241,7 +241,7 @@ with $\{ x_I^l[t] \}_{t\in \mathbb{N}}$ 2-by-2 independant.
 The firing graph is the main data structure used in our solution. In this section we propose a definition of it, as well as basic tools to support its analysis.
   
 \subsubsection*{Graph specification}
-The algorithm presented in this report use a particular datastructure that we refer as firing graph and that we denote $G(V, D_w)$. 
+The algorithm presented in this report use a particular data structure that we refer as firing graph and that we denote $G(V, D_w)$. 
 
 \begin{itemize}
 \item $V$ is the set of vertices $V = \lbrace v_1, \ldots, v_{\vert V \vert} \rbrace$
@@ -264,7 +264,7 @@ $G$ is a directed weighted graph whose vertices are organized in layer. A vertex
 
 \subsubsection*{Graph Polynomials}
 
-As for bits of the measure grid and factors, a vertex $v(I, l_0)$ of a firing graph is assiociated with the set of polynomes $\lbrace \mathcal{P}_{I, l} \rbrace_{l \in \{l_0, \ldots, \vert I \vert \ \}}$. Each polynome is a segment of its characteristic polynome $\mathcal{P}_v$ that describes activation, at instant $t$, of $v$, given its input domain's activations at instant $t-1$. If we denote by $n$, $I$ and $l_0$ respectively the size of the input domain of $v$, the set of vertex that has a link toward $v$ and the level of the vertex, then 
+As for bits of the measure grid and factors, a vertex $v(I, l_0)$ of a firing graph is assiociated with the set of polynomes $\lbrace \mathcal{P}_{I, l} \rbrace_{l \in \{l_0, \ldots, \vert I \vert \ \}}$. Each polynome is a segment of its characteristic polynome $\mathcal{P}_v$ that describes activation, at instant $t$, of $v$, given its input domain's activations at instant $t-1$. If we denote by $n$, $I$ and $l_0$ respectively the size of the input domain of $v$, the set of vertex that has a link toward $v$ and the level of $v$, then 
 
 \vspace{10px}\noindent\begin{minipage}{.5\linewidth}
 \begin{align*}
@@ -275,11 +275,11 @@ As for bits of the measure grid and factors, a vertex $v(I, l_0)$ of a firing gr
 \noindent\begin{minipage}{.5\linewidth}
 \begin{align*}
 \mathcal{P}_v &: F(2)^{n} \rightarrow F(2)\\
-\mathcal{P}_v &= \sum_{l = l_0}^{\vert I \vert} \mathcal{P}_{v, l}[\textbf{x}]
+\mathcal{P}_v[\textbf{x}]  &= \sum_{l = l_0}^{\vert I \vert} \mathcal{P}_{v, l}[\textbf{x}]
 \end{align*}
 \end{minipage}\vspace{15px}
 
-Where $S(I, l)$ is the set of all permutations of size $l$ of elements of $I$ and $\textbf{x} \in F_2(\{ I \}, D_v)$, where $D_v$ is the input domain of $v$. Furthermore, all operators on polynome defined previously is applicable. Let $v, v_1, \ldots, v_k$  be some vertex of the firing graph with the same input domain and $d$ a distribution over activation of their input domain's vertices. Then the norm and the product with respect to distribution $d$ are defined as
+Where $S(I, l)$ is the set of all permutations of size $l$ of elements of $I$ and $\textbf{x} \in F_2(\{ I \}, D_v)$, where $D_v$ is the input domain of $v$. Furthermore, all operators on polynome defined previously is applicable. Let $v, v_1, \ldots, v_k$  be some vertices of the firing graph with the same input domain and $d$ a distribution over activations of their input domain's vertices. Then the norm and the product with respect to distribution $d$ are defined as
 
 
 \vspace{10px}\begin{minipage}{.3\linewidth}
@@ -294,13 +294,13 @@ Where $S(I, l)$ is the set of all permutations of size $l$ of elements of $I$ an
 \end{minipage}\vspace{15px}
 
 
-Finally, the activation of vertices are observed as stochastic processus. Given a vertex $v(I, l)$ we define
+Finally, activations of vertices are observed as stochastic processus. Given a vertex $v(I, l)$ we define
 
 \begin{equation*}
 x_v[t] = \begin{cases} 1, & \text{with probability }\ \Vert \mathcal{P}_v \Vert_{d}\\ 0, & \text{Otherwise} \end{cases}
 \end{equation*}
 
-The stochastic process that takes value 1 if the vertex $v$ actvivates and 0 otherwise. If measure grid's bits compound layer 0 of the firing graph then from definition of bit's stochastic processus and linearity of state's propagations, $x_v[t]$ is strictly stationary.
+The stochastic process that takes value 1 if the vertex $v$ actvivates and 0 otherwise, at each instant of time. If measure grid's bits compound layer 0 of the firing graph, then, from definition of bit's stochastic processus and linearity of state's propagations, $x_v[t]$ is strictly stationary.
 
 
 \subsubsection*{Connection to grid's bit}
@@ -324,7 +324,7 @@ Besides, one can design more complexe arrangements of vertices that enable to mo
 
 \begin{align*}
 \mathcal{P}_{w} &= \sum_{b \in I'} \mathcal{P}_{I \cup \{ b \}, \vert I \vert + 1}\\
-x_w[t] &= \begin{cases} 1, & \text{if }\ \sum_{b \in I'} x_{I \cup \{ b \}}^{\vert I \vert}[t - 2] > 0\\ 0, & \text{Otherwise} \end{cases}
+x_w[t] &= \begin{cases} 1, & \text{if }\ \sum_{b \in I'} x_{I \cup \{ b \}}^{\vert I \vert +1}[t - 2] > 0\\ 0, & \text{Otherwise} \end{cases}
 \end{align*}
 
 
@@ -395,19 +395,19 @@ Where $d, e$, the distribution over the combination of activations of measure gr
 
 \subsubsection*{Advanced stochastic process induced by vertex}
 
-Given a firing graph with its layer 0 composed of measure grid's bits, we have seen that the propagation of activations induces a stochastic process at each vertex that describes states of each vertex. Here we introduce some more complex stochastic processus at each vertex of $G$. Given a vertex $v$ at layer $k \geq 0$, its  characteristic polynome $\mathcal{P}_{v}$, a factor $f \in \mathcal{F}$ and e, the event "factor $f$ is active", we define the score process of $v$ with respect to factor $f$ as
+Given a firing graph with its layer 0 composed of measure grid's bits, we have seen that the propagation of activations induces a stochastic process at each vertex. Here we introduce some more complex stochastic processus at each vertex of $G$. Given a vertex $v$ at layer $k \geq 0$, its  characteristic polynome $\mathcal{P}_{v}$, a factor $f \in \mathcal{F}$ and e, the event "factor $f$ is active", we define the score process of $v$ with respect to factor $f$ as
 
 \begin{equation*}
 s_{v,f}\left[N, T, p, q \right] = N + \sum_{t=1}^{T} s_{v, p, q, t, f}
 \end{equation*}
 
-Where $(N, T, p, q) \in \mathbb{N}^4$ and $\lbrace s_{v, p, q, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable. $s_{v, p, q, t, f}$ takes value $q$ if the event e was true at instant $t - k $ and value $-p$ if it was false, given that $v$ activate at instant $t$. That is, $\forall$ $t  < k $, $s_{v, p, q,t, f} = 0$ and $\forall$ $t  \geq k$
+Where $(N, T, p, q) \in \mathbb{N}^4$ and $\lbrace s_{v, p, q, t, f} \rbrace_{t \in \mathbb{N}}$ a set of i.i.d random variable. $s_{v, p, q, t, f}$ takes value $q$ if the event e was true at instant $t - k $ and value $-p$ if it was false, given that $v$ activates at instant $t$. That is, $\forall$ $t  < k $, $s_{v, p, q,t, f} = 0$ and $\forall$ $t  \geq k$
 
 \begin{equation*}
 s_{v, p,q, t, f} = \begin{cases} q, & \text{with probability } q_s  \\ -p, & \text{with probability } 1 - q_s \end{cases}
 \end{equation*}
 
-Where $q_r = \Vert \mathcal{P}_v \Vert_{d,e} $, $q_p = \Vert \mathcal{P}_v \Vert_{d} - q_r$ and $q_s = \frac{q_r}{q_r + q_p}$.  $d, e$ is the distribution over measure grid's activations that intersect with the event e
+Where $q_s = \frac{q_r}{q_r + q_p}$ with $q_r = \Vert \mathcal{P}_v \Vert_{d,e} $ and $q_p = \Vert \mathcal{P}_v \Vert_{d} - q_r$.  $d, e$ is the distribution over measure grid's activations that intersect with the event e
 
 \subsection{Properties}
 
@@ -441,7 +441,7 @@ Let $G$ be a firing graph with layer 0 composed of $\mathcal{G}$. Let $u(I, l_u)
 \mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2}\left[ x' \right] = \sum_{l=l_u}^{\vert I \vert}  \sum_{J \in S(I, l)} \mathcal{P}_{J \cup K, l + \vert K \vert }\left[ x \right]
 \end{equation}
 
-In particular if $l_u = \vert I \vert$ and $l_v = 1$ , then for any vertex of layer 0 $b \in I'$
+In particular if $l_u = \vert I \vert$ and $l_v = 1$, then for any vertex of layer 0, $b \in I'$
 
 \begin{equation}
 \label{prop:2layer-2}
@@ -516,7 +516,7 @@ Both processus will be described and the efficiency of the draining algorithm qu
 \subsection{Sampling}
 
 
-Sampling the measure grid consists in following a procedure to select some bits of it. This procedure is usually designed to be the most efficient in the fullfilment of specific quantitative objective. First we assume that given a target factor $f$ we have access to a determinist exact indicator of $f$'s activations. Then, given target $f$, the objective of sampling is to maximize the probability that we sample a bit whose purity coefficient with respect to $f$ is lower or equal to some positive constant $\omega$. That is, if we denote $s$ the random variable of the outcome of a single sampling, the objective is to maximize
+Sampling the measure grid consists in following a procedure to select some bits of it. This procedure is usually designed to be the most efficient in the fullfilment of specific quantitative objective. First, we assume that we have access to a determinist exact indicator of $f$'s activations with $f\in \mathcal{F}$. Then, the objective of sampling is to maximize the probability that we sample a bit whose purity coefficient with respect to $f$ is lower or equal to some positive constant $\omega$. That is, if we denote $s$ the random variable of the outcome of a single sampling, the objective is to maximize
 
 \begin{center}
 $\mathbb{P}( \omega_{\{s\}, 1, f} \leq \omega)$
@@ -550,7 +550,7 @@ We propose a very intuitive sampling method based on the indicator of activation
 \end{algorithmic}
 \end{algorithm}
 
-Where $x_f$ and $X_{\mathcal{G}}$ are respectively a scalar that takes value 1 when factor $f$ is active, 0 otherwise and a mapping with measure grid's bits as keys and their states as values (0 or 1). The second mean of the sampling procedure is to build a firing graph. The construction of the firing graph requires to set a parameter $N$ that corresponds to the initial weigths of edges that will be drained. In addition we add mask matrix $G_{mask} \in \{0, 1\}^{\vert V \vert}$ that controls which vertex is allowed to have their outcoming edges updated during draining. We consider two kind of firing graphs.
+Where $x_f$ and $X_{\mathcal{G}}$ are respectively a scalar that takes value 1 when factor $f$ is active, 0 otherwise, and a mapping with measure grid's bits as keys and their states as values (0 or 1). The second mean of the sampling procedure is to build a firing graph. The construction of the firing graph requires to set a parameter $N \in \mathbb{N}$ that corresponds to the initial weigth of edges that will be drained. In addition we set a mask matrix $G_{mask} \in \{0, 1\}^{\vert V \vert}$ that controls which vertex is allowed to have their outcoming edges updated during draining. We consider two kind of firing graphs.
 
 \begin{figure}[H]
 \centering
@@ -572,7 +572,7 @@ In figure~\ref{fig:joint_sampled_fg}, sampled bits $\{b_1, \ldots, b_{n_s}\}$ an
 
 \subsection{Draining}
 
-Draining the firing graph consists in iterating a forward propagation of bit's activation and a backward propagation of feedback generated by factor's activation through the firing graph. Feedback are meant to increment or decrement the weight of unmasked vertices's outcoming edges. Given that an edge with a null or negative weigth vanishes, at the end of the routine, connections of the graph differentiate between vertices's purity. To ease understanding of the algorithm, we split vertices of the firing graph into input and core vertices which are respectively vertices of layer 0 and vertices of layers $> 0$. Furthermore, we introduce a new type of vertices that can only have incoming edges from core vertices. We refer to those vertices as outputs. 
+Draining the firing graph consists in iterating a forward propagation of bits's activations and a backward propagation of feedback generated by factor's activations through the firing graph. Feedback are meant to increment or decrement the weight of unmasked vertices's outcoming edges. Given that an edge with a null or negative weigth vanishes, at the end of the routine, connections of the graph differentiate between vertices's purity. To ease understanding of the algorithm, we split vertices of the firing graph into input and core vertices which are respectively vertices of layer 0 and vertices of layers $> 0$. Furthermore, we introduce a new type of vertices that can only have incoming edges from core vertices. We refer to those vertices as outputs. 
 
 \begin{figure}[H]
 \centering
@@ -584,13 +584,13 @@ Draining the firing graph consists in iterating a forward propagation of bit's a
 We use $n_i$, $n_c$ and $n_o$ to refer to the number of respectively input, core and output vertices. Furthermore, we define $I_w \in \mathbb{N}^{n_i \times n_c}$, $C_w \in \mathbb{N}^{n_c \times n_c}$ and $O_w \in \mathbb{N}^{n_c \times n_o}$ that correspond to the weighted direct link matrices respectively from input toward core vertices, core toward core vertices and core toward output vertices. Furthermore we will use $A = A_w > 0$, $A \in \{I, C, O \}$ to denote the corresponding unweighted direct link matrices. Finally, in order to represent in a more convenient way stochastic processus induced by measure grid's activations, we define the following stochastics vectors
 
 \begin{itemize}
-\item $x_i^{(t)} \in \{0, 1\}^{1 \times n_i}$ the vector of activation of input vertices at instant $t$
-\item $x_c^{(t)} \in \{0, 1\}^{1 \times n_c}$ the vector of activation of core vertices at instant $t$
-\item $x_o^{(t)} \in \{0, 1\}^{1 \times n_o}$ the vector of activation of output vertices at instant $t$
+\item $x_i^{(t)} \in \{0, 1\}^{1 \times n_i}$ the vector of activations of input vertices at instant $t$
+\item $x_c^{(t)} \in \{0, 1\}^{1 \times n_c}$ the vector of activations of core vertices at instant $t$
+\item $x_o^{(t)} \in \{0, 1\}^{1 \times n_o}$ the vector of activations of output vertices at instant $t$
 
 \end{itemize}
 
-The propagation of activation through the firing graph can be represented with two equations:\\
+The propagation of activations through the firing graph can be represented with two equations:\\
 
 
 \vspace{20px}\noindent\begin{minipage}{.5\linewidth}
@@ -665,7 +665,7 @@ I_w &= I_w + I \circ (X_{b, c}^{(t-1)} \cdot X_{m, i}^{(t)})^{T}
 
 
  
-Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\end{bmatrix}^{T}$ and $X_{m, i}^{(t)} =\begin{bmatrix} x_i^{(t)} & \ldots & x_i^{(t- d_{max})}\end{bmatrix}^{T}$, $X_{c, b}^{(t)} \in  \{0, q, - p \}^{n_c \times d_{max}}$ for $t \in \mathbb{N}^{*}$ and $X_{c, b}^{(0)} = \textbf{0}_{n_c \times d_{max}}$. Furthermore $d_{max} \geq (l -1) \times 2 + 1$ where $l$ is the number of layers of the firing graph. Finally we provide a parameter $T$ to the draining algorithm. It controls the targeted number of feedback that an edge should receive before disabling its update. Maintaining update's permissions for each edge requires an operation similar to structure updates. Finally, the draining algorithm iterates forward and backward pass until either $G$ is composed of two distinct connexe component, no structure update is enabled or the maximum number of iterations $T_{max} \in \mathbb{N}$ has been reached. 
+Where $X_{m,c}^{(t)} = \begin{bmatrix} x_c^{(t)} & \ldots & x_c^{(t- d_{max})}\end{bmatrix}^{T}$ and $X_{m, i}^{(t)} =\begin{bmatrix} x_i^{(t)} & \ldots & x_i^{(t- d_{max})}\end{bmatrix}^{T}$, $X_{c, b}^{(t)} \in  \{0, q, - p \}^{n_c \times d_{max}}$ for $t \in \mathbb{N}^{*}$ and $X_{c, b}^{(0)} = \textbf{0}_{n_c \times d_{max}}$. Furthermore $d_{max} \geq (l -1) \times 2 + 1$ where $l$ is the number of layers of the firing graph. Finally we provide a parameter $T \in \mathbb{N}$ to the draining algorithm. It controls the targeted number of feedback that an edge should receive before disabling its update. Maintaining update's permissions for each edge requires an operation similar to structure updates. Finally, the draining algorithm iterates forward and backward pass until either $G$ is composed of two distinct connexe components, no structure update is enabled or the maximum number of iterations $T_{max} \in \mathbb{N}$ has been reached. 
 
 \begin{algorithm}[H]
 \caption{Draining}
@@ -715,13 +715,13 @@ With $\delta_{f}$, $C$ and $c$ are postitive constants that depends on $\omega$ 
 
 \end{theorem}
 
-\textbf{Proof.} As a reminder, in the core of this proof, we refer to $d$ and $d'$ respectively to the distribution over bits's activations and factors's activations. Given the arrangement of vertices of graph $G$ and the forward equation of the draining algorithm, the activation of any vertices $b \in S$ that will be propagated toward an output vertex, is modelled by the following characteristic polynomial
+\textbf{Proof.} As a reminder, in the core of this proof, we refer to $d$ and $d'$ respectively to the distribution over bits's activations and factors's activations. Given the arrangement of vertices of graph $G$ and the forward equations of the draining algorithm, the activation of any vertices $b \in S$ that will be propagated toward an output vertex, is modelled by the following characteristic polynomial
 
 \begin{equation*}
 \mathcal{P}_{\{b\}, 1} \cdot \mathcal{P}_{\{u, v\}, 2}
 \end{equation*}
 
-With $v(S, 1)$ and $u(\{b_1^{*}, \ldots, b_i^{*}\}, i)$. Thus, using (\ref{prop:2layer-2}), the activity of $b$ that is propagated to the ouptut vertex is the same than the activity of a vertex $v(\{b_1^{*}, \ldots, b_i^{*}, b\}, i+1)$ at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furtermore, given the time and space consistency of the backpropagation of the feedback from the output vertex, the weight of the edge at the convergence of the draining algorithm is either $0$ or equal to the score process of vertex $v$ of $G'$ with respect to $f$, $s_{v, f}[N, T, p, q]$. Then, the first inequality is obtained by developping
+With $v(S, 1)$ and $u(\{b_1^{*}, \ldots, b_i^{*}\}, i)$. Thus, using (\ref{prop:2layer-2}), the activity of $b$ that is propagated to the ouptut vertex is the same than the activity of a vertex $v(\{b_1^{*}, \ldots, b_i^{*}, b\}, i+1)$ at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furtermore, given the time and space consistency of the backpropagation of the feedback from the output vertex, the weight of the outcoming edge of $b$, at the convergence of the draining algorithm, is either $0$ or equal to the score process of vertex $v$ in $G'$ with respect to $f$, $s_{v, f}[N, T, p, q]$. Then, the first inequality is obtained by developping
 
 \begin{align*}
 \mathbb{P} \left( E \right)&= \sum_{j=0}^{\vert S \vert} p_{-}^j \times p_{+}^{\vert S \vert -j} \times\mathbb{P}_{\mathcal{S}} \left( \vert \lbrace s \in S \setminus \omega_{I \cup \{s\}, i + 1, f } < \omega \rbrace \vert = j \right) \\
@@ -818,7 +818,7 @@ Where $v(I \cup \{ s \}, i+1)$, for any $s \in S$, is a vertex of layer 1 of a f
 \end{theorem}
 
 \textbf{Proof.} 
-As in the proof of the previous theorem, using the arrangement of vertices of $G$, the property (\ref{prop:2layer-2}) and the forward and backward equation of the draining algorithm, one can show that the weight of the outcoming edge of any vertices $b \in S$ of $G$ is either equal to 0 or to the score process $s_{v, f}[N, T, p, q]$ where $v(\{b_1^{*}, \ldots, b_i^{*}, b\}, i+1)$ is a vertex at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furthermore, if sample $b$ still have outcoming edges after draining, then
+As in the proof of the previous theorem, using the arrangement of vertices of $G$, the property (\ref{prop:2layer-2}) and the forward and backward equations of the draining algorithm, one can show that the weight of the outcoming edge of any vertices $b \in S$ of $G$ is either equal to 0 or to the score process $s_{v, f}[N, T, p, q]$ where $v(\{b_1^{*}, \ldots, b_i^{*}, b\}, i+1)$ is a vertex at the layer 1 of a firing graph $G'$ where $b_1^{*}, \ldots, b_i^{*}$ and $b$ compound its layer 0. Furthermore, if sample $b$ still have outcoming edges after draining, then
 
 \begin{equation*}
 \mathbb{P} \left( \omega_{v, f} >  \omega \right) = \mathbb{P}_{\mathcal{S}} \left( \omega_{I \cup \{b\}, i + 1, f } > \omega \right) \times \mathbb{P} \left( s_{v, f}(N, T, p, q) > 0 \vert \omega_{I \cup \{ b \}, i + 1, f} > \omega \right)
@@ -868,8 +868,8 @@ With $C, c$ some positive constant and $\Var[s_{v, p, q, t, f}] = \sigma^2$. Q.E
 
 \subsection{Limit of the generic case}
 
-The combination of theorems shows that the association of sampling and draining with the right choice of 5-tuple $(\omega, N, T, p, q)$ gives a convenient tool to select measure grid's bits with purity coefficient lower than a target $\omega$. Furthermore, when $T \rightarrow +\infty$, the identification is almost certain, which highlights the trade-off between efficiency and complexity of the algorithm that is embedded in the choice of $\omega$ and $T$, on which depends $N, p$ and $q$.
-This generic procedure and its analysis deliver a strong framework that eases the derivation of more specific results that may be obtained under specific modelling of latent factor's activations and measure grid signature. Nevertheless it leaves two fundamental points clueless 
+The combination of theorems shows that the association of sampling and draining with the right choice of 5-tuple $(\omega, N, T, p, q)$ gives a convenient tool to select measure grid's bits with purity coefficient lower than a target $\omega$. Furthermore, when $T \rightarrow +\infty$, the correct selction is almost certain, which highlights the trade-off between efficiency and complexity of the algorithm that is embedded in the choice of $\omega$ and $T$, on which depends $N, p$ and $q$.
+This generic procedure and its analysis deliver a strong framework that eases the derivation of more specific results that may be obtained under specific modelling of latent factors's activations and measure grid signatures. Nevertheless, it leaves two fundamental points clueless 
 
 \begin{itemize}
 \item No possibility to quantify further the effectiveness of the sampling strategy 
@@ -880,17 +880,17 @@ In the rest of this paper, we present two particular cases of factor's and measu
 
 \section{Case of signal plus noise}
 
-This particular case is designed to be easy to analyze. We first define the statistical signature of factor and bit's activations. Then, we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally we present simulations and provide discussion of the results obtained with this special case.
+This particular case is designed to be easy to analyze. We first define the statistical modelling of factors and bits's activations. Then, we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally, we present simulations and provide discussion of the results obtained with this special case.
 
 \subsection{Statistical modelling}
 
-In this particular case, we assume that the target factor $f$ is linked to some $\vert \mathcal{G}(f)\vert = k$ measure grid's bits and activates with probability $p_f$. We also assume that bits of the measure grid are identically and independently subject to a noisy activation with probability $p_N$. We may see noisy activations as the result of $n$ noisy latent factors linked to exactly 1 bit of the measure grid, that is $K=n + 1$. Under this model, the probability for a bit $b\in \mathcal{G}$ to activate is defined as 
+In this particular case, we assume that the target factor $f$ is linked to some $\vert \mathcal{G}(f)\vert = k$ measure grid's bits and activates with probability $p_f$. We also assume that bits of the measure grid are identically and independently subject to a noisy activation with probability $p_N$. We may see noisy activations as the result of $n$ noisy latent factors, linked to exactly 1 bit of the measure grid, that is $K=n + 1$. Under this model, the probability for a bit $b\in \mathcal{G}$ to activate is defined as 
 
 \begin{equation*}
 \mathbb{P} \left( \textit{"b active"} \right) = \begin{cases} p_{f} + p_N \times (1-p_{f}), & \text{if }\ b \in \mathcal{G}(f^{*}) \\ p_N, & \text{Otherwise} \end{cases}
 \end{equation*}
 
-As a consequence, for any $I \in S(\mathcal{G})$ such that $\vert I \cap \mathcal{G}(f) \vert = i$ and $j = \vert I \vert -i$ if we set $x \in F_2 (\{I\} , \mathcal{G})$, the distribution over measure grid bit's activations is defined as
+As a consequence, for any $I \in S(\mathcal{G})$ such that $\vert I \cap \mathcal{G}(f) \vert = i$ and $j = \vert I \vert -i$ if we set $x \in F_2 (\{I\} , \mathcal{G})$, the distribution over measure grid bits's activations is defined as
 
 \begin{equation*}
 d_{x} =  \begin{cases} p_N^{i+j} \times (1-p_N)^{n - i - j} \times (1- p_{f}) + p_N^{j} \times (1-p_N)^{n - k - j} \times p_{f}, & \text{if }\ i=k \\ p_N^{i+j} \times (1-p_N)^{n - i - j} \times (1- p_{f}), & \text{Otherwise} \end{cases}
@@ -921,7 +921,7 @@ if  $b \notin \mathcal{G}(f)$
 
 \subsection{Sampling Strategy}
 
-In this particular case we follow the generic sampling procedure $\mathcal{S}$ with parameter $p_{\mathcal{S}}$. Thus, using the previously defined statistical distribution of bits's activations, if we denote $S$ the set of sampled bits using $\mathcal{S}$, the distribution of the cardinal of $S$ is 
+In this particular case we follow the generic sampling procedure $\mathcal{S}$ with parameter $p_{\mathcal{S}}$. Thus, using the previously defined statistical distribution of bits's activations, if we denote $S$, the set of sampled bits using $\mathcal{S}$, the distribution of the cardinal of $S$ is 
 
 \begin{align*}
 \mathbb{P}\left(\vert S \vert = s\right) = \begin{cases} \begin{pmatrix} n - k \\ s - k  \end{pmatrix} \times p_N^{s - k } \times (1 - p_N)^{n-k-s} \times p_{\mathcal{S}} , & \text{if }\ s \geq k \\ 0, & \text{otherwise} \end{cases}
@@ -936,7 +936,7 @@ Thus its expected size is $\mathbb{E}\left[ \vert S \vert \right] = k + (n - k) 
 
 \subsection{Identification of factors}
 
-First, in the case of a single sampled firing graph, one can see that bit's purity coefficients take only two values with respect to $f$
+First, in the case of a single sampled firing graph, one can see that bits's purity coefficients take only two values with respect to $f$
 
 \begin{align*}
 \omega_{\{b\}, 1, f} = \begin{cases} p_N , & \text{if }\ b \in \mathcal{G}(f) \\ 1, & \text{otherwise} \end{cases}
@@ -975,7 +975,7 @@ it maximizes the purity margin defined as
 Where $b \in \mathcal{G}(f)$ and $b' \notin \mathcal{G}(f)$. Finally we define the 5-tuple $(N_i, T_i, p, q)$ as 
 
 \begin{align*}
-(p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi_i \times (p + q) - p < 0 \textit{ and } \phi_i' \times (p + q) - p < 0 \\
+(p, q) &\in \mathbb{N}^{2} \textit{ such that } \phi_i \times (p + q) - p \leq 0 \textit{ and } \phi_i' \times (p + q) - p > 0 \\
 N &= -T \times (\phi \times (p+q) - p)\\
 T &\in \mathbb{N} \textit{ such that } N \textit{ large enough}
 \end{align*}
@@ -984,7 +984,7 @@ Where $t \in \mathbb{N}$, $\phi_i = \frac{p_{f}}{p_{f} + \omega_i \times (1 - p_
 
 \subsection{Simulation}
 
-The signal plus noise model is implemented in python and mainly uses standard numpy module to generate random signal that fits its probabilistic model. More details about the implementation can be found in appendix B. We generate $n=1000$ bits that randomly activate with probability $p_N$ and we choose randomly $\vert  \mathcal{G}(f)\vert = 50$ bits that are linked to a latent factor that activates with probability $p_f=0.3$. Finally we build the single sampled firing graph using $p_{\mathcal{S}} = 1$.
+The signal plus noise model is implemented in python and mainly uses standard numpy and scipy modules to generate random signal that fit its probabilistic model. More details about the implementation can be found in appendix B. We generate $n=1000$ bits that randomly activate with probability $p_N$ and we choose randomly $\vert  \mathcal{G}(f)\vert = 50$ bits that are linked to a latent factor that activates with probability $p_f=0.3$. Finally we build the single sampled firing graph using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
 \subfloat[$p_N = 0.3$, $(p,q)=(1,1)$]{\includegraphics[scale=0.165]{figures/signalplusnoise_111.png}} 
@@ -1010,7 +1010,7 @@ $P_N$ & Mean $\phi$ & Standard deviation $\phi$ & Mean $\psi$ & Standard deviati
 \label{tab:sim_spn_1}
 \end{table}
 
-Table~\ref{tab:sim_spn_1} shows quality indicators of the estimator for different SNR ratio. The two first columns give respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any input vertices that have a path towards the output, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveals that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally, we simulate the signal plus noise model in the settings of joint sampled firing graph. We use a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to target factor $f$ that activates with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
+Table~\ref{tab:sim_spn_1} shows quality indicators of the estimator for different SNR ratio. The two first columns give respectively the mean and standard deviation of the precision of the estimator. The two following columns are respectively the mean and the standard deviation of the recall of the estimator. Finally the last column is the number of experiments that ended without any input vertices having a path towards the output, so that the construction of an estimator is not possible. Again, we see that the quality of the estimator drops as the theoretical precision between noisy bits and factor's bits are close to each other. Yet it reveals that this naive estimator, for a reasonable SNR ratio, is still efficient to predict the activation of target latent factor. Finally, we simulate the signal plus noise model in the settings of joint sampled firing graph. We use a measure grid of $n=1000$ bits from which we sampled randomly $\vert \mathcal{G}(f) \vert = 50$ bits linked to target factor $f$ that activates with probability $p_f = 0.3$ and we set $p_N=0.6$. Finally we built the joint sampled firing graph by pre-selecting randomly 5 bits linked to the factor and running the sampling algorithm described previously using $p_{\mathcal{S}} = 1$.
 
 \begin{figure}[H]
 \centering
@@ -1023,7 +1023,7 @@ In this case, we obtain $N=7$ and $\omega_5 \simeq 0.062$ when following the pro
 
 \section{Case of sparse measure grid}
 
-This particular case is more complex than the previous one. We first define the statistical signature of factors and bits's activations. Then we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally we present simulations and provide discussion of results obtained with this particular case.
+This particular case is more complex than the previous one. We first define the statistical signature of factors and bits's activations. Then we quantify the sampling strategy and justify a choice for the 5-tuple $(\omega, T, N, p, q)$. Finally, we present simulations and provide discussion of results obtained with this particular case.
 
 \subsection{Statistical modelling}
 
@@ -1118,7 +1118,7 @@ The sparse measure grid model is implemented using python and the standard pytho
 \label{fig:sim_si_1}
 \end{figure}
 
-We clearly see a rapid differentiation of score processus according to their purity rank. We can also observe that, at the end of draining, the higher the purity coefficient is, the closer are weights of corresponding edges. Finally the behaviour of score processus validates the efficiency of the draining algorithm to rank bits of the measure grids blindly, in an attempt to identify latent factors. The second experiment with the sparse measure grid model aims to give intuition on the choice of $\delta$ for draining a joint sampled firing graph. As for the previous simulation, we generate $n=1000$, bits with $K=10$ latent factors that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probability $p_g=0.3$. Then we choose randomly $i=5$ bits, denoted by $I=\{b_1^{*}, \ldots, b_i^{*}\}$, with purity rank $4$ with respect to the target factor $f$. Finally we sampled and built the joint sampled firing graph using $p_{\mathcal{S}} = 1$ and the set of pre-selected bits $I$. The procedure described in the previous section to choose the target purity coefficient consists in estimating the purity coefficient $\hat{\omega}_{I, \vert I \vert, f}$ and to set $\delta$ so that $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$.\\
+We clearly see a rapid differentiation of score processus according to their purity rank. We can also observe that, at the end of draining, the higher the purity coefficient is, the closer are weights of corresponding edges. Finally, the behaviour of score processus validates the efficiency of the draining algorithm to rank bits of the measure grids blindly, in an attempt to identify latent factors. The second experiment with the sparse measure grid model aims to give intuition on the choice of $\delta$ used for draining a joint sampled firing graph. As for the previous simulation, we generate $n=1000$, bits with $K=10$ latent factors that activate with probability $p_f = 0.3$ and we link measure grid's bits independently with probability $p_g=0.3$. Then we choose randomly $i=5$ bits, denoted by $I=\{b_1^{*}, \ldots, b_i^{*}\}$, with purity rank $4$ with respect to the target factor $f$. Finally we sampled and built the joint sampled firing graph using $p_{\mathcal{S}} = 1$ and the set of pre-selected bits $I$. The procedure described in the previous section to choose the target purity coefficient consists in estimating the purity coefficient $\hat{\omega}_{I, \vert I \vert, f}$ and to set $\delta$ so that $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$.\\
 
 \begin{figure}[H]
 \subfloat[$\delta = 0.$]{\includegraphics[scale=0.165]{figures/sparse_211.png}} 
@@ -1129,11 +1129,11 @@ We clearly see a rapid differentiation of score processus according to their pur
 \label{fig:sim_si_2}
 \end{figure}
 
-In each simulation, $\hat{\omega}_{I, \vert I \vert, f}$ has been estimated using $1000$ samples and we use $T=500$. Furthermore, each figure corresponds to a different value of $\delta$ that induces different values of $\omega$, set as $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$. As for the first experiment, the different colored lines in each subfigure show the weight of edges outcoming from sampled bits with different purity ranks. As expected we  can see that the higher $\delta$ is, the more discriminative the draining procedure is.  If $\delta$ is set to 0, then every sampled bits will remain connected in the firing graph after draining, which is not of great interest. Yet, if $\delta$ is set too high we may end with two connexe components, whis is not desirable neither. Thus, the experiment confirms the difficulties that we may face choosing the right value for $\delta$.
+In each simulation, $\hat{\omega}_{I, \vert I \vert, f}$ has been estimated using $1000$ samples and we use $T=500$. Furthermore, each figure corresponds to a different value of $\delta$ that induces different values of $\omega$, set as $\omega = \hat{\omega}_{I, \vert I \vert, f} - \delta$. As for the first experiment, the different colored lines in each subfigure show the weight of edges outcoming from sampled bits with different purity ranks. As expected, we can see that the higher $\delta$ is, the more discriminative the draining procedure is.  If $\delta$ is set to 0, then every sampled bits will remain connected in the firing graph after draining, which is not of great interest. Yet, if $\delta$ is set too high we may end with two connexe components, which is not desirable neither. Thus, the experiment confirms the difficulties that we may face choosing the right value for $\delta$.
 
 \section{Discussion}
 
-This paper has presented an algorithm that consists in a generic optimisation of a firing graph, in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative optimisation method associated with the diversity and flexibility of the architecture of a firing graph opens doors to further applications, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the target is a combination of latent factor activation and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedures could turn our solution into a supervised classificator. The specificity of such a learner would give it an intresting position in the supervised learning landscape. Indeed its iterative optimisation and flexible architecture could make it an adaptative learner, that scale to large dataset, with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more suitable to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype granted to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be common sense to orient this piece of research to this field.     
+This paper has presented an algorithm that consists in a generic optimisation of a firing graph, in an attempt to solve the abstract task of identifying latent factor's activations. Furthermore it has provided theoretical certitude on the effectivness of the procedure. However, the iterative optimisation method associated with the diversity and flexibility of the architecture of a firing graph opens doors to further applications, notably in the field of inverse problem and in the very hype field of machine learning. Indeed in supervised classification, we are given a dataset composed of features that may be numerical or categorical description of samples and targets that specify the class of samples. If we assume that the activation of a target is a combination of latent factors's activations and that we operate the minimum transformation of features so that they take the form of a measure grid, a light layer of procedures could turn our solution into a supervised classificator. The specificity of such a learner would give it an interesting position in the supervised learning landscape. Indeed, its iterative optimisation and flexible architecture could make it an adaptative learner, that scale to large dataset, with minimum processing work on raw data, in the manner of a neural network. Yet unlike neural network the algorithm handle very efficiently categorical or sparse feature space. Furthermore, compared to the most advanced tree based classification, its flexible architecture is more suitable to learning update and on-the-fly evaluation or addition of new features. Finally, given the hype granted to the field of machine learning nowaday, both in the scientific comunity and civil society, it would be common sense to orient this piece of research to this field.     
 
 
 \newpage
@@ -1165,7 +1165,7 @@ $\forall$ $l\in \{l_0, \ldots, \vert I\vert\}$, now we propose a simple proof by
 \sum_{j=0}^{\vert J \vert} \mathcal{P}_{J, j}\left[ x \right]  \cdot \mathcal{P}_{K, l - j}\left[ x \right] &= 0
 \end{align*}
 
-$J$ and $K$ compose a partition of $I$ and $\vert I \cap X \vert = l$, thus a couple $(j^{*}, k^{*})$ exists such taht
+Yet, if $J$ and $K$ is a partition of $I$ and $\vert I \cap X \vert = l$, then $(j^{*}, k^{*}) \in \{0, \ldots \vert J \vert \} \times \{ 0, \ldots \vert K \vert\}$ exists such taht
 
 \begin{align*}
 \vert X \cap J \vert &= j^{*}\\
@@ -1179,7 +1179,7 @@ Thus for $x \in  F_2(\{ X \}, \mathcal{G})$
 \mathcal{P}_{J, j^{*}}\left[ x \right] \cdot \mathcal{P}_{K, k^{*}}\left[ x \right] = 1\\
 \end{align*}
 
-which contradicts our first assumption. Let $l \in \{l_O, \ldots, \vert I \vert\}$, $X \in S(\mathcal{G})$ and $x \in F_2(\{X\}, \mathcal{G})$ such that
+which contradicts our first assumption. Let $l \in \{l_0, \ldots, \vert I \vert\}$, $X \in S(\mathcal{G})$ and $x \in F_2(\{X\}, \mathcal{G})$ such that
 
 \begin{align*}
 \mathcal{P}_{I,l} \left[ x \right] &= 0\\
@@ -1207,7 +1207,7 @@ Result (\ref{prop:partition-2}) is a particular case of result (\ref{prop:partit
 
 \underline{Decomposition}\\
 
-Let $G$ be a firing graph with layer 0 composed of $\mathcal{G}$. Let $u(I, l_u)$, $v(I', l_v)$ such that $I \cap I' = \emptyset$ as vertices of layer 1 and $w(\{ u, v \}, 2)$ as vertex of layer 2. Let $K \in \cup_{l \in \{l_v, \ldots, \vert I' \vert \}} S(I', l)$, $x \in F_2(S(\mathcal{G}), \mathcal{G})$ and $x' = \begin{bmatrix} \mathcal{P}_{u}[x] &\mathcal{P}_{v}[x] \end{bmatrix}$, the result (\ref{prop:2layer-1}) stands
+Let $G$ be a firing graph with layer 0 composed of $\mathcal{G}$. Let $u(I, l_u)$, $v(I', l_v)$ such that $I \cap I' = \emptyset$ be vertices of layer 1 and $w(\{ u, v \}, 2)$ be a vertex of layer 2. Let $K \in \cup_{l \in \{l_v, \ldots, \vert I' \vert \}} S(I', l)$, $x \in F_2(S(\mathcal{G}), \mathcal{G})$ and $x' = \begin{bmatrix} \mathcal{P}_{u}[x] &\mathcal{P}_{v}[x] \end{bmatrix}$, the result (\ref{prop:2layer-1}) stands that
 
 \begin{equation*}
 \mathcal{P}_{K, \vert K \vert}\left[ x \right] \cdot \mathcal{P}_{\{u, v\}, 2}\left[ x' \right] = \sum_{l=l_u}^{\vert I \vert}  \sum_{J \in S(I, l)} \mathcal{P}_{J \cup K, l + \vert K \vert }\left[ x \right]
@@ -1304,13 +1304,13 @@ Where $d$ is any well defined ditribution on $F_2(S(\mathcal{G}), \mathcal{G})$.
 \mu_{I, l_0, f} = \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})}  \mathcal{P}_{*}[x] \cdot \left( \sum_{l=l_0}^{\vert I \vert} \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} [x] \right) \times d_{x \vert e}
 \end{equation*}
 
-As a consequence, in order to have $\mu_{I, l_0, f} = 1$ we most have $ \lbrace \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} \rbrace_{l \in \{ l_0, \ldots, \vert I \vert \}}$ to be a partion of $F_2(S(\mathcal{G}), \mathcal{G})$. Thus $l_0 \leq \vert I \cap \mathcal{G}(f) \vert$. On the other end the precision coefficient writes
+As a consequence, in order to have $\mu_{I, l_0, f} = 1$ we most have $ \lbrace \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} \rbrace_{l \in \{ l_0, \ldots, \vert I \vert \}}$ to be a partion of $F_2(S(\mathcal{G}), \mathcal{G})$. Thus $l_0 \leq \vert I \setminus \mathcal{G}(f) \vert$. On the other end the precision coefficient writes
 
 \begin{equation*}
 \nu_{I, l_0, f} = \sum_{x \in F_2(S(\mathcal{G}), \mathcal{G})}  \mathcal{P}_{*}[x] \cdot \left( \sum_{l=l_0}^{\vert I \vert} \mathcal{P}_{I\setminus \mathcal{G}(f), l-\vert I \cap \mathcal{G}(f)\vert} [x] \right) \times d_{x \vert \bar{e}} +  \langle  \mathcal{P}_{I}^{l_0}, \bar{\mathcal{P}}_{*}\rangle_{d \vert \bar{e}}
 \end{equation*}
 
-so if $l_0 \leq \vert I \cap \mathcal{G}(f) \vert$
+so if $l_0 \leq \vert I \setminus \mathcal{G}(f) \vert$
 
 \begin{align*}
 \nu_{I, l_0, f} &=  \nu_{\mathcal{G}(f), \vert \mathcal{G}(f) \vert, f} + \langle  \mathcal{P}_{I}^{l_0}, \bar{\mathcal{P}}_{*}\rangle_{d \vert \bar{e}}\\
