@@ -3,11 +3,11 @@ import pickle
 import numpy as np
 
 # Local import
-from tests.simulation import utils as u
+from simulations import utils as u
 
 """
 This script is meant to validate that simulated data meets theoretical expectation. More specifically, this script will 
-run the simulation of the 'Signal plus Noise' model.
+run the simulations of the 'Signal plus Noise' model.
 """
 
 # Global parameter
@@ -21,7 +21,7 @@ for p_noise in l_p_noise:
     l_phi, l_psi, n_empty = [], [], 0
 
     for i in range(n_exp):
-        # Run simulation
+        # Run simulations
         ax_noisy_bits, ax_target_bits, simu = u.run_signal_plus_noise_simulation(
             t, n_bits, p_noise, p_target, n_targets, 0, p_sample=0.5
         )

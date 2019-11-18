@@ -1,9 +1,11 @@
 # Global import
 import numpy as np
 
+# local external import
+from firing_graph.utils import grid_sim as gs
+from firing_graph.core.solver import sampler, drainer
+
 # Local import
-from tests.utils import test_signal as ts
-from deyep.core.solver import sampler, drainer
 
 
 def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i, p_sample=1., resolution=10, verbose=0):
@@ -18,8 +20,8 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
     :return:
     """
 
-    # Create simulation and get imputer
-    simu = ts.SignalPlusNoise(1, n_bits, p_target, n_targets, p_noise)
+    # Create simulations and get imputer
+    simu = gs.SignalPlusNoiseGrid(1, n_bits, p_target, n_targets, p_noise)
     imputer, dirin, dirout = simu.stream_io_sequence(10000, return_dirs=True)
     simu.set_score_params(i)
 
@@ -36,14 +38,14 @@ def run_signal_plus_noise_simulation(t, n_bits, p_noise, p_target, n_targets, i,
     # Drain
     drn = drainer.FiringGraphDrainer(t, simu.p, simu.q, resolution, smp.firing_graph.copy(), imputer, verbose=1)
 
-    # init tracking of simulation
+    # init tracking of simulations
     l_ps_bits, l_target_bits = list(smp.preselect_bits[0]), list(simu.target_bits[0])
     l_noisy_bits = list(set(l_ps_bits).difference(l_target_bits))
     ax_noisy_bits, ax_target_bits = np.zeros((len(l_noisy_bits), 1)), np.zeros((len(l_target_bits), 1))
 
-    # Print some general information on simulation
+    # Print some general information on simulations
     if verbose > 0:
-        print('simulation parameter: i={}, t={}, N={}, mean_score={}'.format(
+        print('simulations parameter: i={}, t={}, N={}, mean_score={}'.format(
             i, t, simu.N(t, i), simu.mean_score_signal(t, i)
         ))
 
@@ -86,8 +88,8 @@ def run_sparse_simulation(t, i, resolution, p_targets, p_bits, n_targets, n_bits
     :param i:
     :return:
     """
-    # Create simulation abd generate I/O
-    simu = ts.SparseActivation(p_targets, p_bits, n_targets, n_bits, purity_rank=purity_rank, delta=delta) \
+    # Create simulations abd generate I/O
+    simu = gs.SparseActivationGrid(p_targets, p_bits, n_targets, n_bits, purity_rank=purity_rank, delta=delta) \
         .build_map_targets_bits()
     imputer, dirin, dirout = simu.stream_io_sequence(10000, mask_target=target, return_dirs=True)
     simu.set_score_params(i)

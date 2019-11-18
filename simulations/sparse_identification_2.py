@@ -1,20 +1,22 @@
 # Global import
 import numpy as np
 
+# local external import
+from utils import interactive_plots as ip
+
 # Local import
-from tests.simulation import utils as u
-from deyep.utils import interactive_plots as ip
+from simulations import utils as u
 
 
 """
 This script is meant to validate that simulated data meets theoretical expectation. More specifically, this script will 
-run the simulation of the 'Signal plus Noise' model.
+run the simulations of the 'Signal plus Noise' model.
 """
 
 # Pseudo random
 np.random.seed(1234)
 
-# Core params of the simulation
+# Core params of the simulations
 p_targets, p_bits, n_targets, n_bits, purity_rank = 0.3, 0.3, 10, 1000, 4
 
 # drainer params range of delta [0.0, 1e-2, 5e-2, 1.5e-1]

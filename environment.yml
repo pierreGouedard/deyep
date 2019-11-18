@@ -1,0 +1,14 @@
+# Create env: conda env create -f environment.yml
+name: deyep-env
+dependencies:
+  - python==3.7
+  - pytest==5.2.2
+  - ipython
+  - texlive-core
+  - pip:
+    - pandas==0.25.2
+    - numpy==1.17.4
+    - scipy==1.3.2
+    - networkx==2.4
+    - matplotlib==3.1.1
+    # - add firing graph when ready
