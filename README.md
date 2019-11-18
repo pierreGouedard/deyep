@@ -2,10 +2,7 @@
 
 This branch host the minimal implementation of simulations that are presented in the document 
 *"on recovering latent factors from sampling and firing graph"*
- on which relies the deyep algorithm. The document is accessible at
-
-* Directory 'report'
-* [Arxiv web site](https://arxiv.org/abs/1909.09493) 
+ on which relies the deyep algorithm. The document is accessible at [Arxiv web site](https://arxiv.org/abs/1909.09493) 
 
 ## Running simulations (instruction for Ubuntu)
 
@@ -16,6 +13,8 @@ This branch host the minimal implementation of simulations that are presented in
     mkdir lib 
     cd lib/
     git clone https://github.com/pierreGouedard/firing_graph.git
+    cd firing_graph
+    git checkout publi_1
    ```
 
  * Run firing_graph's  unit tests
