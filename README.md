@@ -60,5 +60,5 @@ Due to uncomplete conda package texlive-core, the matplotlib plots may not be ab
 
 To uninstall run 
 
-```sudo sudo apt-get purge texlive-*```
+```sudo apt-get purge texlive-*```
 
