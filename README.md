@@ -54,7 +54,7 @@ This branch host the minimal implementation of simulations that are presented in
     ``` 
 
 ## Additional tips
-Due to uncomplete conda package texlive-core, the matplotlib plots may not be able to display if install in conda env. A solution is to install texlive-full package outside env
+Due to uncomplete conda package texlive-core, the matplotlib plots may not be able to display correctly. A solution is to install texlive-full package outside env
 
 ```sudo apt-get install texlive-full```
 
