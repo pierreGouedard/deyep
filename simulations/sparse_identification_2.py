@@ -2,7 +2,7 @@
 import numpy as np
 
 # local external import
-from utils import interactive_plots as ip
+from firing_graph.utils import interactive_plots as ip
 
 # Local import
 from simulations import utils as u
