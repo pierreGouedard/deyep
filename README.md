@@ -52,3 +52,13 @@ This branch host the minimal implementation of simulations that are presented in
         python simulations/sparse_identification.py &&
         python simulations/sparse_identification_2
     ``` 
+
+## Additional tips
+Due to uncomplete conda package texlive-core, the matplotlib plots may not be able to display if install in conda env. A solution is to install texlive-full package outside env
+
+```sudo apt-get install texlive-full```
+
+To uninstall run 
+
+```sudo sudo apt-get purge texlive-*```
+
