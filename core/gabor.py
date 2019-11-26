@@ -2,6 +2,8 @@
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
+import itertools
+
 
 # Local import
 
@@ -19,7 +21,27 @@ def build_filter_bank(l_ksizes):
     return l_filters
 
 
-class SquareDrawer():
+class GaborFilter(object):
+
+    def __init__(self, l_sigmas, l_thetas, l_lambdas):
+
+        # Get list of
+        self.sigmas = l_sigmas
+        self.thetas = l_thetas
+        self.lambdas = l_lambdas
+
+        # Encode dictionary of Gabor filters
+        self.filters = self.encode_filters(self.sigmas, self.lambdas, self.thetas)
+
+    @staticmethod
+    def encode_filters(l_sigmas, l_lambdas, l_thetas):
+
+        d_filters = {}
+        for sgm, lmbd, tht in itertools.product(l_sigmas, l_lambdas, l_thetas):
+            d_filters['']
+
+
+class SquareDrawer(object):
 
     def __init__(self, size, n, img_dim, coords=None, scale=1., seed=None):
 
@@ -50,14 +72,25 @@ class SquareDrawer():
             l_y = np.random.randint(0 + (self.size / self.scale), self.image.shape[1] - (self.size / self.scale), n)
             self.coords = [(x, y) for x, y in zip(*[l_x, l_y])]
 
-    def draw_random_squares(self):
+        # Draw original image
+        self.draw(self.image, self.coords, self.size)
 
-        for x, y in self.coords:
-            self.image[x: x + self.size, y: y + self.size] = self.patch
+    @staticmethod
+    def draw(img, coords, size, scale=1., translate_x=0, translate_y=0):
 
-        return self
+        # Build patch
+        p = np.ones((int(size * scale), int(size * scale)))
+
+        # Draw patch at given positions
+        for x, y in coords:
+            img[
+                int(x * scale) - translate_x: int(x * scale) + p.shape[0] - translate_x,
+                int(y * scale) - translate_y: int(y * scale) + p.shape[0] - translate_y
+            ] = p
 
     def scale_up(self, scale):
+
+        # Create new patch
         p = np.ones((int(self.size * scale), int(self.size * scale)))
 
         # Get ideal translation to recenter up scale square
@@ -71,45 +104,26 @@ class SquareDrawer():
                 upper_left[1] = y
                 translate_y = int(y * scale - y)
 
-        for x, y in self.coords:
-
-            self.scaled_image[
-            int(x * scale) - translate_x: int(x * scale) + p.shape[0] - translate_x,
-            int(y * scale) - translate_y: int(y * scale) + p.shape[0] - translate_y
-            ] = p
-
-        return self
-
-    def swipe_images(self):
-        tmp_image = self.scaled_image.copy()
-        self.scaled_image = self.image.copy()
-        self.image = tmp_image
+        # Draw scaled image
+        self.draw(
+            self.scaled_image, self.coords, self.size, scale=scale, translate_x=translate_x, translate_y=translate_y
+        )
 
         return self
 
     def show_images(self):
         plt.figure(1)
-        plt.subplot(211)
+        plt.subplot(121)
         plt.imshow(self.image, cmap='gray')
 
-        plt.subplot(212)
+        plt.subplot(122)
         plt.imshow(self.scaled_image, cmap='gray')
-        plt.show()
-
-    def show_image(self, key):
-
-        if key == 'orig':
-            plt.imshow(self.scaled_image, cmap='gray')
-
-        elif key == 'scaled':
-            plt.imshow(self.scaled_image, cmap='gray')
-
         plt.show()
 
         return self
 
 
-class MosaicDrawer():
+class MosaicDrawer(object):
 
     def __init__(self, img_dim, treshold, wavelength, orientation, scale=1.):
 
@@ -122,38 +136,34 @@ class MosaicDrawer():
         self.image = np.zeros(img_dim)
         self.scaled_image = np.zeros(img_dim)
 
-    def draw_mosaic(self):
+        # Draw original image
+        self.draw(self.image, self.wavelength, self.theta, self.treshold)
 
-        for x in range(self.image.shape[0]):
-            for y in range(self.image.shape[1]):
-                v = np.cos((2. * np.pi / self.wavelength) * ((x * np.cos(self.theta)) + (y * np.sin(self.theta))))
+    @staticmethod
+    def draw(img, wavelength, theta, treshold, scale=1.):
 
-                if v > self.treshold:
-                    self.image[x, y] = 1.
+        for x in range(img.shape[0]):
+            for y in range(img.shape[1]):
+                v = np.cos((2. * np.pi / (wavelength * scale)) * ((x * np.cos(theta)) + (y * np.sin(theta))))
 
-                v = np.cos((2. * np.pi / self.wavelength) * ((x * np.sin(self.theta)) + (y * np.cos(self.theta))))
-                if v > self.treshold:
-                    self.image[x, y] = 1.
+                if v > treshold:
+                    img[x, y] = 1.
 
+                v = np.cos((2. * np.pi / (wavelength * scale)) * ((x * np.sin(theta)) + (y * np.cos(theta))))
+                if v > treshold:
+                    img[x, y] = 1.
+
+    def scale_up(self, scale):
+        self.draw(self.scaled_image, self.wavelength, self.theta, self.treshold, scale=scale)
         return self
 
     def show_images(self):
         plt.figure(1)
-        plt.subplot(211)
+        plt.subplot(121)
         plt.imshow(self.image, cmap='gray')
 
-        plt.subplot(212)
+        plt.subplot(122)
         plt.imshow(self.scaled_image, cmap='gray')
-        plt.show()
-
-    def show_image(self, key):
-
-        if key == 'orig':
-            plt.imshow(self.image, cmap='gray')
-
-        elif key == 'scaled':
-            plt.imshow(self.scaled_image, cmap='gray')
-
         plt.show()
 
         return self
@@ -168,20 +178,12 @@ if __name__ == '__main__':
     #     plt.imshow(filter, cmap='gray')
     #     plt.show()
 
-    # # 2. Generate different scale simple pattern on image
-    # # 2.A simple randomly positioned square
-    # sd = SquareDrawer(5, 10, (500, 500), scale=0.05, seed=123)\
-    #     .draw_random_squares()
-    #
-    # sd.scale_up(1.55)\
-    #     .show_images()
+    # 2.A simple randomly positioned square
+    sd = SquareDrawer(5, 10, (500, 500), scale=0.05, seed=123)\
+        .scale_up(1.55)\
+        .show_images()
 
     # 2.B draw mosaic
-    sd = MosaicDrawer((500, 500), 0.7, 20., 0.3, scale=0.05)\
-        .draw_mosaic()\
-        .show_image(key='orig')
-
-
-    import IPython
-    IPython.embed()
-
+    sd = MosaicDrawer((500, 500), 0.9, 20., 0.3, scale=0.05)\
+        .scale_up(1.55)\
+        .show_images()
