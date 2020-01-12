@@ -1,10 +1,8 @@
 ## Overview
 
-This branch host the minimal implementation of simulations that are presented in the document 
-*"on recovering latent factors from sampling and firing graph"*
- on which relies the deyep algorithm. The document is accessible at [Arxiv web site](https://arxiv.org/abs/1909.09493) 
-
-## Running simulations (instruction for Ubuntu)
+The simulations presented in the paper  *"On recovering latent factors from sampling and firing graph"*, 
+accessible at [Arxiv web site](https://arxiv.org/abs/1909.09493), are now avalable in the git project "firing graph". In 
+ordrer to access and run simulations, please following intrusctions:
 
  * Clone git firing_graph repository
     
@@ -27,31 +25,7 @@ This branch host the minimal implementation of simulations that are presented in
     conda deactivate
    ```
 
-
-* Clone git deyep repository
-    
-    ```
-    cd $HOME
-    git clone https://github.com/pierreGouedard/deyep.git
-   ```
-  
- 
- * Create conda env and set PYTHONPATH environment variable
-  
-    ``` 
-    cd $HOME/deyep
-    conda env create -f environment.yml 
-    export PYTHONPATH="$HOME/lib:$HOME/deyep:$PYTHONPATH"
-   ```
-
- * Run simulation
-
-    ``` python simulations/signal_plus_noise_1.py &&
-        python simulations/signal_plus_noise_2.py &&
-        python simulations/signal_plus_noise_3.py &&
-        python simulations/sparse_identification.py &&
-        python simulations/sparse_identification_2
-    ``` 
+Follow instruction in the readme.md and run the simulations ! 
 
 ## Additional tips
 Due to uncomplete conda package texlive-core, the matplotlib plots may not be able to display correctly. A solution is to install texlive-full package outside env
