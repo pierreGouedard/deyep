@@ -2,7 +2,7 @@
 
 The simulations presented in the paper  *"On recovering latent factors from sampling and firing graph"*, 
 accessible at [Arxiv web site](https://arxiv.org/abs/1909.09493), are now avalable in the git project "firing graph". In 
-ordrer to access and run simulations, please following intrusctions:
+ordrer to access and run simulations, please follow intrusctions below:
 
  * Clone git firing_graph repository
     
