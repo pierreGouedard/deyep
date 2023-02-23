@@ -1,0 +1,14 @@
+# Create env: conda env create -f dev-env.yaml
+name: deyep-env
+dependencies:
+  - python==3.10
+  - ipython
+  - pip
+  - pip:
+    - numpy==1.23.0
+    - scipy==1.9.1
+    - matplotlib==3.5.2
+    - pytest==7.1.3
+    - pandas==1.4.4
+    - opencv-python==4.6.0.66
+    - Pillow==9.2.0
