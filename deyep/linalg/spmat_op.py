@@ -1,3 +1,4 @@
+"""Transformation of sparse matrices."""
 # Global import
 from math import ceil
 from typing import List, Tuple
@@ -168,3 +169,5 @@ def explode(sax_inputs, bitmap, partitions, use_bf_mask: bool = False, return_pa
         return sax_inputs, partitions
 
     return sax_inputs
+
+

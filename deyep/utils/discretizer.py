@@ -1,13 +1,14 @@
 # Local import
+from typing import Union, Tuple
+from scipy.sparse import csr_matrix, csc_matrix, hstack, spmatrix
 import numpy as np
-from scipy.sparse import csr_matrix, csc_matrix, hstack
 
 # Global import
 
 
-class SparseEncoder(object):
+class SparsDiscretizer(object):
     def __init__(
-            self, n_bin, min_val_by_bin=10, quantile_offset: float = 0.02
+            self, n_bin: int, min_val_by_bin: int = 10, quantile_offset: float = 0.02
     ):
 
         # Core parameters
@@ -19,10 +20,10 @@ class SparseEncoder(object):
         # Set unknown attribute to None
         self.bins = None
 
-    def update_enc_size(self):
+    def update_enc_size(self) -> None:
         self.enc_size = self.n_bin
 
-    def fit(self, x, y=None):
+    def fit(self, x: np.ndarray) -> 'SparsDiscretizer':
 
         # Get unique values
         ax_unique = np.unique(x)
@@ -40,7 +41,7 @@ class SparseEncoder(object):
 
         return self
 
-    def transform(self, ax_continuous):
+    def transform(self, ax_continuous: np.ndarray) -> spmatrix:
 
         if self.bins is None:
             raise ValueError('Bins are not set when transform called')
@@ -51,9 +52,9 @@ class SparseEncoder(object):
         return csc_matrix(ax_activation)
 
 
-class ImgCoordEncoder:
+class ImgCoordDiscretizer:
     def __init__(
-            self, n_bin, n_directions, min_val_by_bin: int = 10, quantile_offset: float = 0.02
+            self, n_bin: int, n_directions: int, min_val_by_bin: int = 10, quantile_offset: float = 0.02
     ):
         # Sparse encoder parameters
         self.n_bin = n_bin
@@ -76,11 +77,11 @@ class ImgCoordEncoder:
         self.n_label = None
         self.encoders = {}
 
-    def fit_transform(self, ax_image):
+    def fit_transform(self, ax_image: np.ndarray) -> Union[spmatrix, Tuple[spmatrix, spmatrix]]:
         self.fit(ax_image)
         return self.transform(self.augmented_basis, ax_image[self.basis[:, 0], self.basis[:, 1]])
 
-    def fit(self, ax_image):
+    def fit(self, ax_image: np.ndarray) -> 'ImgCoordDiscretizer':
         # Create basis
         self.basis = np.hstack([
             np.kron(np.arange(ax_image.shape[0]), np.ones(ax_image.shape[1]))[:, np.newaxis],
@@ -95,7 +96,7 @@ class ImgCoordEncoder:
 
         return self
 
-    def encode(self, X, y):
+    def encode(self, X: np.ndarray, y: np.ndarray) -> 'ImgCoordDiscretizer':
         # Check whether X and y contain only numeric data
         assert X.dtype.kind in set('buifc'), "X contains non num data, must contains only num data"
         assert y.dtype.kind in set('buifc'), "y contains non num data, must contains only num data"
@@ -105,7 +106,7 @@ class ImgCoordEncoder:
 
         ax_bf_map, n_inputs = np.zeros((self.n_bin * self.n_directions, self.n_directions), dtype=bool), 0
         for i in range(self.n_directions):
-            self.encoders[i] = SparseEncoder(self.n_bin, self.min_val_by_bin, self.quantile_offset)\
+            self.encoders[i] = SparsDiscretizer(self.n_bin, self.min_val_by_bin, self.quantile_offset)\
                 .fit(self.augmented_basis[:, i])
             ax_bf_map[range(n_inputs, n_inputs + self.encoders[i].enc_size), i] = True
             n_inputs += self.encoders[i].enc_size
@@ -115,7 +116,9 @@ class ImgCoordEncoder:
 
         return self
 
-    def transform(self, X, y = None, transform_input: bool = False):
+    def transform(
+            self, X: np.ndarray, y: np.ndarray = None, transform_input: bool = False
+    ) -> Union[spmatrix, Tuple[spmatrix, spmatrix]]:
         assert self.bf_map is not None, "Encoder is not fitted when transform called"
 
         if transform_input:
@@ -127,15 +130,19 @@ class ImgCoordEncoder:
             l_encoded.append(self.encoders[i].transform(X[:, [i]]))
 
         if y is not None:
-            # Transform target
-            if self.n_label > 1:
-                y = csr_matrix(([True] * y.shape[0], (range(y.shape[0]), y)), shape=(y.shape[0], self.n_label))
-
-            else:
-                y = csr_matrix(y[:, np.newaxis] > 0)
-
-            return hstack(l_encoded), y
+            return hstack(l_encoded), self.transform_labels(y)
 
         return hstack(l_encoded)
+
+    def transform_labels(self, y: np.ndarray) -> spmatrix:
+        # Transform target
+        if self.n_label > 2:
+            y = csr_matrix(([True] * y.shape[0], (range(y.shape[0]), y)), shape=(y.shape[0], self.n_label))
+
+        else:
+            y = csr_matrix(y[:, np.newaxis] > 0)
+
+        return y
+
 
 
