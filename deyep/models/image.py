@@ -15,7 +15,7 @@ class Node:
 
 
 @dataclass
-class Chain:
+class SimpleChain:
     nodes: List[Node]
     orient: str
 
@@ -36,9 +36,3 @@ class Chain:
 
     def directions(self) -> np.array:
         return np.array([n.direction for n in self.nodes], dtype=int)
-
-
-@dataclass
-class ChainTree:
-    # TODO: use networkx ? => no need for complicated module.
-    pass

@@ -6,6 +6,8 @@ from scipy.sparse import spmatrix, csr_matrix, hstack as sphstack
 from copy import deepcopy as copy
 from functools import lru_cache
 import numpy as np
+import random
+import string
 
 # Local import
 
@@ -78,7 +80,7 @@ class FgComponents:
         if self._meta:
             return self._meta
         else:
-            self._meta = [{"id": i} for i in range(len(self.levels))]
+            self._meta = [{"id": self.rd_id(5)} for _ in range(len(self.levels))]
             return self._meta
 
     def set_levels(self, level: int = None):
@@ -87,7 +89,11 @@ class FgComponents:
 
     @staticmethod
     def empty_comp():
-        return FgComponents(csr_matrix((0, 0)), [], np.empty((0,)))
+        return FgComponents(csr_matrix((0, 0)), [], [])
+
+    @staticmethod
+    def rd_id(n: int = 5):
+        return ''.join([random.choice(string.ascii_letters) for _ in range(n)])
 
     @property
     def empty(self):
@@ -109,11 +115,15 @@ class FgComponents:
     def __len__(self):
         return self.levels.shape[0]
 
-    def __getitem__(self, i):
-        assert isinstance(i, int), 'index should be an integer'
-        return FgComponents(
-            inputs=self.inputs[:, i], meta=[self.meta[i]], levels=self.levels[[i]]
-        )
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            ind = key
+        elif isinstance(key, str):
+            ind = self.get_ind(key)
+        else:
+            raise TypeError(f'key ({key}) should be string or int')
+
+        return FgComponents(inputs=self.inputs[:, ind], _meta=[self._meta[nd]], levels=self.levels[[ind]])
 
     def __add__(self, other):
         if self.inputs.shape[1] == 0:
@@ -122,13 +132,20 @@ class FgComponents:
             sax_inputs = sphstack([self.inputs, other.inputs], format='csr')
 
         return FgComponents(
-            inputs=sax_inputs, meta=self.meta + other.meta,
+            inputs=sax_inputs, _meta=self._meta + other._meta,
             levels=np.hstack([self.levels, other.levels])
         )
 
+    def get_ind(self, id: str):
+        return [d['id'] for d in self._meta].index(id)
+
+    def set_meta(self, meta: List[Dict[str, Any]]):
+        self._meta = meta
+        return self
+
     def update(self, **kwargs):
-        if kwargs.get('meta', None) is not None:
-            self.meta = kwargs['meta']
+        if kwargs.get('_meta', None) is not None:
+            self._meta = kwargs['_meta']
 
         if kwargs.get('levels', None) is not None:
             self.levels = kwargs['levels']
@@ -140,7 +157,7 @@ class FgComponents:
 
     def copy(self, **kwargs):
         return FgComponents(**{
-            'inputs': self.inputs.copy(), 'meta': copy(self.meta),
+            'inputs': self.inputs.copy(), '_meta': copy(self._meta),
             'levels': self.levels.copy(), **kwargs
         })
 

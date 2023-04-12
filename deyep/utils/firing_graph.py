@@ -4,7 +4,7 @@ from scipy.sparse import eye
 
 # Local import
 from firing_graph.graph import FiringGraph, create_empty_matrices
-from deyep.models.firing_graph_models import FgComponents
+from deyep.models.base import FgComponents
 from deyep.linalg.spmat_op import fill_gap
 
 
@@ -23,7 +23,7 @@ class DeyepFiringGraph(FiringGraph):
         super(DeyepFiringGraph, self).__init__(**kwargs)
 
     def to_comp(self):
-        return FgComponents(inputs=self.I, levels=self.levels, meta=self.meta)
+        return FgComponents(inputs=self.I, levels=self.levels, _meta=self.meta)
 
     @staticmethod
     def from_comp(fg_comp: FgComponents):
@@ -58,6 +58,6 @@ class DeyepFiringGraph(FiringGraph):
         sax_product = sax_x.T.dot(sax_fg)
 
         return FgComponents(
-            inputs=fill_gap(sax_product, server.bitmap), levels=np.ones(sax_fg.shape[1]), meta=self.meta
+            inputs=fill_gap(sax_product, server.bitmap), levels=np.ones(sax_fg.shape[1]), _meta=self.meta
         )
 

@@ -6,8 +6,9 @@ from matplotlib import pyplot as plt
 
 # Local import
 from deyep.linalg.spmat_op import fill_gap
-from deyep.models.img_graph_models import Chain
+from deyep.models.image import Chain
 
+# TODO: no need for a fucking class there
 class ShapeDrawer:
     def __init__(self, im_shape, factor=0.5):
         self.im_shape = im_shape

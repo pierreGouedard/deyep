@@ -7,6 +7,7 @@ import cv2 as cv
 
 # Local import
 from deyep.utils.plots import plot_img
+from deyep.opencv.utils import get_mask_cc
 
 
 class OpenCVSeq:
@@ -127,7 +128,7 @@ class OpenCVSeq:
 
             # Get connected components
             ax_bin[ax_sub_coords[:, 0], ax_sub_coords[:, 1]] = ax_flat_labels
-            l_sub_comp_mask = self.cc(ax_bin, comp_min_size)
+            l_sub_comp_mask = get_mask_cc(ax_bin.astype(np.uint8), comp_min_size)
             ax_bin[:, :] = False
 
             # Get connected components
@@ -141,15 +142,10 @@ class OpenCVSeq:
 
         # Finally => segment the background:
         if ax_comp_mask.sum() > comp_min_size:
-            l_sub_segs_mask = self.cc(ax_comp_mask, comp_min_size)
+            l_sub_segs_mask = get_mask_cc(ax_comp_mask.astype(np.uint8), comp_min_size)
             l_comp_mask.extend(l_sub_segs_mask)
 
         return l_comp_mask
-
-    @staticmethod
-    def cc(ax_bin: np.ndarray, comp_min_size: int):
-        n_cc, ax_labels, stats, _ = cv.connectedComponentsWithStats(ax_bin.astype(np.uint8), connectivity=8)
-        return [ax_labels == (i + 1) for i, ok in enumerate(stats[1:, -1] > comp_min_size) if ok]
 
     @staticmethod
     def get_random_colors(size: int, black_zeros: bool = False):

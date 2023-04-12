@@ -1,5 +1,5 @@
 # Local import
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 from scipy.sparse import csr_matrix, csc_matrix, hstack, spmatrix
 import numpy as np
 
@@ -144,5 +144,10 @@ class ImgCoordDiscretizer:
 
         return y
 
+    def transform_mask_labels(self, l_masks: List[np.ndarray]):
+        return hstack([
+            self.transform_labels(ax_img[self.basis[:, 0], self.basis[:, 1]])
+            for ax_img in l_masks
+        ])
 
 

@@ -12,3 +12,4 @@ dependencies:
     - pandas==1.4.4
     - opencv-python==4.6.0.66
     - Pillow==9.2.0
+    - treelib==1.6.4
