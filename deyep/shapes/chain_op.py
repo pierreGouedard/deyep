@@ -227,14 +227,14 @@ def build_nodes(
 
     # Init list of nodes if necessary
     if d_nodes is None:
-        d_nodes: Dict[str, List[Node]] = {d['id']: [] for d in l_meta}
+        d_nodes: Dict[str, List[SimpleNode]] = {d['id']: [] for d in l_meta}
 
     # Build nodes for each comp
     for cind, l_sub_inds in groupby(sorted(zip(*sax_x.nonzero()), key=itemgetter(1)), itemgetter(1)):
 
         # Get dir and norm ind
         dir_ind = cind + ((cind // bitmap.ndir) * bitmap.ndir) + (int(down) * bitmap.ndir)
-        norm_ind = bitmap.norm_ind(dir_ind + (int(down) * bitmap.ndir))
+        norm_ind = bitmap.norm_ind(dir_ind)
         l_pix_inds = list(map(itemgetter(0), l_sub_inds))
 
         # Get min position
@@ -248,6 +248,5 @@ def build_nodes(
         d_nodes[l_meta[cind // bitmap.ndir]['id']].append(SimpleNode(
             direction=(cind % bitmap.ndir) + bitmap.ndir * down, p0=tuple(p.astype(int)), scale=ax_scales[cind]
         ))
-    import IPython
-    IPython.embed()
+
     return d_nodes
