@@ -72,8 +72,6 @@ def build_simple_chain_trees(
         else:
             break
 
-    import IPython
-    IPython.embed()
     # TODO: visualize the different children by iterating along node of the tree
     bar_plot('Encoding as bar plot', d_chains[0].scales(sparse=True, n_dir=bitmap.nf * 2))
 
@@ -141,6 +139,7 @@ def build_nodes(
             offset_norm = (((2 * (norm_ind >= bitmap.nf)) - 1) * bitmap.transform_op[:, norm_ind % bitmap.nf])
             offset_dir = bitmap.transform_op[:, cind % bitmap.nf]
             p = bitmap.basis[l_linds][arg_min] + (offset_coef * offset_norm) - offset_dir
+
 
         # Set Node
         d_nodes[l_meta[cind // bitmap.nf]['id']].append(Node(
