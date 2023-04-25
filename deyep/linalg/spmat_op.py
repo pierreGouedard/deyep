@@ -8,7 +8,7 @@ from operator import itemgetter
 
 
 def expand(sax_inputs, bitmap, keep_only_expanded=False, is_only_up=False, is_only_down=False):
-    ax_mask, n = bitmap.b2f(sax_inputs).A.any(axis=0), bitmap.nb
+    ax_mask, n = bitmap.b2d(sax_inputs).A.any(axis=0), bitmap.nbit
     l_linds, l_cinds = [], []
     for i, sax_mask in enumerate(bitmap):
         if ax_mask[i]:
@@ -40,7 +40,7 @@ def expand(sax_inputs, bitmap, keep_only_expanded=False, is_only_up=False, is_on
 
 
 def shrink(sax_inputs, bitmap, n_shrink=2):
-    ax_mask = bitmap.b2f(sax_inputs).A.any(axis=0)
+    ax_mask = bitmap.b2d(sax_inputs).A.any(axis=0)
     l_linds, l_cinds = [], []
     for i, sax_mask in enumerate(bitmap):
         if ax_mask[i]:
@@ -66,7 +66,7 @@ def shrink(sax_inputs, bitmap, n_shrink=2):
 
 
 def bounds(sax_inputs, bitmap):
-    ax_mask = bitmap.b2f(sax_inputs).A.any(axis=0)
+    ax_mask = bitmap.b2d(sax_inputs).A.any(axis=0)
     l_linds, l_cinds = [], []
     for i, sax_mask in enumerate(bitmap):
         if ax_mask[i]:
@@ -84,7 +84,7 @@ def bounds(sax_inputs, bitmap):
 
 
 def add_connex(sax_base, sax_inputs, bitmap):
-    ax_mask = bitmap.b2f(sax_inputs).A.any(axis=0)
+    ax_mask = bitmap.b2d(sax_inputs).A.any(axis=0)
     l_linds, l_cinds = [], []
     for i, sax_mask in enumerate(bitmap):
         if ax_mask[i]:
@@ -130,7 +130,7 @@ def add_connex(sax_base, sax_inputs, bitmap):
 
 
 def fill_gap(sax_inputs, bitmap):
-    ax_mask = bitmap.b2f(sax_inputs).A.any(axis=0)
+    ax_mask = bitmap.b2d(sax_inputs).A.any(axis=0)
     l_linds, l_cinds = [], []
     for i, sax_mask in enumerate(bitmap):
         if ax_mask[i]:
@@ -151,21 +151,21 @@ def fill_gap(sax_inputs, bitmap):
     return sax_inputs.tocsr()
 
 
-def explode(sax_inputs, bitmap, partitions, use_bf_mask: bool = False, return_partition: bool = False):
+def explode(sax_inputs, bitmap, partitions, use_bdir_mask: bool = False, return_partition: bool = False):
 
     # Build input
-    if not use_bf_mask:
+    if not use_bdir_mask:
         sax_inputs = hstack([
-            sax_inputs[:, [i] * bitmap.nf].multiply(bitmap.bf_map) for i in range(len(partitions))
+            sax_inputs[:, [i] * bitmap.ndir].multiply(bitmap.bitdir_map) for i in range(len(partitions))
         ])
     else:
         sax_inputs = hstack([
-            sax_inputs[:, [i] * bitmap.nf].multiply(bitmap.bf_mask) for i in range(len(partitions))
+            sax_inputs[:, [i] * bitmap.ndir].multiply(bitmap.bitdir_mask) for i in range(len(partitions))
         ])
 
     # Compute new partitions if necessary
     if return_partition:
-        partitions = [{'vertex_id': f'{i}', **p} for i, p in enumerate(partitions) for _ in range(bitmap.nf)]
+        partitions = [{'vertex_id': f'{i}', **p} for i, p in enumerate(partitions) for _ in range(bitmap.ndir)]
         return sax_inputs, partitions
 
     return sax_inputs
