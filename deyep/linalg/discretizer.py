@@ -62,9 +62,8 @@ class ImgCoordDiscretizer:
         self.quantile_offset = quantile_offset
 
         # parameters to build bounds
-        self.basis = None
-        self.augmented_basis = None
-        self.y_swaped_basis = None
+        self.pixel_coords = None
+        self.augmented_coords = None
         self.n_directions = n_directions
 
         self.transformation = np.vstack([
@@ -73,26 +72,26 @@ class ImgCoordDiscretizer:
         ])
 
         #
-        self.bf_map = None
+        self.bitdir_map = None
         self.n_label = None
         self.encoders = {}
 
     def fit_transform(self, ax_image: np.ndarray) -> Union[spmatrix, Tuple[spmatrix, spmatrix]]:
         self.fit(ax_image)
-        return self.transform(self.augmented_basis, ax_image[self.basis[:, 0], self.basis[:, 1]])
+        return self.transform(self.augmented_coords, ax_image[self.pixel_coords[:, 0], self.pixel_coords[:, 1]])
 
     def fit(self, ax_image: np.ndarray) -> 'ImgCoordDiscretizer':
-        # Create basis
-        self.basis = np.hstack([
+        # Create img coords
+        self.pixel_coords = np.hstack([
             np.kron(np.arange(ax_image.shape[0]), np.ones(ax_image.shape[1]))[:, np.newaxis],
             np.kron(np.ones(ax_image.shape[0]), np.arange(ax_image.shape[1]))[:, np.newaxis]
         ]).astype(int)
 
-        # Augment basis with more direction
-        self.augmented_basis = self.basis.dot(self.transformation)
+        # Augment coords with more direction
+        self.augmented_coords = self.pixel_coords.dot(self.transformation)
 
         # Encode
-        self.encode(self.augmented_basis, ax_image[self.basis[:, 0], self.basis[:, 1]])
+        self.encode(self.augmented_coords, ax_image[self.pixel_coords[:, 0], self.pixel_coords[:, 1]])
 
         return self
 
@@ -101,17 +100,17 @@ class ImgCoordDiscretizer:
         assert X.dtype.kind in set('buifc'), "X contains non num data, must contains only num data"
         assert y.dtype.kind in set('buifc'), "y contains non num data, must contains only num data"
 
-        if self.basis is not None:
+        if self.pixel_coords is not None:
             pass
 
-        ax_bf_map, n_inputs = np.zeros((self.n_bin * self.n_directions, self.n_directions), dtype=bool), 0
+        ax_bd_map, n_inputs = np.zeros((self.n_bin * self.n_directions, self.n_directions), dtype=bool), 0
         for i in range(self.n_directions):
             self.encoders[i] = SparsDiscretizer(self.n_bin, self.min_val_by_bin, self.quantile_offset)\
-                .fit(self.augmented_basis[:, i])
-            ax_bf_map[range(n_inputs, n_inputs + self.encoders[i].enc_size), i] = True
+                .fit(self.augmented_coords[:, i])
+            ax_bd_map[range(n_inputs, n_inputs + self.encoders[i].enc_size), i] = True
             n_inputs += self.encoders[i].enc_size
 
-        self.bf_map = csr_matrix(ax_bf_map[:n_inputs, :])
+        self.bd_map = csr_matrix(ax_bd_map[:n_inputs, :])
         self.n_label = len(np.unique(y))
 
         return self
@@ -119,7 +118,7 @@ class ImgCoordDiscretizer:
     def transform(
             self, X: np.ndarray, y: np.ndarray = None, transform_input: bool = False
     ) -> Union[spmatrix, Tuple[spmatrix, spmatrix]]:
-        assert self.bf_map is not None, "Encoder is not fitted when transform called"
+        assert self.bd_map is not None, "Encoder is not fitted when transform called"
 
         if transform_input:
             X = X.dot(self.transformation)
@@ -146,7 +145,7 @@ class ImgCoordDiscretizer:
 
     def transform_mask_labels(self, l_masks: List[np.ndarray]):
         return hstack([
-            self.transform_labels(ax_img[self.basis[:, 0], self.basis[:, 1]])
+            self.transform_labels(ax_img[self.pixel_coords[:, 0], self.pixel_coords[:, 1]])
             for ax_img in l_masks
         ])
 

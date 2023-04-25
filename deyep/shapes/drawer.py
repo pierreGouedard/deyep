@@ -1,12 +1,11 @@
 # Global import
 import numpy as np
-from scipy.sparse import lil_matrix
 import cv2 as cv
 from matplotlib import pyplot as plt
 
 # Local import
-from deyep.linalg.spmat_op import fill_gap
 from deyep.models.image import SimpleChain
+
 
 # TODO: no need for a fucking class there
 class ShapeDrawer:
