@@ -14,27 +14,27 @@ import string
 
 @dataclass
 class BitMap:
-    bf_map: spmatrix
-    nb: int
-    nf: int
-    bf_mask: spmatrix
-    basis: np.array
-    projections: np.array
-    transform_op: np.array
+    bitdir_map: spmatrix
+    nbit: int
+    ndir: int
+    bitdir_mask: spmatrix
+    pixel_coords: np.array
+    dir_proj: np.array
+    dir_coords: np.array
 
-    def __init__(self, bf_map: spmatrix, basis: np.array, ax_transform_op: np.array):
-        self.bf_map = bf_map
-        self.nb, self.nf = bf_map.shape[0], bf_map.shape[1]
-        self.bf_mask = csr_matrix(~bf_map.A)
-        self.basis = basis
-        self.transform_op = ax_transform_op
-        self.projections = self.compute_projections()
+    def __init__(self, bitdir_map: spmatrix, pixel_coords: np.array, dir_coords: np.array):
+        self.bitdir_map = bitdir_map
+        self.nbit, self.ndir = bitdir_map.shape[0], bitdir_map.shape[1]
+        self.bitdir_mask = csr_matrix(~bitdir_map.A)
+        self.pixel_coords = pixel_coords
+        self.dir_coords = dir_coords
+        self.dir_proj = self.compute_projections()
 
     def compute_projections(self) -> np.array:
-        return self.basis.dot(self.transform_op)
+        return self.pixel_coords.dot(self.dir_coords)
 
     def __len__(self):
-        return self.bf_map.shape[1]
+        return self.bitdir_map.shape[1]
 
     def __iter__(self):
         self.__idx = 0
@@ -51,20 +51,44 @@ class BitMap:
 
     def __getitem__(self, i):
         assert isinstance(i, int), 'index should be an integer'
-        return self.bf_map[:, i]
+        return self.bitdir_map[:, i]
 
-    @lru_cache()
-    def feature_card(self, n_repeat):
-        return self.bf_map.sum(axis=0).A[[0] * n_repeat, :]
+    def norm_ind(self, dir_ind: int) -> int:
+        return (dir_ind + (self.ndir // 2)) % (self.ndir * 2)
 
-    def b2f(self, sax_x):
-        return sax_x.T.dot(self.bf_map)
+    def b2d(self, sax_x: spmatrix) -> spmatrix:
+        return sax_x.T.dot(self.bitdir_map)
 
-    def f2b(self, sax_x):
-        return self.bf_map.dot(sax_x)
+    def d2b(self, sax_x: spmatrix) -> spmatrix:
+        return self.bitdir_map.dot(sax_x)
 
-    def bitmask(self, sax_x):
-        return self.f2b(self.b2f(sax_x).T)
+    def get_coef_dir(self, dir_ind: int) -> int:
+        # Make sure index dir is correct
+        assert 0 <= dir_ind < (self.ndir * 2), f'Index of dir is not in [0, {self.ndir * 2}]'
+        return (2 * (dir_ind < self.ndir)) - 1
+
+    def get_proj(self, dir_ind: int, l_sub_inds: Optional[List[int]] = None) -> np.ndarray:
+
+        # Make sure ind is between 0 and 2 * nb direction
+        dir_ind = dir_ind % (self.ndir * 2)
+
+        # return projections
+        if l_sub_inds is not None:
+            return self.dir_proj[l_sub_inds, dir_ind % self.ndir] * self.get_coef_dir(dir_ind)
+
+        else:
+            return self.dir_proj[:, dir_ind % self.ndir] * self.get_coef_dir(dir_ind)
+
+    def get_dir_coords(self, dir_ind: int) -> np.ndarray:
+        return self.get_coef_dir(dir_ind % (self.ndir * 2)) * self.dir_coords[:, dir_ind % self.ndir]
+
+    def get_norm_coords(self, norm_ind: Optional[int] = None, dir_ind: Optional[int] = None) -> np.ndarray:
+        assert norm_ind is not None or dir_ind is not None, "At least one of {norm index, dir index} should be set"
+
+        if norm_ind is None:
+            norm_ind = self.norm_ind(dir_ind)
+
+        return self.get_coef_dir(norm_ind % (self.ndir * 2)) * self.dir_coords[:, norm_ind % self.ndir]
 
 
 @dataclass
@@ -123,7 +147,7 @@ class FgComponents:
         else:
             raise TypeError(f'key ({key}) should be string or int')
 
-        return FgComponents(inputs=self.inputs[:, ind], _meta=[self._meta[nd]], levels=self.levels[[ind]])
+        return FgComponents(inputs=self.inputs[:, ind], _meta=[self._meta[ind]], levels=self.levels[[ind]])
 
     def __add__(self, other):
         if self.inputs.shape[1] == 0:
