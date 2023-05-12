@@ -12,7 +12,7 @@ from deyep.linalg.spmat_op import expand, explode
 from deyep.models.base import FgComponents, BitMap
 from deyep.shapes.drawer import ShapeDrawer
 from deyep.utils.plots import bar_plot
-from deyep.models.image import SimpleNode, SimpleChain, WalkableChain
+from deyep.models.graph import SimpleNode, SimpleChain, WalkableChain, NodeBasis
 from deyep.opencv.utils import get_mask_cc
 
 
@@ -36,7 +36,12 @@ def master_update(master_chain: SimpleChain, curr_tree_node: TreeNode, tree: Tre
             tree.get_node(curr_tree_node.predecessor(tree.identifier))
         )
         master_chain.append(node)
-
+        # TODO: debug area
+        print('New iteration')
+        shape_drawer = ShapeDrawer((210, 141))
+        import IPython
+        IPython.embed()
+        ###
         if conflicting_tree_node is not None:
             return master_update(master_chain, conflicting_tree_node, tree)
 
@@ -51,19 +56,33 @@ def walk_through_chain_node(
         parent_tree_node: Optional[TreeNode] = None
 ):
     # 1. Check for conflict of chain node with children chains in tree
-    child_tree_node, master_scale = find_children_conflict(chain, child_tree_nodes)
+    child_tree_node, init_ind, master_scale = find_children_conflict(chain, child_tree_nodes)
 
-    # 2. If conflict, create sub node from current node (node that make the path to conflict)
+    # TODO: debug area
+    print('Walk after children check')
+    shape_drawer = ShapeDrawer((210, 141))
+    import IPython
+    IPython.embed()
+    ###
+
     if child_tree_node is not None:
+        # 2. If conflicted, create sub node from current node (node that make the path to conflict)
         master_node = chain.curr_node.copy(scale=master_scale)
 
         # 3. If conflict, process successor node data so that => right order & index start is set
-        child_tree_node.data.set_orientation(chain.swapped_orientation)
+        child_tree_node.data.init_walk(position=init_ind, orient=chain.swapped_orientation)
 
         return master_node, child_tree_node
 
-    # 6. If no conflict, check for conflict with predessecor node
+    # 6. If no conflict, check for conflict with predecessor node
     parent_tree_node = find_parent_conflict(chain, parent_tree_node)
+
+    ### TODO: debug area
+    print('walk after parent check')
+    shape_drawer = ShapeDrawer((210, 141))
+    import IPython
+    IPython.embed()
+    ###
 
     if parent_tree_node is not None:
         # TODO 8. Remove current chain from tree
@@ -76,49 +95,86 @@ def walk_through_chain_node(
 
 def find_children_conflict(
         chain: WalkableChain, l_children_tree_nodes: List[TreeNode]
-) -> Tuple[Union[TreeNode, None], float]:
+) -> Tuple[Union[TreeNode, None], int, float]:
+
     # Init. Get curr basis components and
-    basis_params, l_candidates = (chain.curr_p0(), chain.curr_dir(), chain.curr_norm()), []
-    for child_chain in [child_tree_node.data for child_tree_node in l_children_tree_nodes]:
+    basis, l_candidates = chain.curr_basis(), []
+    for child_tree_node in l_children_tree_nodes:
 
         # Curr node of chain has a dir and a normal + p0
-        for ind, dir_coef, norm_coef in project(basis_params, child_chain.simple_chain.points()):
-            if abs(norm_coef) < 1e-2:
-                l_candidates.append((child_chain, ind, dir_coef))
+        for ind, dir_coef, norm_coef in project(basis, child_tree_node.data.points()):
+            # TODO: See what is a good tolerance, given how we solve the problem of point's approximation.
+            if abs(norm_coef) < 2:
+                l_candidates.append((child_tree_node.identifier, ind, dir_coef))
 
-    [conflicting_chain, node_ind] = min(l_candidates, key=lambda x: x[-1])[:-1]
+    # TODO: Debug area
+    #print('find in children')
+    #shape_drawer = ShapeDrawer((210, 141))
+    #import IPython
+    #IPython.embed()
+    ####
 
-    # Compute new scale of curr_node
-    return None, 0
+    if l_candidates:
+        # Get candidate closest to curr p0 along the curr direction
+        [tree_id, node_ind, dir_coef] = min(l_candidates, key=lambda x: x[-1])
+
+        # Compute new scale of curr_node
+        p1_projected = list(project(basis, [chain.curr_p1()]))[0]
+
+        # TODO: we absolutely need to stop this non linear notion of scale.
+        master_scale = chain.curr_node.scale * (dir_coef / p1_projected[1])
+
+        # Recover tree node
+        conflicted_tree_node = [tnode for tnode in l_children_tree_nodes if tnode.identifier == tree_id][0]
+
+        return conflicted_tree_node, node_ind, master_scale
+
+    return None, 0, 0
 
 
 def find_parent_conflict(chain: WalkableChain, parent_tree_node: TreeNode) -> Union[TreeNode, None]:
 
+    ### TODO: Debug area
+    print('find in parent')
+    shape_drawer = ShapeDrawer((210, 141))
+    import IPython
+    IPython.embed()
+    ####
+
     # Init. Get curr basis components and
     parent_chain, is_conflict = parent_tree_node.data.copy(), False
     while not parent_chain.is_looped:
-        basis_params = (parent_chain.curr_p0(), parent_chain.curr_dir(), parent_chain.curr_norm())
-        (ind, dir_coef, norm_coef) = list(project(basis_params, [chain.curr_p1()]))[0]
+        # Project
+        (ind, dir_coef, norm_coef) = list(project(parent_chain.curr_basis(), [chain.curr_p1()]))[0]
 
         if abs(norm_coef) < 1e-2:
             is_conflict = True
             break
 
+        # Increment parent chain
+        parent_chain.next()
+
     if is_conflict:
+        # get new scale
+        parent_scale = None
+
+        # Split parent chain curr_node and move to latest
+        parent_chain.split(parent_scale, target=1)
+
         # replace parent_tree_node data with parent_chain
-        # update scale of current node, or best, split it
-        pass
+        parent_tree_node.data = parent_chain
+
+        return parent_tree_node
 
     return None
 
 
-def project(
-        basis_params: Tuple[Tuple[int, int], Tuple[float, float], Tuple[float, float]],
-        l_points: List[Tuple[int, int]]
-) -> Iterable[Tuple[int, float, float]]:
+def project(basis: NodeBasis, l_points: List[Tuple[int, int]]) -> Iterable[Tuple[int, float, float]]:
     # Basis is dir, norm, p0 => always p0 (that change according to order)
     for i, p in enumerate(l_points):
-        yield i, p
+        dir_coef = np.array(p).dot(basis.dir) - np.array(basis.p0).dot(basis.dir)
+        norm_coef = np.array(p).dot(basis.norm) - np.array(basis.p0).dot(basis.norm)
+        yield i, dir_coef, norm_coef
 
 
 def build_simple_chain_trees(
@@ -139,6 +195,15 @@ def build_simple_chain_trees(
         # Encode masks
         d_chains = build_simple_chains(sax_data, fg_comps, bitmap)
 
+        # TODO: debug area:
+        import cv2 as cv
+        shape_drawer = ShapeDrawer(pixel_shape)
+        chain = d_chains[list(d_chains.keys())[0]]
+        ax_points = chain.points()[:, ::-1]
+        import IPython
+        IPython.embed()
+
+        hull = cv.convexHull(ax_points)
         import IPython
         IPython.embed()
 
@@ -156,8 +221,8 @@ def build_simple_chain_trees(
 
             # Add chain to tree
             d_trees.get(root_id or cur_id, Tree()).create_node(
-                f'{parent_id or cur_id}:{cur_id}', cur_id, data=chain,
-                parent=parent_id or None
+                f'{parent_id or cur_id}:{cur_id}', cur_id,
+                data=WalkableChain.from_simple_chain(chain, bitmap), parent=parent_id or None
             )
 
             # Extend meta & flags
@@ -177,6 +242,8 @@ def build_simple_chain_trees(
     if debug:
         import IPython
         IPython.embed()
+        # TODO: There is still something wrong with points, there are not always where they should be => (when drawing
+        #   we see some convex defect needs to be handled
         tree = d_trees[list(d_trees.keys())[0]]
         shape_drawer = ShapeDrawer(pixel_shape)
 
@@ -241,6 +308,7 @@ def build_nodes(
         arg_min = bitmap.get_proj(norm_ind, l_pix_inds).argmin()
 
         # Apply offset in dir and normal
+        # TODO: stop that, add and intermediate consolidation step instead.
         dir_coef, norm_coef = bitmap.get_dir_coords(dir_ind), bitmap.get_norm_coords(norm_ind)
         p = bitmap.pixel_coords[l_pix_inds][arg_min] - (offset_coef * norm_coef) - dir_coef
 

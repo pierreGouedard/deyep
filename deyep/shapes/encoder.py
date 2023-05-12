@@ -7,7 +7,7 @@ import numpy as np
 # Local import
 from deyep.linalg.discretizer import ImgCoordDiscretizer
 from deyep.models.base import BitMap
-from deyep.models.image import SimpleChain
+from deyep.models.graph import SimpleChain, WalkableChain
 from deyep.shapes.chain_op import build_simple_chain_trees, reduce_simple_chain_trees, merge_simple_chain
 
 
@@ -35,7 +35,9 @@ class ImageEncoder:
 
     def encode_image(self) -> SimpleChain:
         # Build chain tree for each masks
-        d_chain_trees = build_simple_chain_trees(self.flags, self.data, self.bitmap, self.pixel_shape)
+        d_chain_trees = build_simple_chain_trees(
+            self.flags, self.data, self.bitmap, self.pixel_shape, debug=False
+        )
 
         # TODO: save chain_tree for smoother dev
         with open('test_chain_tree.pckl', 'wb') as handle:

@@ -4,7 +4,7 @@ import cv2 as cv
 from matplotlib import pyplot as plt
 
 # Local import
-from deyep.models.image import SimpleChain
+from deyep.models.graph import SimpleChain
 
 
 # TODO: no need for a fucking class there
