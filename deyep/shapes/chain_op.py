@@ -102,7 +102,7 @@ def find_children_conflict(
     for child_tree_node in l_children_tree_nodes:
 
         # Curr node of chain has a dir and a normal + p0
-        for ind, dir_coef, norm_coef in project(basis, child_tree_node.data.points()):
+        for ind, dir_coef, norm_coef in iter_project(basis, child_tree_node.data.points()):
             # TODO: See what is a good tolerance, given how we solve the problem of point's approximation.
             if abs(norm_coef) < 2:
                 l_candidates.append((child_tree_node.identifier, ind, dir_coef))
@@ -119,7 +119,7 @@ def find_children_conflict(
         [tree_id, node_ind, dir_coef] = min(l_candidates, key=lambda x: x[-1])
 
         # Compute new scale of curr_node
-        p1_projected = list(project(basis, [chain.curr_p1()]))[0]
+        p1_projected = list(iter_project(basis, [chain.curr_p1()]))[0]
 
         # TODO: we absolutely need to stop this non linear notion of scale.
         master_scale = chain.curr_node.scale * (dir_coef / p1_projected[1])
@@ -145,7 +145,7 @@ def find_parent_conflict(chain: WalkableChain, parent_tree_node: TreeNode) -> Un
     parent_chain, is_conflict = parent_tree_node.data.copy(), False
     while not parent_chain.is_looped:
         # Project
-        (ind, dir_coef, norm_coef) = list(project(parent_chain.curr_basis(), [chain.curr_p1()]))[0]
+        (ind, dir_coef, norm_coef) = list(iter_project(parent_chain.curr_basis(), [chain.curr_p1()]))[0]
 
         if abs(norm_coef) < 1e-2:
             is_conflict = True
@@ -169,7 +169,7 @@ def find_parent_conflict(chain: WalkableChain, parent_tree_node: TreeNode) -> Un
     return None
 
 
-def project(basis: NodeBasis, l_points: List[Tuple[int, int]]) -> Iterable[Tuple[int, float, float]]:
+def iter_project(basis: NodeBasis, l_points: List[Tuple[int, int]]) -> Iterable[Tuple[int, float, float]]:
     # Basis is dir, norm, p0 => always p0 (that change according to order)
     for i, p in enumerate(l_points):
         dir_coef = np.array(p).dot(basis.dir) - np.array(basis.p0).dot(basis.dir)
@@ -177,7 +177,13 @@ def project(basis: NodeBasis, l_points: List[Tuple[int, int]]) -> Iterable[Tuple
         yield i, dir_coef, norm_coef
 
 
-def build_simple_chain_trees(
+def ax_project(basis: NodeBasis, ax_points: np.array) -> Tuple[np.array, np.array]:
+    ax_dir_coef = ax_points.dot(basis.dir) - np.array(basis.p0).dot(basis.dir)
+    ax_norm_coef = ax_points.dot(basis.norm) - np.array(basis.p0).dot(basis.norm)
+    return ax_dir_coef, ax_norm_coef
+
+
+def build_walkable_chain_trees(
         sax_flags: spmatrix, sax_data: spmatrix, bitmap: BitMap, pixel_shape: Tuple[int, int],
         debug: bool = False
 ) -> Dict[str, Tree]:
@@ -195,18 +201,6 @@ def build_simple_chain_trees(
         # Encode masks
         d_chains = build_simple_chains(sax_data, fg_comps, bitmap)
 
-        # TODO: debug area:
-        import cv2 as cv
-        shape_drawer = ShapeDrawer(pixel_shape)
-        chain = d_chains[list(d_chains.keys())[0]]
-        ax_points = chain.points()[:, ::-1]
-        import IPython
-        IPython.embed()
-
-        hull = cv.convexHull(ax_points)
-        import IPython
-        IPython.embed()
-
         # Update trees - see later how to precisely handle that
         l_meta, l_flags = [], []
         for key, chain in d_chains.items():
@@ -222,7 +216,8 @@ def build_simple_chain_trees(
             # Add chain to tree
             d_trees.get(root_id or cur_id, Tree()).create_node(
                 f'{parent_id or cur_id}:{cur_id}', cur_id,
-                data=WalkableChain.from_simple_chain(chain, bitmap), parent=parent_id or None
+                data=build_walkable_chain(chain, bitmap),
+                parent=parent_id or None
             )
 
             # Extend meta & flags
@@ -240,10 +235,6 @@ def build_simple_chain_trees(
 
     # Visualize the different children by iterating along node of the tree
     if debug:
-        import IPython
-        IPython.embed()
-        # TODO: There is still something wrong with points, there are not always where they should be => (when drawing
-        #   we see some convex defect needs to be handled
         tree = d_trees[list(d_trees.keys())[0]]
         shape_drawer = ShapeDrawer(pixel_shape)
 
@@ -254,6 +245,40 @@ def build_simple_chain_trees(
             shape_drawer.draw_shape(tree[node].data)
 
     return d_trees
+
+
+def build_walkable_chain(chain: SimpleChain, bitmap: BitMap) -> WalkableChain:
+    """
+    # Todo => can be parallelized (as moving node only on its dir axis)
+    Parameters
+    ----------
+    chain
+    bitmap
+
+    Returns
+    -------
+
+    """
+    # Create walkable chain & set max offset
+    wchain = WalkableChain.from_simple_chain(chain, bitmap)
+    offset_range = range(int(np.ceil(np.cos(np.pi / bitmap.ndir) / np.sin(np.pi / bitmap.ndir)) + 2))
+
+    # Correct nodes position.
+    while not wchain.is_looped:
+        # Move current points along its inverse direction
+        ax_points = (
+                np.array(wchain.curr_node.p0) -
+                np.array([i * np.array(wchain.curr_dir()) for i in offset_range])
+        ).astype(int)
+
+        # Project candidate points along normal of prev node
+        _, ax_norm = ax_project(wchain.nodes[wchain.cindex(wchain.position - 1)].basis, ax_points)
+
+        # update curr node position and move to next
+        wchain.curr_node.p0 = tuple(ax_points[np.abs(ax_norm).argmin()])
+        wchain.next()
+
+    return wchain.init_walk(0)
 
 
 def build_simple_chains(sax_data: spmatrix, comps: FgComponents, bitmap: BitMap) -> Dict[str, SimpleChain]:
@@ -276,21 +301,19 @@ def build_simple_chains(sax_data: spmatrix, comps: FgComponents, bitmap: BitMap)
         .seq_propagate(sax_data)
 
     # Get nodes for each comp
-    d_nodes = build_nodes(bitmap, sax_x_up, comps.meta)
-    d_nodes = build_nodes(bitmap, sax_x_down, comps.meta, d_nodes=d_nodes, down=True)
+    d_nodes = build_simple_nodes(bitmap, sax_x_up, comps.meta)
+    d_nodes = build_simple_nodes(bitmap, sax_x_down, comps.meta, d_nodes=d_nodes, down=True)
 
     # Build chains
     return {k: SimpleChain(v) for k, v in d_nodes.items()}
 
 
-def build_nodes(
+def build_simple_nodes(
         bitmap: BitMap, sax_x: spmatrix, l_meta: List[Dict[str, str]], d_nodes: Dict[int, List[SimpleNode]] = None,
         down: bool = False
 ) -> Dict[int, List[SimpleNode]]:
-
     # Precompute scales and offset coef
     ax_scales = sax_x.sum(axis=0).A[0]
-    offset_coef = int(np.cos(np.pi / bitmap.ndir) / np.sin(np.pi / bitmap.ndir))
 
     # Init list of nodes if necessary
     if d_nodes is None:
@@ -300,21 +323,17 @@ def build_nodes(
     for cind, l_sub_inds in groupby(sorted(zip(*sax_x.nonzero()), key=itemgetter(1)), itemgetter(1)):
 
         # Get dir and norm ind
-        dir_ind = cind + ((cind // bitmap.ndir) * bitmap.ndir) + (int(down) * bitmap.ndir)
-        norm_ind = bitmap.norm_ind(dir_ind)
+        norm_ind = bitmap.norm_ind(cind + ((cind // bitmap.ndir) * bitmap.ndir) + (int(down) * bitmap.ndir))
         l_pix_inds = list(map(itemgetter(0), l_sub_inds))
 
         # Get min position
         arg_min = bitmap.get_proj(norm_ind, l_pix_inds).argmin()
 
-        # Apply offset in dir and normal
-        # TODO: stop that, add and intermediate consolidation step instead.
-        dir_coef, norm_coef = bitmap.get_dir_coords(dir_ind), bitmap.get_norm_coords(norm_ind)
-        p = bitmap.pixel_coords[l_pix_inds][arg_min] - (offset_coef * norm_coef) - dir_coef
-
         # Update SimpleNode dict
         d_nodes[l_meta[cind // bitmap.ndir]['id']].append(SimpleNode(
-            direction=(cind % bitmap.ndir) + bitmap.ndir * down, p0=tuple(p.astype(int)), scale=ax_scales[cind]
+            direction=(cind % bitmap.ndir) + bitmap.ndir * down,
+            p0=tuple(bitmap.pixel_coords[l_pix_inds][arg_min]),
+            scale=ax_scales[cind]
         ))
 
     return d_nodes

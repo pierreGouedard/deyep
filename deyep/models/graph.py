@@ -31,6 +31,9 @@ class SimpleChain:
     def __len__(self):
         return len(self.nodes)
 
+    def cindex(self, index) -> int:
+        return (index + len(self)) % len(self)
+
     def scales(self, sparse: bool = False, n_dir: int = None) -> np.array:
         if sparse:
             ax_scales = np.zeros(n_dir)
@@ -50,10 +53,18 @@ class SimpleChain:
 
 
 @dataclass
+class NodeBasis:
+    p0: Tuple[int, int]
+    dir: Tuple[float, float]
+    norm: Tuple[float, float]
+
+
+@dataclass
 class DirectedNode(SimpleNode):
     dir: Tuple[float, float]
     norm: Tuple[float, float]
     _opposite_dir: Optional[Tuple[float, float]] = None
+    _basis: Optional[NodeBasis] = None
 
     @property
     def opposite_dir(self) -> Tuple[float, float]:
@@ -61,12 +72,13 @@ class DirectedNode(SimpleNode):
             self._opposite_dir = (-self.dir[0], -self.dir[1])
         return self._opposite_dir
 
-
-@dataclass
-class NodeBasis:
-    p0: Tuple[int, int]
-    dir: Tuple[float, float]
-    norm: Tuple[float, float]
+    @property
+    def basis(self):
+        if self._basis is None:
+            self._basis = NodeBasis(
+                p0=self.p0, dir=self.dir, norm=self.norm
+            )
+        return self._basis
 
 
 @dataclass
@@ -117,9 +129,9 @@ class WalkableChain(SimpleChain):
 
     def next(self):
         if self.orient == 'trigo':
-            self.position = (self.position + 1) % len(self)
+            self.position = self.cindex(self.position + 1)
         else:
-            self.position = (len(self) + (self.position - 1)) % len(self)
+            self.position = self.cindex(self.position - 1)
 
         self._cnt += 1
 
@@ -127,35 +139,37 @@ class WalkableChain(SimpleChain):
         while position != self.position:
             self.next()
 
-    def init_walk(self, position: int, orient: Optional[str] = None):
+    def init_walk(self, position: int, orient: Optional[str] = None) -> 'WalkableChain':
         self._orient = orient or self._orient
-        self.position = len(self) + (self.position - 1 if self._orient == 'anti-trigo' else position) % len(self)
+        self.position = self.cindex(self.position - 1 if self._orient == 'anti-trigo' else position)
         self._cnt = 0
 
-    def _get_next_node(self):
-        if self.orient == 'trigo':
-            return self.nodes[(self.position + 1) % len(self)]
-        else:
-            return (len(self) + (self.position - 1)) % len(self)
+        return self
 
-    def _get_prev_node(self):
+    def _get_next_node(self) -> DirectedNode:
         if self.orient == 'trigo':
-            return self.nodes[(len(self) + (self.position - 1)) % len(self)]
+            return self.nodes[self.cindex(self.position + 1)]
         else:
-            return self.nodes[(self.position + 1) % len(self)]
+            return self.nodes[self.cindex(self.position - 1)]
+
+    def _get_prev_node(self) -> DirectedNode:
+        if self.orient == 'trigo':
+            return self.nodes[self.cindex(self.position - 1)]
+        else:
+            return self.nodes[self.cindex(self.position + 1)]
 
     def curr_dir(self) -> Tuple[float, float]:
         if self.orient == 'trigo':
-            return self.nodes[self.position % len(self)].dir
+            return self.nodes[self.cindex(self.position)].dir
         else:
-            return self.nodes[self.position % len(self)].opposite_dir
+            return self.nodes[self.cindex(self.position)].opposite_dir
 
     def curr_norm(self) -> Tuple[float, float]:
-        return self.nodes[self.position % len(self)].norm
+        return self.nodes[self.cindex(self.position)].norm
 
     def curr_p0(self) -> Tuple[int, int]:
         if self.orient == 'trigo':
-            return self.nodes[self.position % len(self)].p0
+            return self.nodes[self.cindex(self.position)].p0
         else:
             return self._get_prev_node().p0
 
@@ -163,7 +177,7 @@ class WalkableChain(SimpleChain):
         if self.orient == 'trigo':
             return self._get_next_node().p0
         else:
-            return self.nodes[self.position % len(self)].p0
+            return self.nodes[self.cindex(self.position)].p0
 
     def curr_basis(self) -> NodeBasis:
         return NodeBasis(
