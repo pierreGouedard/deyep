@@ -46,6 +46,11 @@ class ImageEncoder:
         with open('test_chain_tree.pckl', 'rb') as handle:
             d_chain_trees = pickle.load(handle)
 
+        # TODO: let start with a simple Depth 2 graph (remove 3rd level of tree)
+        chain_tree = d_chain_trees[list(d_chain_trees.keys())[0]]
+        for leaf in chain_tree.leaves():
+            chain_tree.remove_node(leaf.identifier)
+
         # Reduce Chain Trees
         l_chains = reduce_simple_chain_trees(d_chain_trees, self.bitmap)
 

@@ -80,6 +80,10 @@ class DirectedNode(SimpleNode):
             )
         return self._basis
 
+    def reset_basis(self):
+        self._basis = None
+        return self
+
 
 @dataclass
 class WalkableChain(SimpleChain):
@@ -88,12 +92,15 @@ class WalkableChain(SimpleChain):
     _orient: str
     position: int = 0
     _cnt: int = 0
+    _ndir: int = 0
 
     def __init__(
             self, simple_nodes: Optional[List[SimpleNode]] = None,
-            directed_nodes: Optional[List[DirectedNode]] = None
+            directed_nodes: Optional[List[DirectedNode]] = None,
+            ndir: Optional[int] = 0
     ):
         self._orient = 'trigo'
+        self._ndir = ndir
         super(WalkableChain, self).__init__(simple_nodes or directed_nodes or [])
 
     @staticmethod
@@ -106,7 +113,7 @@ class WalkableChain(SimpleChain):
                 **node.__dict__
             )
             for node in simple_chain.nodes
-        ])
+        ], ndir=2 * bitmap.ndir)
 
     @property
     def orient(self):
@@ -121,14 +128,18 @@ class WalkableChain(SimpleChain):
         return self._cnt // len(self) >= 1
 
     @property
-    def curr_node(self) -> SimpleNode:
+    def curr_node(self) -> DirectedNode:
         return self.nodes[self.position]
+
+    @property
+    def is_trigo(self):
+        return self.orient == 'trigo'
 
     def __len__(self):
         return len(self.nodes)
 
     def next(self):
-        if self.orient == 'trigo':
+        if self.is_trigo:
             self.position = self.cindex(self.position + 1)
         else:
             self.position = self.cindex(self.position - 1)
@@ -146,20 +157,43 @@ class WalkableChain(SimpleChain):
 
         return self
 
+    def split(self, scale: float, p0: Tuple[float, float]):
+        if self._orient == 'trigo':
+            new_node = DirectedNode(
+                **{**self.curr_node.__dict__, **{'scale': scale, 'p0': tuple(map(int, p0))}}
+            ).reset_basis()
+
+            self.nodes = [*self.nodes[:self.position + 1], new_node, *self.nodes[self.position + 1:]]
+            self.next()
+        else:
+            # In this case, new node has the same p0 as current, and a scale
+            new_node = DirectedNode(
+                **{**self.curr_node.__dict__, **{'scale': max(self.curr_node.scale - (scale + 0.2), 0.)}}
+            )
+
+            # Update current position
+            self.curr_node.p0 = p0
+            self.curr_node.scale = scale
+            self.curr_node.reset_basis()
+
+            # Update nodes
+            self.nodes = [*self.nodes[:self.position], new_node, *self.nodes[self.position:]]
+            self._cnt += 1
+
     def _get_next_node(self) -> DirectedNode:
-        if self.orient == 'trigo':
+        if self.is_trigo:
             return self.nodes[self.cindex(self.position + 1)]
         else:
             return self.nodes[self.cindex(self.position - 1)]
 
     def _get_prev_node(self) -> DirectedNode:
-        if self.orient == 'trigo':
+        if self.is_trigo:
             return self.nodes[self.cindex(self.position - 1)]
         else:
             return self.nodes[self.cindex(self.position + 1)]
 
     def curr_dir(self) -> Tuple[float, float]:
-        if self.orient == 'trigo':
+        if self.is_trigo:
             return self.nodes[self.cindex(self.position)].dir
         else:
             return self.nodes[self.cindex(self.position)].opposite_dir
@@ -168,18 +202,36 @@ class WalkableChain(SimpleChain):
         return self.nodes[self.cindex(self.position)].norm
 
     def curr_p0(self) -> Tuple[int, int]:
-        if self.orient == 'trigo':
+        if self.is_trigo:
             return self.nodes[self.cindex(self.position)].p0
         else:
             return self._get_prev_node().p0
 
     def curr_p1(self) -> Tuple[int, int]:
-        if self.orient == 'trigo':
+        if self.is_trigo:
             return self._get_next_node().p0
         else:
             return self.nodes[self.cindex(self.position)].p0
 
+    def curr_simple_node(self) -> SimpleNode:
+        if self._orient == 'trigo':
+            curr_direction = self.curr_node.direction
+        else:
+            curr_direction = int((self.curr_node.direction + (self._ndir / 2)) % self._ndir)
+
+        return SimpleNode(
+            p0=self.curr_p0(), scale=self.curr_node.scale, direction=curr_direction
+        )
+
     def curr_basis(self) -> NodeBasis:
         return NodeBasis(
             p0=self.curr_p0(), dir=self.curr_dir(), norm=self.curr_norm()
+        )
+
+    def next_basis(self) -> NodeBasis:
+        nxt_node = self._get_next_node()
+        return NodeBasis(
+            p0=self.curr_p1(),
+            dir=nxt_node.dir if self.is_trigo else nxt_node.opposite_dir,
+            norm=nxt_node.norm
         )

@@ -23,30 +23,68 @@ def merge_simple_chain(l_simple_chain: List[SimpleChain], bitmap: BitMap):
 def reduce_simple_chain_trees(d_chain_tree: Dict[str, Tree], bitmap: BitMap):
     # Todo: parallelize this loop
     for k, tree in d_chain_tree.items():
+        # TODO: this can also be separeted start with merging all  level d-1 node of tree,
+        #   Then do that again with d-1, the parallelized complexity in log(tree_depth) * (average point in simplechain)
         master_chain = master_update(SimpleChain(), tree.get_node(tree.root), tree)
 
     return
 
 
 def master_update(master_chain: SimpleChain, curr_tree_node: TreeNode, tree: Tree):
+    print('============ Init =============')
+    print(tree)
+    print('=========================')
+
     while not curr_tree_node.data.is_looped:
         # Check for conflicts. Conflicting node can either be a child or a parent
         node, conflicting_tree_node = walk_through_chain_node(
             curr_tree_node.data, [tree.get_node(tnid) for tnid in curr_tree_node.successors(tree.identifier)],
             tree.get_node(curr_tree_node.predecessor(tree.identifier))
         )
-        master_chain.append(node)
+        if node.scale > 0:
+            master_chain.append(node)
+
+        # If conflicting tree node is a parent of current tree node, then remove curr_tree_node from tree
+        if conflicting_tree_node:
+            if curr_tree_node.identifier in conflicting_tree_node.successors(tree.identifier):
+
+                import IPython
+                IPython.embed()
+                tree.remove_node(curr_tree_node.identifier)
+                print('============ Child removal =============')
+                print(tree)
+                print('=========================')
+
         # TODO: debug area
-        print('New iteration')
+        print('master_update: New iteration')
+        print('============ master_update: New iteration =============')
+        print("node to add to master")
+        print(node.__dict__)
+        print('---------')
+        print("master chain:")
+        print(master_chain.__dict__)
+        print('---------')
+        print("current tree node id:")
+
+
+
         shape_drawer = ShapeDrawer((210, 141))
-        import IPython
-        IPython.embed()
+        #import IPython
+        #IPython.embed()
         ###
+
         if conflicting_tree_node is not None:
+
+            print(conflicting_tree_node.identifier)
+            print('=========================')
+
             return master_update(master_chain, conflicting_tree_node, tree)
 
         # Move to next node in chain
         curr_tree_node.data.next()
+
+        print(curr_tree_node.identifier)
+        print('=========================')
 
     return master_chain
 
@@ -54,20 +92,15 @@ def master_update(master_chain: SimpleChain, curr_tree_node: TreeNode, tree: Tre
 def walk_through_chain_node(
         chain: WalkableChain, child_tree_nodes: Optional[List[TreeNode]] = None,
         parent_tree_node: Optional[TreeNode] = None
-):
+) -> Tuple[SimpleNode, Union[TreeNode, None]]:
+
     # 1. Check for conflict of chain node with children chains in tree
     child_tree_node, init_ind, master_scale = find_children_conflict(chain, child_tree_nodes)
 
-    # TODO: debug area
-    print('Walk after children check')
-    shape_drawer = ShapeDrawer((210, 141))
-    import IPython
-    IPython.embed()
-    ###
-
     if child_tree_node is not None:
         # 2. If conflicted, create sub node from current node (node that make the path to conflict)
-        master_node = chain.curr_node.copy(scale=master_scale)
+        master_node = chain.curr_simple_node()
+        master_node.scale = master_scale
 
         # 3. If conflict, process successor node data so that => right order & index start is set
         child_tree_node.data.init_walk(position=init_ind, orient=chain.swapped_orientation)
@@ -77,20 +110,11 @@ def walk_through_chain_node(
     # 6. If no conflict, check for conflict with predecessor node
     parent_tree_node = find_parent_conflict(chain, parent_tree_node)
 
-    ### TODO: debug area
-    print('walk after parent check')
-    shape_drawer = ShapeDrawer((210, 141))
-    import IPython
-    IPython.embed()
-    ###
-
     if parent_tree_node is not None:
-        # TODO 8. Remove current chain from tree
-
-        return chain.curr_node, parent_tree_node
+        return chain.curr_simple_node(), parent_tree_node
 
     # 9. If no conflict, return node unchanged and None as conflicting node
-    return chain.curr_node, None
+    return chain.curr_simple_node(), None
 
 
 def find_children_conflict(
@@ -104,14 +128,17 @@ def find_children_conflict(
         # Curr node of chain has a dir and a normal + p0
         for ind, dir_coef, norm_coef in iter_project(basis, child_tree_node.data.points()):
             # TODO: See what is a good tolerance, given how we solve the problem of point's approximation.
-            if abs(norm_coef) < 2:
+            if abs(norm_coef) < 1:
                 l_candidates.append((child_tree_node.identifier, ind, dir_coef))
 
     # TODO: Debug area
-    #print('find in children')
-    #shape_drawer = ShapeDrawer((210, 141))
-    #import IPython
-    #IPython.embed()
+    print('============ find_children_conflict =============')
+    print(f'curr chain {chain.position}:')
+    print('---------')
+    print(f'childrens conflicted ({len(l_candidates)}):')
+    for (tree_id, node_ind, dir_coef) in l_candidates:
+        print(f'child {tree_id}')
+        print('---------')
     ####
 
     if l_candidates:
@@ -119,11 +146,14 @@ def find_children_conflict(
         [tree_id, node_ind, dir_coef] = min(l_candidates, key=lambda x: x[-1])
 
         # Compute new scale of curr_node
-        p1_projected = list(iter_project(basis, [chain.curr_p1()]))[0]
+        p1_projected, _ = ax_project(basis, np.array(chain.curr_p1())[np.newaxis, :])
 
         # TODO: we absolutely need to stop this non linear notion of scale.
-        master_scale = chain.curr_node.scale * (dir_coef / p1_projected[1])
+        #  In addition, if p1_projected ~ dir_coef, we better move current to next.
+        master_scale = chain.curr_node.scale * (dir_coef / p1_projected[0])
 
+        print(f'child selected, identifier {tree_id}, position => {node_ind}, master_scale => {master_scale}')
+        print('=========================')
         # Recover tree node
         conflicted_tree_node = [tnode for tnode in l_children_tree_nodes if tnode.identifier == tree_id][0]
 
@@ -133,36 +163,36 @@ def find_children_conflict(
 
 
 def find_parent_conflict(chain: WalkableChain, parent_tree_node: TreeNode) -> Union[TreeNode, None]:
+    # Project curr p1 on parent node and next node.
+    ax_curr_dir, ax_curr_norm = ax_project(
+        parent_tree_node.data.curr_basis(), np.array(chain.curr_p1())[np.newaxis, :]
+    )
+    ax_next_dir, ax_next_norm = ax_project(
+        parent_tree_node.data.next_basis(), np.array(chain.curr_p1())[np.newaxis, :]
+    )
+
+    # Check conflict
+    is_conflict, dir_coef = False, None
+    if abs(ax_curr_norm[0]) < 1:
+        is_conflict, dir_coef = True, ax_curr_dir[0]
+    elif abs(ax_next_norm[0]) < 1:
+        is_conflict, dir_coef = True, ax_next_dir[0]
+        parent_tree_node.data.next()
 
     ### TODO: Debug area
-    print('find in parent')
-    shape_drawer = ShapeDrawer((210, 141))
-    import IPython
-    IPython.embed()
+    print('============ find_parent_conflict =============')
+    print(
+        f'curr chain at position {chain.position}, p0 => {chain.curr_p1()}, '
+        f'p1 => {chain.curr_p1()}, is_conflict => {is_conflict} '
+        f'parent_position => {parent_tree_node.data.position}'
+    )
+    print('---------')
+    print('=========================')
     ####
 
-    # Init. Get curr basis components and
-    parent_chain, is_conflict = parent_tree_node.data.copy(), False
-    while not parent_chain.is_looped:
-        # Project
-        (ind, dir_coef, norm_coef) = list(iter_project(parent_chain.curr_basis(), [chain.curr_p1()]))[0]
-
-        if abs(norm_coef) < 1e-2:
-            is_conflict = True
-            break
-
-        # Increment parent chain
-        parent_chain.next()
-
     if is_conflict:
-        # get new scale
-        parent_scale = None
-
         # Split parent chain curr_node and move to latest
-        parent_chain.split(parent_scale, target=1)
-
-        # replace parent_tree_node data with parent_chain
-        parent_tree_node.data = parent_chain
+        parent_tree_node.data.split(scale=dir_coef, p0=chain.curr_p1())
 
         return parent_tree_node
 
@@ -276,6 +306,7 @@ def build_walkable_chain(chain: SimpleChain, bitmap: BitMap) -> WalkableChain:
 
         # update curr node position and move to next
         wchain.curr_node.p0 = tuple(ax_points[np.abs(ax_norm).argmin()])
+        wchain.curr_node.reset_basis()
         wchain.next()
 
     return wchain.init_walk(0)
