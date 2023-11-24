@@ -10,9 +10,26 @@ from deyep.linalg.spmat_op import fill_gap
 
 class DeyepFiringGraph(FiringGraph):
     """
-    This class implement the main data structure used for fitting data. It is composed of weighted link in the form of
-    scipy.sparse matrices and store complement information on vertices such as levels, mask for draining. It also keep
-    track of the firing of vertices.
+    DeyepFiringGraph inherit from the base firing graph. It correspond to a graph with 3 main matrix.
+
+    the firing graph is composed of 3 kind of vertices:
+     * input vertices: First layer of vertex, directly link to a potential input signal.
+     * core vertices: Internal vertices, receive and send signal only from, to vertices of the firing graph.
+     * output vertices: Last layer of vertices that receive signal from core vertices and don't send signals.
+
+    Each vertex has a level, which correspond to the minimum number of positive signal required for the vertex signal
+    to take value 1, the vertex value takes value 0 otherwise.
+
+    The firing graph provide a procedure to iteratively propagate an input signal composed of sparse signal
+    taking values 0, 1 through its vertices. There is 3 type of matrices that enable the propagation.
+    Let ni, nc and no be respectively the number of input vertices
+
+     * input matrix: enable to propagate the input signal ({0, 1} values) to the first layer of core vertices.
+     * core matrix: enable to propagate signal from core vertex to core vertex propagation of signal
+     * outpur matrix: enable to propagate the vertices signal to output vertices
+
+    DeyepFiringGraph is a particular form of firing graph of depth 2 with empty core matrix. In addition the first
+    layer of vertices is directly link to output vertices using a 1-1 unique mapping (ni == no).
 
     """
 
@@ -46,18 +63,3 @@ class DeyepFiringGraph(FiringGraph):
         }
 
         return DeyepFiringGraph(**kwargs)
-
-    def get_convex_hull(self, server):
-        # Get masked activations
-        sax_x = server.next_all_forward().sax_data_forward
-
-        # propagate through firing graph
-        sax_fg = self.seq_propagate(sax_x)
-
-        # Get masked activations
-        sax_product = sax_x.T.dot(sax_fg)
-
-        return FgComponents(
-            inputs=fill_gap(sax_product, server.bitmap), levels=np.ones(sax_fg.shape[1]), _meta=self.meta
-        )
-

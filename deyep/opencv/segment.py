@@ -87,9 +87,6 @@ class OpenCVSeq:
         for ax in l_masks:
             self.show_img(f'segmentation / connected component', ax)
 
-        import IPython
-        IPython.embed()
-
     def segment_sampling(
             self, ax_image: np.ndarray, ax_coords: np.ndarray, ax_mask: np.ndarray,
             comp_min_size: int = 20, display: bool = True

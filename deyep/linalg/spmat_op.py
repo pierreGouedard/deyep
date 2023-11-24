@@ -1,13 +1,40 @@
 """Transformation of sparse matrices."""
 # Global import
 from math import ceil
-from typing import List, Tuple
-from scipy.sparse import lil_matrix, hstack
+from typing import List, Tuple, Dict, Any, Union
+from scipy.sparse import lil_matrix, hstack, spmatrix
 from itertools import groupby
 from operator import itemgetter
 
+# Local import
+from deyep.models.base import BitMap
 
-def expand(sax_inputs, bitmap, keep_only_expanded=False, is_only_up=False, is_only_down=False):
+
+def expand(
+        sax_inputs: spmatrix, bitmap: BitMap, keep_only_expanded: bool = False, is_only_up: bool = False,
+        is_only_down: bool =False
+) -> spmatrix:
+    """
+    For each vertex, expand the active bit of each non empty direction, either only the up way, down way or both way.
+    Keep original bits and added bit or only newly added bit.
+
+    To get more sense of what is a direction, vertices and bits you can check the documentation of
+    FgComponents and BitMap of module deyep.models.base
+
+
+    Parameters
+    ----------
+    sax_inputs: firing graph input matrix
+    bitmap: see deyep.models.base.BitMap
+    keep_only_expanded: Control whether to keep only newly added bits.
+    is_only_up: Control whether to expand direction bit only the up way.
+    is_only_down: Control Control whether to expand direction bit only the down way.
+
+    Returns
+    -------
+    Expanded firing graph's input matrix
+
+    """
     ax_mask, n = bitmap.b2d(sax_inputs).A.any(axis=0), bitmap.nbit
     l_linds, l_cinds = [], []
     for i, sax_mask in enumerate(bitmap):
@@ -20,9 +47,13 @@ def expand(sax_inputs, bitmap, keep_only_expanded=False, is_only_up=False, is_on
                 l_tmp_linds, l_sub_linds = list(map(itemgetter(0), l_sub_inds)), []
 
                 if not is_only_up:
-                    l_sub_linds.extend(list(range(max(min(l_tmp_linds) - n, ind_min), min(l_tmp_linds))))
+                    l_sub_linds.extend(list(range(
+                        max(min(l_tmp_linds) - n, ind_min), min(l_tmp_linds))
+                    ))
                 if not is_only_down:
-                    l_sub_linds.extend(list(range(max(l_tmp_linds) + 1, min(max(l_tmp_linds) + n + 1, ind_max + 1))))
+                    l_sub_linds.extend(list(range(
+                        max(l_tmp_linds) + 1, min(max(l_tmp_linds) + n + 1, ind_max + 1))
+                    ))
 
                 # Extend indices list
                 l_linds.extend(l_sub_linds)
@@ -151,8 +182,31 @@ def fill_gap(sax_inputs, bitmap):
     return sax_inputs.tocsr()
 
 
-def explode(sax_inputs, bitmap, partitions, use_bdir_mask: bool = False, return_partition: bool = False):
+def explode(
+        sax_inputs: spmatrix, bitmap: BitMap, partitions: Dict[str, Any],
+        use_bdir_mask: bool = False, return_partition: bool = False
+) -> Union[spmatrix, Tuple[spmatrix, Dict[str, Any]]]:
+    """
+    Explode a firing graph input matrix to isolate each direction.
 
+    The input of a firing graph is composed of n_dir x n_bins rows and n_vertices columns. For each columns,
+    create n_dir vertices, where each vertex has non null bit for only a single direction.
+
+    To get more sense of what is a n_dir, n_bins, n_vertices, you can check the documentation of
+    FgComponents and BitMap of module deyep.models.base
+
+    Parameters
+    ----------
+    sax_inputs: firing graph input matrix
+    bitmap: see deyep.models.base.BitMap
+    partitions: list of partition of vertices
+    use_bdir_mask: Control whether to use bit to dir map or mask. If true, bit to dir mask is used.
+    return_partition: Control whether partitions should be returned.
+
+    Returns
+    -------
+    exploded firing graph's input matrix
+    """
     # Build input
     if not use_bdir_mask:
         sax_inputs = hstack([
