@@ -174,7 +174,7 @@ def build_walkable_chain(chain: SimpleChain, bitmap: BitMap) -> WalkableChain:
     # Reset basis of last node
     wchain.nodes[-1].reset_basis()
 
-    return wchain.deduplicated().init_walk(0)
+    return wchain.deduplicated().init_walk(0, cnt=0)
 
 
 def build_simple_chains(sax_data: spmatrix, comps: FgComponents, bitmap: BitMap) -> Dict[str, SimpleChain]:

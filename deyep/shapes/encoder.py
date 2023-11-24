@@ -67,8 +67,8 @@ class ImageEncoder:
         )
 
         # # TODO: save chain_tree for smoother dev
-        with open('test_chain_tree.pckl', 'wb') as handle:
-           pickle.dump(d_chain_trees, handle)
+        # with open('test_chain_tree.pckl', 'wb') as handle:
+        #    pickle.dump(d_chain_trees, handle)
 
 
         # TODO: let start with a simple Depth 2 graph (remove 3rd level of tree)

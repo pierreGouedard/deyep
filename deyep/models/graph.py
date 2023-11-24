@@ -302,7 +302,7 @@ class WalkableChain(SimpleChain):
             self.position = self.cindex(position + 1)
 
         # Init count
-        self._cnt = cnt or self._cnt
+        self._cnt = cnt if cnt is not None else self._cnt
 
         return self
 
