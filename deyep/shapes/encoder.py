@@ -62,22 +62,22 @@ class ImageEncoder:
 
     def encode_image(self) -> SimpleChain:
         # Build chain tree for each masks
-        # d_chain_trees = build_walkable_convex_chain_trees(
-        #     self.flags, self.data, self.bitmap, self.pixel_shape, debug=True
-        # )
+        d_chain_trees = build_walkable_convex_chain_trees(
+            self.flags, self.data, self.bitmap, self.pixel_shape, debug=True
+        )
 
         # # TODO: save chain_tree for smoother dev
-        # with open('test_chain_tree.pckl', 'wb') as handle:
-        #    pickle.dump(d_chain_trees, handle)
+        with open('test_chain_tree.pckl', 'wb') as handle:
+           pickle.dump(d_chain_trees, handle)
 
-        # Load tree
-        with open('test_chain_tree.pckl', 'rb') as handle:
-            d_chain_trees = pickle.load(handle)
 
         # TODO: let start with a simple Depth 2 graph (remove 3rd level of tree)
         chain_tree = d_chain_trees[list(d_chain_trees.keys())[0]]
         for leaf in chain_tree.leaves():
             chain_tree.remove_node(leaf.identifier)
+
+        import IPython
+        IPython.embed()
 
         # Reduce Chain Trees
         l_chains = build_walkable_chains(d_chain_trees, self.bitmap)

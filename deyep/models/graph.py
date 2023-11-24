@@ -296,9 +296,9 @@ class WalkableChain(SimpleChain):
 
         # Process position according to orientation of passed position.
         self.position = self.cindex(position)
-        if self._orient  != 'trigo' and is_trigo_position:
+        if self._orient != 'trigo' and is_trigo_position:
             self.position = self.cindex(position - 1)
-        elif self._orient  == 'trigo' and not is_trigo_position:
+        elif self._orient == 'trigo' and not is_trigo_position:
             self.position = self.cindex(position + 1)
 
         # Init count
